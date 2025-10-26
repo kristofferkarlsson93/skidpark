@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../database/database.dart';
 import '../models/ski/ski.dart';
 
 class AddSkiForm extends StatefulWidget {
-  const AddSkiForm({super.key});
+
+  final StoredSkiData? skiToEdit;
+
+  const AddSkiForm({super.key, this.skiToEdit});
 
   @override
   State<AddSkiForm> createState() => _AddSkiFormState();
@@ -16,6 +20,17 @@ class _AddSkiFormState extends State<AddSkiForm> {
   final _brandAndModelController = TextEditingController();
   final _technicalDataController = TextEditingController();
   final _notesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.skiToEdit != null) {
+      _nameController.text = widget.skiToEdit!.name;
+      _brandAndModelController.text = widget.skiToEdit!.brandAndModel ?? '';
+      _technicalDataController.text = widget.skiToEdit!.technicalData ?? '';
+      _notesController.text = widget.skiToEdit!.notes ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -32,21 +47,22 @@ class _AddSkiFormState extends State<AddSkiForm> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final newSki = SkiCandidate(
+      final skiCandidate = SkiCandidate(
         name: _nameController.text,
         brandAndModel: _emptyAsNull(_brandAndModelController.text),
         technicalData: _emptyAsNull(_technicalDataController.text),
         notes: _emptyAsNull(_notesController.text),
       );
-      Navigator.pop(context, newSki);
+      Navigator.pop(context, skiCandidate);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets;
     const double horizontalPadding = 16.0;
 
+    final isEditing = widget.skiToEdit != null;
+    final title = isEditing ? 'Redigera skida' : 'Lägg till ny skida';
     return Padding(
       padding: EdgeInsets.fromLTRB(
         horizontalPadding,
@@ -62,7 +78,7 @@ class _AddSkiFormState extends State<AddSkiForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Lägg till ny skida',
+                title,
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),

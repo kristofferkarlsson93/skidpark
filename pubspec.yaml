@@ -42,6 +42,7 @@ dependencies:
   drift: ^2.29.0
   drift_flutter: ^0.2.7
   provider: ^6.1.5+1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
