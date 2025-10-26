@@ -49,7 +49,7 @@ class MySkisComponent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Text(
-              'Du har inga skidor än.\nKlicka på + för att lägga till.',
+              'Du har inte lagt till några skidor än.\nKlicka på + för att lägga till.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

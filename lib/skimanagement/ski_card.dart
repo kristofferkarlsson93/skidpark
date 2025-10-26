@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import '../database/database.dart';
 import '../screens/ski_details_screen.dart';
@@ -20,7 +21,7 @@ class SkiCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => SkiDetailScreen(skiId: ski.id),
+              builder: (context) => SkiDetailScreen(skiId: ski.id),
             ),
           );
         },
@@ -32,8 +33,20 @@ class SkiCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.circle, size: 36, color: theme.colorScheme.primary),
-
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: theme.colorScheme.primary,
+                    child: SvgPicture.asset(
+                      'assets/icons/ski_icon.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(
+                        theme.colorScheme.onPrimary,
+                        BlendMode.srcIn,
+                      ),
+                      semanticsLabel: 'Skis icon',
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -64,7 +77,7 @@ class SkiCard extends StatelessWidget {
                 Text(
                   ski.technicalData!,
                   style: textTheme.bodySmall,
-                  maxLines: 3,
+                  maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
             ],
