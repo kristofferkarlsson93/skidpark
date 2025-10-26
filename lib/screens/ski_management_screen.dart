@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skidpark/models/ski/ski.dart';
 import 'package:skidpark/skimanagement/my_skis_component.dart';
 
 import '../database/database.dart';
@@ -20,27 +21,23 @@ class SkiManagementScreen extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         child: const Icon(Icons.add),
         onPressed: () async {
-          final newSkiCompanion =
-              await showModalBottomSheet<StoredSkiCompanion>(
-                context: context,
-                isScrollControlled: true,
-                builder: (ctx) => const AddSkiForm(),
-              );
+          final newSkiCandidate = await showModalBottomSheet<SkiCandidate>(
+            context: context,
+            isScrollControlled: true,
+            builder: (ctx) => const AddSkiForm(),
+          );
 
-          if (newSkiCompanion != null) {
-            await skiRepository.save(newSkiCompanion);
+          if (newSkiCandidate != null) {
+            await skiRepository.save(newSkiCandidate);
           }
         },
       ),
-      body: Container(
-        alignment: AlignmentDirectional.topCenter,
-        child: StreamBuilder<List<StoredSkiData>>(
-          stream: skiRepository.watchSkis(),
-          builder: (context, snapshot) {
-            final skis = snapshot.data ?? [];
-            return MySkisComponent(skis: skis);
-          },
-        ),
+      body: StreamBuilder<List<StoredSkiData>>(
+        stream: skiRepository.watchSkis(),
+        builder: (context, snapshot) {
+          final skis = snapshot.data ?? [];
+          return MySkisComponent(skis: skis);
+        },
       ),
     );
   }

@@ -32,7 +32,7 @@ class _AddSkiFormState extends State<AddSkiForm> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final newSki = Ski(
+      final newSki = SkiCandidate(
         name: _nameController.text,
         brandAndModel: _emptyAsNull(_brandAndModelController.text),
         technicalData: _emptyAsNull(_technicalDataController.text),
