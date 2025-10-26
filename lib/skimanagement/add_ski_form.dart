@@ -86,6 +86,7 @@ class _AddSkiFormState extends State<AddSkiForm> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Skidans namn'),
+                textCapitalization: TextCapitalization.words,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Fyll i ett namn på skidan';
@@ -97,9 +98,11 @@ class _AddSkiFormState extends State<AddSkiForm> {
               TextFormField(
                 controller: _brandAndModelController,
                 decoration: const InputDecoration(labelText: 'Märke och modell (valfritt)'),
+                textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: 16),
               TextFormField(
+                textCapitalization: TextCapitalization.sentences,
                 controller: _technicalDataController,
                 decoration: const InputDecoration(
                   alignLabelWithHint: true,
@@ -112,6 +115,7 @@ class _AddSkiFormState extends State<AddSkiForm> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _notesController,
+                textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   alignLabelWithHint: true,
                   labelText: 'Övrig info (valfritt)',

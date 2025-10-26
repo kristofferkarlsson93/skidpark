@@ -30,56 +30,57 @@ class SkiCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: theme.colorScheme.primary,
-                    child: SvgPicture.asset(
-                      'assets/icons/ski_icon.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        theme.colorScheme.onPrimary,
-                        BlendMode.srcIn,
-                      ),
-                      semanticsLabel: 'Skis icon',
+              Center(
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.primary,
+                  child: SvgPicture.asset(
+                    'assets/icons/ski_icon.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      theme.colorScheme.onPrimary,
+                      BlendMode.srcIn,
                     ),
+                    semanticsLabel: 'Skis icon',
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ski.name,
-                          style: textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (ski.brandAndModel != null)
-                          Text(
-                            ski.brandAndModel!,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
-              if (ski.technicalData != null)
-                Text(
-                  ski.technicalData!,
-                  style: textTheme.bodySmall,
-                  maxLines: 4,
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  ski.name,
+                  style: textTheme.titleMedium,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              if (ski.brandAndModel != null)
+                Center(
+                  child: Text(
+                    ski.brandAndModel!,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (ski.technicalData != null)
+                      Text(
+                        ski.technicalData!,
+                        style: textTheme.bodySmall,
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
