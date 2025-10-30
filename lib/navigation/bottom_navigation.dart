@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/screens/ski_management_screen.dart';
-import 'package:skidpark/screens/ski_testing_screen.dart';
+import 'package:skidpark/screens/glidetesting/glide_testing_home_screen.dart';
+import 'package:skidpark/screens/ski/ski_management_screen.dart';
+
+import '../screens/ski_testing_screen_temp_data_collection.dart';
 
 class BottomNavigator extends StatefulWidget {
   const BottomNavigator({super.key});
@@ -14,7 +16,8 @@ class _BottomNavigatorState extends State<BottomNavigator> {
 
   final List<Widget> _screens = [
     const SkiManagementScreen(),
-    const SkiTestingScreen(),
+    const GlideTestingHomeScreen(),
+    const TempDataCollectionScreen(),
   ];
 
   @override
@@ -36,9 +39,14 @@ class _BottomNavigatorState extends State<BottomNavigator> {
             label: 'Min skidpark',
           ),
           NavigationDestination(
+            selectedIcon: Icon(Icons.science),
+            icon: Icon(Icons.science_outlined),
+            label: 'GlidLabbet',
+          ),
+          NavigationDestination(
             selectedIcon: Icon(Icons.compare_arrows),
             icon: Icon(Icons.compare_arrows_outlined),
-            label: 'GlidLabbet',
+            label: 'Temp datainsamling',
           ),
         ],
       ),

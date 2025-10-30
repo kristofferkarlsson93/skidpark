@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/models/ski/ski.dart';
-import 'package:skidpark/skimanagement/my_skis_component.dart';
 
-import '../database/database.dart';
-import '../database/repository/ski_repository.dart';
-import '../skimanagement/add_ski_form.dart';
+import '../../database/database.dart';
+import '../../database/repository/ski_repository.dart';
+import '../../widgets/skimanagement/add_ski_form.dart';
+import '../../widgets/skimanagement/my_skis_component.dart';
 
 class SkiManagementScreen extends StatelessWidget {
   const SkiManagementScreen({super.key});
@@ -17,6 +17,7 @@ class SkiManagementScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Min skidpark')),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'new-ski-fab',
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         child: const Icon(Icons.add),

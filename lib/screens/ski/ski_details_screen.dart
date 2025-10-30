@@ -5,7 +5,7 @@ import 'package:skidpark/database/repository/ski_repository.dart';
 import 'package:skidpark/models/ski/ski.dart';
 import 'package:intl/intl.dart';
 
-import '../skimanagement/add_ski_form.dart';
+import '../../widgets/skimanagement/add_ski_form.dart';
 
 class SkiDetailScreen extends StatelessWidget {
   final int skiId;

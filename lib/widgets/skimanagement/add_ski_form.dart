@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../database/database.dart';
-import '../models/ski/ski.dart';
+import '../../database/database.dart';
+import '../../models/ski/ski.dart';
+import '../../utils/text_utils.dart';
 
 class AddSkiForm extends StatefulWidget {
 
@@ -41,17 +42,13 @@ class _AddSkiFormState extends State<AddSkiForm> {
     super.dispose();
   }
 
-  String? _emptyAsNull(String text) {
-    return text.isNotEmpty ? text : null;
-  }
-
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final skiCandidate = SkiCandidate(
         name: _nameController.text,
-        brandAndModel: _emptyAsNull(_brandAndModelController.text),
-        technicalData: _emptyAsNull(_technicalDataController.text),
-        notes: _emptyAsNull(_notesController.text),
+        brandAndModel: emptyAsNull(_brandAndModelController.text),
+        technicalData: emptyAsNull(_technicalDataController.text),
+        notes: emptyAsNull(_notesController.text),
       );
       Navigator.pop(context, skiCandidate);
     }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
-import '../database/database.dart';
-import '../screens/ski_details_screen.dart';
+import '../../database/database.dart';
+import '../../screens/ski/ski_details_screen.dart';
 
 class SkiCard extends StatelessWidget {
   const SkiCard({super.key, required this.ski});

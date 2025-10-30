@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skidpark/database/database.dart';
-import 'package:skidpark/models/ski/ski.dart';
-import 'package:skidpark/skimanagement/ski_card.dart';
+import 'package:skidpark/widgets/skimanagement/ski_card.dart';
 
 class MySkisComponent extends StatelessWidget {
   final List<StoredSkiData> skis;
