@@ -2,6 +2,10 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:skidpark/features/glide_testing/compare/compare_runs_view_model.dart';
+import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
+import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/select_run_card.dart';
 
 import '../models/decoded_test_run.dart';
 
@@ -13,7 +17,6 @@ class CompareRuns extends StatefulWidget {
 }
 
 class _CompareRunsState extends State<CompareRuns> {
-  // 1. Ny state-variabel: Håller reda på ID:n för ALLA valda åk
   final Set<int> _selectedRunIds = {};
 
   // En lista med färger att loopa igenom för graferna
@@ -28,108 +31,117 @@ class _CompareRunsState extends State<CompareRuns> {
 
   @override
   Widget build(BuildContext context) {
-    // Hämta hela listan med åk från providern
-    final testRuns = context.watch<List<DecodedTestRun>>();
+    final viewModel = context.watch<CompareRunsViewModel>();
+    final theme = Theme.of(context);
+    final testRuns = viewModel.testRuns;
 
-    // 2. Filtrera ut de åk som faktiskt ska visas i grafen
     final selectedRuns = testRuns
         .where((run) => _selectedRunIds.contains(run.id))
         .toList();
 
-    return Expanded(
-      child: Column(
-        children: [
-          // --- GRAF-SEKTION ---
-          _buildChartContainer(context, selectedRuns),
-
-          // --- LIST-SEKTION ---
-          Padding(
-            padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
-            child: Text(
-              "Välj åk att jämföra i grafen:",
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+    final orientation = MediaQuery.of(context).orientation;
+    final listWidget = Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
+          child: Text(
+            "Välj åk att jämföra i grafen:",
+            style: theme.textTheme.titleMedium,
           ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: testRuns.length,
+            itemBuilder: (context, index) {
+              final run = testRuns[index];
+              final isSelected = _selectedRunIds.contains(run.id);
+              return SelectRunCard(
+                isSelected: isSelected,
+                testRun: run,
+                runNumber: index + 1,
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      _selectedRunIds.remove(run.id);
+                    } else {
+                      _selectedRunIds.add(run.id);
+                    }
+                  });
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
 
+    if (orientation == Orientation.portrait) {
+      return Column(
+        children: [
+          _buildChartContainer(context, selectedRuns, orientation),
+          Expanded(child: listWidget),
+        ],
+      );
+    } else {
+      return Row(
+        children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: testRuns.length,
-              itemBuilder: (context, index) {
-                final run = testRuns[index];
-                // 3. Kolla om åket är valt
-                final isSelected = _selectedRunIds.contains(run.id);
-
-                return Card(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : null,
-                  margin:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: ListTile(
-                    leading: Icon(
-                      isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                    ),
-                    title: Text("Åk ${run.id} (Skida: ${run.skiId})"),
-                    subtitle:
-                    Text("Varaktighet: ${run.elapsedSeconds} sekunder"),
-                    trailing: Text("${run.gpsData.length} datapunkter"),
-                    onTap: () {
-                      // 4. Uppdatera state: Lägg till eller ta bort ID:t
-                      setState(() {
-                        if (isSelected) {
-                          _selectedRunIds.remove(run.id);
-                        } else {
-                          _selectedRunIds.add(run.id);
-                        }
-                      });
-                    },
-                  ),
-                );
-              },
-            ),
+            flex: 7,
+            child: _buildChartContainer(context, selectedRuns, orientation),
+          ),
+          Expanded(
+            flex: 3,
+            child: listWidget,
           ),
         ],
-      ),
-    );
+      );
+    }
+
   }
 
-  /// Bygger en container för vår graf.
-  Widget _buildChartContainer(BuildContext context, List<DecodedTestRun> runs) {
-    return AspectRatio(
-      aspectRatio: 1.7,
-      child: Card(
-        margin: const EdgeInsets.all(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: runs.isEmpty
-              ? Center(child: Text("Välj ett eller flera åk nedan."))
-              : LineChart(
-            _buildChartData(runs), // Skicka in listan med valda åk
-          ),
+  Widget _buildChartContainer(
+      BuildContext context,
+      List<EnrichedTestRun> runs,
+      Orientation orientation,
+      ) {
+    final chartWidget = Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: runs.isEmpty
+            ? Center(child: Text("Välj ett eller flera åk nedan."))
+            : LineChart(
+          _buildChartData(runs),
         ),
       ),
     );
+
+    if (orientation == Orientation.portrait) {
+      return AspectRatio(
+        aspectRatio: 1.5,
+        child: chartWidget,
+      );
+    } else {
+      return chartWidget;
+    }
   }
 
   /// Skapar all data som fl_chart behöver.
-  LineChartData _buildChartData(List<DecodedTestRun> runs) {
-
+  LineChartData _buildChartData(List<EnrichedTestRun> runs) {
     // 5. Loopa igenom varje valt åk och skapa en linje för det
     final List<LineChartBarData> lines = [];
     for (int i = 0; i < runs.length; i++) {
       final run = runs[i];
-      final spots = _createSpots(run.gpsData);
+      final spots = _createSpots(run.positionData);
       final color = _lineColors[i % _lineColors.length]; // Loopa igenom färgerna
 
       lines.add(
         LineChartBarData(
           spots: spots,
-          isCurved: false,
-          color: color,
+          isCurved: true,
+          color: run.runColor,
           barWidth: 3,
           dotData: FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
           // Ge linjen ett ID så tooltips vet vilken det är
           // (Detta är en förenkling, men fungerar för tooltips)
           // Du kan använda run.id.toString() om du vill
@@ -140,7 +152,6 @@ class _CompareRunsState extends State<CompareRuns> {
     return LineChartData(
       // Interaktivitet
       lineTouchData: LineTouchData(
-        // BUGGFIX: Bytte namn på parametern
         // getTooltipColor: (touchedSpot) => Colors.blueGrey.withOpacity(0.8),
         touchTooltipData: LineTouchTooltipData(
           getTooltipItems: (touchedSpots) {
@@ -156,7 +167,6 @@ class _CompareRunsState extends State<CompareRuns> {
         ),
       ),
 
-      // ... (Resten av din kod för grid, titlar, border är densamma)
       gridData: FlGridData(show: true),
       titlesData: FlTitlesData(
         show: true,
@@ -169,6 +179,7 @@ class _CompareRunsState extends State<CompareRuns> {
         leftTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: true, reservedSize: 40),
           axisNameWidget: Text("Hastighet (km/h)"),
+          drawBelowEverything: true,
         ),
       ),
       borderData: FlBorderData(show: true),
@@ -178,33 +189,9 @@ class _CompareRunsState extends State<CompareRuns> {
     );
   }
 
-  /// Din beräkningslogik (oförändrad, den är perfekt)
-  List<FlSpot> _createSpots(List<Position> positions) {
-    final List<FlSpot> spots = [];
-    double totalDistance = 0.0;
-
-    if (positions.isEmpty) {
-      return spots;
-    }
-
-    spots.add(FlSpot(0.0, positions.first.speed * 3.6));
-
-    for (int i = 1; i < positions.length; i++) {
-      final pos1 = positions[i - 1];
-      final pos2 = positions[i];
-
-      final distanceInMeters = Geolocator.distanceBetween(
-        pos1.latitude,
-        pos1.longitude,
-        pos2.latitude,
-        pos2.longitude,
-      );
-
-      totalDistance += distanceInMeters;
-
-      spots.add(FlSpot(totalDistance, pos2.speed * 3.6));
-    }
-
-    return spots;
+  List<FlSpot> _createSpots(List<CalculatedPosition> positions) {
+    return positions
+        .map((pos) => FlSpot(pos.distanceTraveled, pos.speed * 3.6))
+        .toList();
   }
 }

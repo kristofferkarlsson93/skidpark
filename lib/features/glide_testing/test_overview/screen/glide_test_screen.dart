@@ -8,6 +8,7 @@ import 'package:skidpark/features/glide_testing/test_overview/widgets/glide_test
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
+import '../../compare/compare_runs_view_model.dart';
 import '../../models/decoded_test_run.dart';
 
 class GlideTestScreen extends StatelessWidget {
@@ -32,42 +33,39 @@ class GlideTestScreen extends StatelessWidget {
 
         final glideTest = snapshot.data!;
 
-        return StreamProvider<List<DecodedTestRun>>.value(
-          value: testRunRepository.streamByGlideTest(glideTestId),
-          initialData: [],
-          child: Scaffold(
-            appBar: AppBar(title: Text(glideTest.title)),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () async {
-                final hasPermission =
-                    await DataRecorder.handleLocationPermissions(context);
-                if (!hasPermission) return;
-                if (context.mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      fullscreenDialog: true,
-                      builder: (context) =>
-                          RunRecorderScreen(glideTestId: glideTestId),
-                    ),
-                  );
-                }
-              },
-              icon: Icon(Icons.play_circle_outline),
-              label: Text("Spela in teståk"),
-            ),
-            body: Column(
-              children: [
-                Center(child: GlideTestEditButtons()),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Divider(color: theme.colorScheme.onSurfaceVariant),
+        return Scaffold(
+          appBar: AppBar(title: Text(glideTest.title)),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () async {
+              final hasPermission =
+                  await DataRecorder.handleLocationPermissions(context);
+              if (!hasPermission) return;
+              if (context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    fullscreenDialog: true,
+                    builder: (context) =>
+                        RunRecorderScreen(glideTestId: glideTestId),
+                  ),
+                );
+              }
+            },
+            icon: Icon(Icons.play_circle_outline),
+            label: Text("Spela in teståk"),
+          ),
+          body: Column(
+            children: [
+              // Center(child: GlideTestEditButtons()),
+              SizedBox(height: 16),
+              ChangeNotifierProvider(
+                create: (_) => CompareRunsViewModel(
+                  testRunRepository: testRunRepository,
+                  glideTest: glideTest,
                 ),
-                Text("Teståk", style: theme.textTheme.headlineSmall),
-                SizedBox(height: 16),
-                CompareRuns(),
-              ],
-            ),
+                child: Expanded(child: CompareRuns()),
+              ),
+            ],
           ),
         );
       },

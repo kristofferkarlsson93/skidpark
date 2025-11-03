@@ -6,6 +6,7 @@ class DecodedTestRun {
   final int skiId;
   final int glideTestId;
   final int elapsedSeconds;
+  final String skiName;
   final List<Position> gpsData;
 
   DecodedTestRun(
@@ -14,6 +15,7 @@ class DecodedTestRun {
     this.skiId,
     this.glideTestId,
     this.elapsedSeconds,
+    this.skiName,
     this.gpsData,
   );
 }

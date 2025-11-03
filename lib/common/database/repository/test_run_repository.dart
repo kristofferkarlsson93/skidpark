@@ -27,32 +27,42 @@ class TestRunRepository {
   }
 
   Stream<List<DecodedTestRun>> streamByGlideTest(int glideTestId) {
-    final rawRunStream =
-        (_db.select(_db.testRun)
-              ..where((tbl) => tbl.glideTestId.equals(glideTestId))
+    final stream =
+        (_db.select(_db.testRun).join([
+                drift.innerJoin(
+                  _db.storedSki,
+                  _db.storedSki.id.equalsExp(_db.testRun.skiId),
+                ),
+              ])
+              ..where(_db.testRun.glideTestId.equals(glideTestId))
               ..orderBy([
-                (tbl) => drift.OrderingTerm(
-                  expression: tbl.id,
+                drift.OrderingTerm(
+                  expression: _db.testRun.id,
                   mode: drift.OrderingMode.asc,
                 ),
               ]))
             .watch();
 
-    return rawRunStream.map((rawRunList) {
-      return rawRunList.map((rawRun) {
-        return _decodeRun(rawRun);
+    return stream.map((rows) {
+      // "rows" är nu en List<TypedResult>
+      return rows.map((row) {
+        // 3. Extrahera datan från de två tabellerna
+        final runData = row.readTable(_db.testRun);
+        final skiData = row.readTable(_db.storedSki);
+
+        // 4. Skicka båda till din avkodare!
+        return _decodeRun(runData, skiData);
       }).toList();
     });
   }
 
-  DecodedTestRun _decodeRun(TestRunData rawRun) {
+  DecodedTestRun _decodeRun(TestRunData rawRun, StoredSkiData skiData) {
     final gzipDecoder = GZipDecoder();
     final decompressedBytes = gzipDecoder.decodeBytes(rawRun.gpsData);
 
     final jsonString = utf8.decode(decompressedBytes);
 
     final List<dynamic> jsonList = jsonDecode(jsonString);
-
 
     final List<Position> positions = jsonList
         .map((jsonMap) => Position.fromMap(jsonMap as Map<String, dynamic>))
@@ -64,6 +74,7 @@ class TestRunRepository {
       rawRun.skiId,
       rawRun.glideTestId,
       rawRun.elapsedSeconds,
+      skiData.name,
       positions,
     );
   }
