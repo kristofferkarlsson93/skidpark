@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
+import '../../../../common/database/repository/glide_test_repository.dart';
+import '../../create/add_glide_test_form.dart';
+import '../widgets/my_glide_tests_list.dart';
+
+class GlideTestingHomeScreen extends StatelessWidget {
+  const GlideTestingHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final glideTestRepository = context.read<GlideTestRepository>();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('GlidLabbet')),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'new-glide-test-fab',
+        icon: const Icon(Icons.add),
+        label: Text('Skapa nytt test'),
+        onPressed: () async {
+          final newTestCandiate =
+              await showModalBottomSheet<GlideTestCandidate>(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => const AddGlideTestForm(),
+              );
+
+          if (newTestCandiate != null) {
+            await glideTestRepository.create(newTestCandiate);
+          }
+        },
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          buildIntroText(),
+          StreamBuilder(
+            stream: glideTestRepository.watchTests(),
+            builder: (context, snapshot) {
+              return MyGlideTestsList(glideTests: snapshot.data ?? []);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Row buildIntroText() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    "Här kan du skapa och titta på glidtester \nKlicka på + för att skapa ett nytt test",
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/database/repository/glide_test_repository.dart';
-import 'package:skidpark/database/repository/test_run_repository.dart';
-import 'package:skidpark/navigation/bottom_navigation.dart';
 import 'package:skidpark/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
-import 'database/database.dart';
-import 'database/repository/ski_repository.dart';
+import 'common/database/database.dart';
+import 'common/database/repository/glide_test_repository.dart';
+import 'common/database/repository/ski_repository.dart';
+import 'common/database/repository/test_run_repository.dart';
+import 'common/navigation/bottom_navigation.dart';
 
 void main() {
   runApp(
@@ -30,6 +30,7 @@ void main() {
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
