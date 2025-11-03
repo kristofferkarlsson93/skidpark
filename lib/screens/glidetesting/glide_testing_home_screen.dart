@@ -15,9 +15,10 @@ class GlideTestingHomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('GlidLabbet')),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new-glide-test-fab',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: Text('Skapa nytt test'),
         onPressed: () async {
           final newTestCandiate =
               await showModalBottomSheet<GlideTestCandidate>(

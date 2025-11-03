@@ -16,11 +16,12 @@ class SkiManagementScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Min skidpark')),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new-ski-fab',
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: Text('Lägg till skida'),
         onPressed: () async {
           final newSkiCandidate = await showModalBottomSheet<SkiCandidate>(
             context: context,

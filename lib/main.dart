@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skidpark/database/repository/glide_test_repository.dart';
+import 'package:skidpark/database/repository/test_run_repository.dart';
 import 'package:skidpark/navigation/bottom_navigation.dart';
 import 'package:skidpark/theme/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +21,9 @@ void main() {
         ),
         ProxyProvider<AppDatabase, GlideTestRepository>(
           update: (_, db, __) => GlideTestRepository(db),
+        ),
+        ProxyProvider<AppDatabase, TestRunRepository>(
+          update: (_, db, __) => TestRunRepository(db),
         ),
       ],
       child: const MyApp(),

@@ -4,10 +4,11 @@ import 'package:path_provider/path_provider.dart';
 
 import 'models/StoredGlideTest.dart';
 import 'models/stored_ski.dart';
+import 'models/test_runs.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [StoredSki, StoredGlideTest])
+@DriftDatabase(tables: [StoredSki, StoredGlideTest, TestRun])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 

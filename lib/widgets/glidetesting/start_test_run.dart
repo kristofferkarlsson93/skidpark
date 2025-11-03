@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skidpark/database/database.dart';
+import 'package:skidpark/widgets/shared/big_button.dart';
 
 import '../../screens/glidetesting/run_recording_screen.dart';
 import '../skimanagement/simple_ski_list_item.dart';
@@ -8,7 +9,11 @@ class StartTestRunWidget extends StatefulWidget {
   final List<StoredSkiData> selectableSkis;
   final void Function(StoredSkiData) onStartClick;
 
-  const StartTestRunWidget({super.key, required this.selectableSkis, required this.onStartClick});
+  const StartTestRunWidget({
+    super.key,
+    required this.selectableSkis,
+    required this.onStartClick,
+  });
 
   @override
   State<StartTestRunWidget> createState() => _StartTestRunWidgetState();
@@ -37,7 +42,8 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                 final currentSki = widget.selectableSkis[index];
                 return SimpleSkiListItem(
                   skiDetails: currentSki,
-                  isSelected: selectedSki != null && selectedSki!.id == currentSki.id,
+                  isSelected:
+                      selectedSki != null && selectedSki!.id == currentSki.id,
                   isMarked: false,
                   onSelected: () {
                     setState(() {
@@ -50,22 +56,14 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
           ),
           Padding(
             padding: const EdgeInsets.all(RunRecorderScreen.PADDING_FROM_EDGE),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 16,
-                  ),
-                  textStyle: theme.textTheme.titleLarge,
-                  backgroundColor: theme.colorScheme.secondary,
-                ),
-                onPressed: selectedSki == null ? null :  () {
-                  widget.onStartClick(selectedSki!);
-                },
-                child: const Text('STARTA TEST'),
-              ),
+            child: BigButton(
+              backgroundColor: theme.colorScheme.secondary,
+              title: 'STARTA TEST',
+              onPress: selectedSki == null
+                  ? null
+                  : () {
+                      widget.onStartClick(selectedSki!);
+                    },
             ),
           ),
           TextButton(
