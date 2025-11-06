@@ -1,13 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/compare/compare_runs_view_model.dart';
 import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/select_run_card.dart';
-
-import '../models/decoded_test_run.dart';
 
 class CompareRuns extends StatefulWidget {
   const CompareRuns({super.key});
@@ -18,16 +15,6 @@ class CompareRuns extends StatefulWidget {
 
 class _CompareRunsState extends State<CompareRuns> {
   final Set<int> _selectedRunIds = {};
-
-  // En lista med färger att loopa igenom för graferna
-  final List<Color> _lineColors = [
-    Colors.blue,
-    Colors.red,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.cyan,
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -89,21 +76,17 @@ class _CompareRunsState extends State<CompareRuns> {
             flex: 7,
             child: _buildChartContainer(context, selectedRuns, orientation),
           ),
-          Expanded(
-            flex: 3,
-            child: listWidget,
-          ),
+          Expanded(flex: 3, child: listWidget),
         ],
       );
     }
-
   }
 
   Widget _buildChartContainer(
-      BuildContext context,
-      List<EnrichedTestRun> runs,
-      Orientation orientation,
-      ) {
+    BuildContext context,
+    List<EnrichedTestRun> runs,
+    Orientation orientation,
+  ) {
     final chartWidget = Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -111,19 +94,29 @@ class _CompareRunsState extends State<CompareRuns> {
         child: runs.isEmpty
             ? Center(child: Text("Välj ett eller flera åk nedan."))
             : LineChart(
-          _buildChartData(runs),
-        ),
+                transformationConfig: _enableZoom(),
+                _buildChartData(runs),
+              ),
       ),
     );
 
     if (orientation == Orientation.portrait) {
-      return AspectRatio(
-        aspectRatio: 1.5,
-        child: chartWidget,
-      );
+      return AspectRatio(aspectRatio: 1.3, child: chartWidget);
     } else {
       return chartWidget;
     }
+  }
+
+  FlTransformationConfig _enableZoom() {
+    return FlTransformationConfig(
+      panEnabled: true,
+      scaleEnabled: true,
+      minScale: 1.0,
+      maxScale: 10.0,
+
+      // Set which axis can be scaled
+      scaleAxis: FlScaleAxis.horizontal, // Or .vertical, or .all
+    );
   }
 
   /// Skapar all data som fl_chart behöver.
@@ -133,12 +126,12 @@ class _CompareRunsState extends State<CompareRuns> {
     for (int i = 0; i < runs.length; i++) {
       final run = runs[i];
       final spots = _createSpots(run.positionData);
-      final color = _lineColors[i % _lineColors.length]; // Loopa igenom färgerna
 
       lines.add(
         LineChartBarData(
           spots: spots,
           isCurved: true,
+          preventCurveOverShooting: true,
           color: run.runColor,
           barWidth: 3,
           dotData: FlDotData(show: false),
@@ -150,9 +143,7 @@ class _CompareRunsState extends State<CompareRuns> {
     }
 
     return LineChartData(
-      // Interaktivitet
       lineTouchData: LineTouchData(
-        // getTooltipColor: (touchedSpot) => Colors.blueGrey.withOpacity(0.8),
         touchTooltipData: LineTouchTooltipData(
           getTooltipItems: (touchedSpots) {
             return touchedSpots.map((spot) {
