@@ -13,7 +13,7 @@ import '../../../../common/database/repository/test_run_repository.dart';
 enum RunViewState { selectSki, recordRun }
 
 class RunRecorderScreen extends StatefulWidget {
-  static const double PADDING_FROM_EDGE = 16.0;
+  static const double paddingFromEdge = 16.0;
   final int glideTestId;
   final DataRecorder dataRecorder;
 
@@ -49,7 +49,6 @@ class _RunRecorderScreenState extends State<RunRecorderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final skiRepository = context.read<SkiRepository>();
     final testRunRepository = context.read<TestRunRepository>();
     return Scaffold(

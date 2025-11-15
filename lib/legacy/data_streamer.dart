@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
-// (LogEntry class and StatefulWidget setup remains the same)
 class LogEntry {
   final DateTime timestamp;
   final Position? position;
@@ -114,7 +114,7 @@ class _DataStreamerState extends State<DataStreamer> {
           },
           onError: (error) {
             // Alltid bra att ha felhantering
-            print("GPS-fel: $error");
+            log("GPS-fel: $error");
             _stopStreaming();
           },
         );
@@ -124,7 +124,7 @@ class _DataStreamerState extends State<DataStreamer> {
         _accelEvents.add(event);
       },
       onError: (error) {
-        print("Accelerometer-fel: $error");
+        log("Accelerometer-fel: $error");
       },
     );
 
@@ -191,11 +191,6 @@ class _DataStreamerState extends State<DataStreamer> {
 
     final zipEncoder = ZipEncoder();
     final zipData = zipEncoder.encode(archive);
-
-    if (zipData == null) {
-      print("Kunde inte skapa zip-filen.");
-      return;
-    }
 
     final zipFile = File('$path/gliddata_$timestamp.zip');
     await zipFile.writeAsBytes(zipData);

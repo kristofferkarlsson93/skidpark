@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/compare/compare_runs_view_model.dart';
 import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
-import 'package:skidpark/features/glide_testing/compare/widgets/select_run_card.dart';
+import 'package:skidpark/legacy/select_run_card.dart';
 
 class CompareRuns extends StatefulWidget {
   const CompareRuns({super.key});

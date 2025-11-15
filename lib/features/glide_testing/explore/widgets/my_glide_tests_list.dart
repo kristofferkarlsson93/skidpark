@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/features/glide_testing/details/screens/glide_test_compare_screen.dart';
-import 'package:skidpark/features/glide_testing/test_overview/screen/glide_test_screen.dart';
 
 import '../../../../common/database/database.dart';
+import '../../compare/screens/glide_test_compare_screen.dart';
 import '../../test_runs/data_recorder.dart';
 import 'glide_test_list_card.dart';
 

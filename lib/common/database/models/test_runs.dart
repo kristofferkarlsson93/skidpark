@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
+import 'package:skidpark/common/database/models/stored_glide_test.dart';
 import 'package:skidpark/common/database/models/stored_ski.dart';
 
-import 'StoredGlideTest.dart';
 
 class TestRun extends Table {
   IntColumn get id => integer().autoIncrement()();

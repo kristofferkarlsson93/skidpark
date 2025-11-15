@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/test_runs/screen/run_recording_screen.dart';
 import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
-import 'package:skidpark/features/glide_testing/compare/compare_runs.dart';
-import 'package:skidpark/features/glide_testing/test_overview/widgets/glide_test_edit_buttons.dart';
+import 'package:skidpark/legacy/compare_runs.dart';
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
 import '../../compare/compare_runs_view_model.dart';
-import '../../models/decoded_test_run.dart';
 
 class GlideTestScreen extends StatelessWidget {
   final int glideTestId;
@@ -18,11 +15,10 @@ class GlideTestScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final glideTestRepository = context.read<GlideTestRepository>();
     final testRunRepository = context.read<TestRunRepository>();
     return StreamBuilder(
-      stream: glideTestRepository.watchTestById(this.glideTestId),
+      stream: glideTestRepository.watchTestById(glideTestId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Scaffold(

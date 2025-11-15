@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:skidpark/common/database/database.dart';
 
 import '../../compare/compare_runs_view_model.dart';
-import '../../compare/widgets/select_run_card.dart';
+import '../../../../legacy/select_run_card.dart';
 
 class CompareControls extends StatelessWidget {
   final StoredGlideTestData glideTest;

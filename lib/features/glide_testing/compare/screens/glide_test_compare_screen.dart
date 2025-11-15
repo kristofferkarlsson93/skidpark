@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/features/glide_testing/details/widgets/compare_controls.dart';
-import 'package:skidpark/features/glide_testing/details/widgets/compare_view.dart';
-import 'package:skidpark/features/glide_testing/details/widgets/glide_test_more_menu.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/compare_container.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/glide_test_more_menu.dart';
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
 import '../../compare/compare_runs_view_model.dart';
 import '../../test_runs/data_recorder.dart';
 import '../../test_runs/screen/run_recording_screen.dart';
+import '../widgets/compare_controls.dart';
 
 class GlideTestCompareScreen extends StatefulWidget {
   final int glideTestId;
@@ -53,7 +53,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
     final testRunRepository = context.read<TestRunRepository>();
     final theme = Theme.of(context);
     return StreamBuilder(
-      stream: glideTestRepository.watchTestById(this.widget.glideTestId),
+      stream: glideTestRepository.watchTestById(widget.glideTestId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Scaffold(
@@ -102,7 +102,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                 GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
               ],
             ),
-            body: Stack(children: [CompareView(), CompareControls(glideTest: glideTest)]),
+            body: Stack(children: [CompareContainer(), CompareControls(glideTest: glideTest)]),
           ),
         );
       },

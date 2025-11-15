@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/DataStreamer.dart';
+
+import '../../legacy/data_streamer.dart';
 
 class TempDataCollectionScreen extends StatelessWidget {
   const TempDataCollectionScreen({super.key});

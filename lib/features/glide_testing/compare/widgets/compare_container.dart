@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/features/glide_testing/details/widgets/compare_graph.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/compare_graph.dart';
 
-import '../../compare/compare_runs_view_model.dart';
+import '../compare_runs_view_model.dart';
 import 'compare_list.dart';
 
-class CompareView extends StatelessWidget {
-  const CompareView({super.key});
+class CompareContainer extends StatelessWidget {
+  const CompareContainer({super.key});
 
   @override
   Widget build(BuildContext context) {

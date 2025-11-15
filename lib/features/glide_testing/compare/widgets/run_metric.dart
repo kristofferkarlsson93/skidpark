@@ -21,7 +21,7 @@ class RunMetrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLarge = this.size == RunMetricsSize.large;
+    final isLarge = size == RunMetricsSize.large;
     final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.all(8),

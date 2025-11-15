@@ -40,7 +40,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
               builder: (context, child) {
                 return Padding(
                   padding: const EdgeInsets.all(
-                    RunRecorderScreen.PADDING_FROM_EDGE,
+                    RunRecorderScreen.paddingFromEdge,
                   ),
                   child: GpsAccuracyBanner(
                     accuracyGrade: widget.viewModel.accuracyGrade,
@@ -53,7 +53,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.all(
-                  RunRecorderScreen.PADDING_FROM_EDGE,
+                  RunRecorderScreen.paddingFromEdge,
                 ),
                 itemCount: widget.selectableSkis.length,
                 separatorBuilder: (context, index) =>
@@ -76,7 +76,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
             ),
             Padding(
               padding: const EdgeInsets.all(
-                RunRecorderScreen.PADDING_FROM_EDGE,
+                RunRecorderScreen.paddingFromEdge,
               ),
               child: BigButton(
                 backgroundColor: theme.colorScheme.secondary,
