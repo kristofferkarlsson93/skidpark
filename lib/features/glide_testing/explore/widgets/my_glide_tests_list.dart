@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:skidpark/features/glide_testing/details/screens/glide_test_compare_screen.dart';
 import 'package:skidpark/features/glide_testing/test_overview/screen/glide_test_screen.dart';
 
 import '../../../../common/database/database.dart';
+import '../../test_runs/data_recorder.dart';
 import 'glide_test_list_card.dart';
 
 class MyGlideTestsList extends StatelessWidget {
@@ -20,14 +22,21 @@ class MyGlideTestsList extends StatelessWidget {
             itemBuilder: (context, index) {
               return GlideTestListCard(
                 glideTest: glideTests[index],
-                onTestCardClicked: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          GlideTestScreen(glideTestId: glideTests[index].id),
-                    ),
-                  );
+                onTestCardClicked: () async {
+                  // should ideally be propagated to parent
+                  final hasPermissions =
+                      await DataRecorder.handleLocationPermissions(context);
+                  if (!hasPermissions) return;
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GlideTestCompareScreen(
+                          glideTestId: glideTests[index].id,
+                        ),
+                      ),
+                    );
+                  }
                 },
               );
             },

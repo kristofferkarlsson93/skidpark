@@ -15,8 +15,13 @@ enum RunViewState { selectSki, recordRun }
 class RunRecorderScreen extends StatefulWidget {
   static const double PADDING_FROM_EDGE = 16.0;
   final int glideTestId;
+  final DataRecorder dataRecorder;
 
-  const RunRecorderScreen({super.key, required this.glideTestId});
+  const RunRecorderScreen({
+    super.key,
+    required this.glideTestId,
+    required this.dataRecorder,
+  });
 
   @override
   State<RunRecorderScreen> createState() => _RunRecorderScreenState();
@@ -62,6 +67,7 @@ class _RunRecorderScreenState extends State<RunRecorderScreen> {
                 final skis = snapshot.data!;
                 return StartTestRunWidget(
                   selectableSkis: skis,
+                  viewModel: widget.dataRecorder,
                   onStartClick: (newSelectedSki) {
                     setState(() {
                       startedAt = DateTime.now();
@@ -72,19 +78,17 @@ class _RunRecorderScreenState extends State<RunRecorderScreen> {
                 );
               },
             )
-          : ChangeNotifierProvider(
-              create: (context) => DataRecorder(),
-              child: RecordTestRun(
-                testSki: selectedSki!,
-                onStopAndSave: (positions, elapsedSeconds) {
-                  saveTestRun(testRunRepository, positions, elapsedSeconds);
-                  Navigator.pop(context);
-                },
-                onAbort: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ),
+          : RecordTestRun(
+            testSki: selectedSki!,
+            dataRecorder: widget.dataRecorder,
+            onStopAndSave: (positions, elapsedSeconds) {
+              saveTestRun(testRunRepository, positions, elapsedSeconds);
+              Navigator.pop(context);
+            },
+            onAbort: () {
+              Navigator.pop(context);
+            },
+          ),
     );
   }
 }

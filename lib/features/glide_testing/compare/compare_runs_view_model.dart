@@ -13,8 +13,11 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   final StoredGlideTestData _glideTest;
   List<EnrichedTestRun> _testRuns = [];
+  final List<int> _deselectedRunIds = [];
 
   List<EnrichedTestRun> get testRuns => _testRuns;
+
+  List<EnrichedTestRun> get currentSelectedTestRuns => _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
 
   CompareRunsViewModel({
     required testRunRepository,
@@ -24,14 +27,29 @@ class CompareRunsViewModel extends ChangeNotifier {
     _listenToData();
   }
 
+  void toggleSelectedTestRun(EnrichedTestRun testRun) {
+    if (_deselectedRunIds.contains(testRun.id)) {
+      _deselectedRunIds.remove(testRun.id);
+    } else {
+      _deselectedRunIds.add(testRun.id);
+    }
+    notifyListeners();
+  }
+
+  bool isRunSelected(int testRunId) {
+    return !_deselectedRunIds.contains(testRunId);
+  }
+
   void _listenToData() {
     _testRunRepository.streamByGlideTest(_glideTest.id).listen((storedRuns) {
-      _testRuns = storedRuns.map(_enrichRun).toList();
+      _testRuns = storedRuns.indexed.map(((int, DecodedTestRun) entry) {
+        return _enrichRun(entry.$2, entry.$1 + 1);
+      }).toList();
       notifyListeners();
     });
   }
 
-  EnrichedTestRun _enrichRun(DecodedTestRun storedRun) {
+  EnrichedTestRun _enrichRun(DecodedTestRun storedRun, int runNumber) {
     final gpsData = storedRun.gpsData;
     // Need at least 2 data points to do anything useful.
     if (gpsData.length < 2) {
@@ -47,6 +65,7 @@ class CompareRunsViewModel extends ChangeNotifier {
         0,
         storedRun.skiName,
         List.empty(),
+        runNumber,
       );
     }
     var totalDistance = 0.0;
@@ -84,6 +103,7 @@ class CompareRunsViewModel extends ChangeNotifier {
       _calculateMaxSpeed(positions),
       storedRun.skiName,
       positions,
+      runNumber,
     );
   }
 

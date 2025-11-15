@@ -44,13 +44,10 @@ class TestRunRepository {
             .watch();
 
     return stream.map((rows) {
-      // "rows" är nu en List<TypedResult>
       return rows.map((row) {
-        // 3. Extrahera datan från de två tabellerna
         final runData = row.readTable(_db.testRun);
         final skiData = row.readTable(_db.storedSki);
 
-        // 4. Skicka båda till din avkodare!
         return _decodeRun(runData, skiData);
       }).toList();
     });

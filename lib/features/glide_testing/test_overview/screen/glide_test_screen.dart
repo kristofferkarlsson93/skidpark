@@ -46,7 +46,7 @@ class GlideTestScreen extends StatelessWidget {
                   MaterialPageRoute(
                     fullscreenDialog: true,
                     builder: (context) =>
-                        RunRecorderScreen(glideTestId: glideTestId),
+                        RunRecorderScreen(glideTestId: glideTestId, dataRecorder:  DataRecorder()), // Hack for now, not used
                   ),
                 );
               }

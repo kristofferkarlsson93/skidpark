@@ -13,6 +13,7 @@ class EnrichedTestRun {
   final double maxSpeed;
   final String skiName;
   final List<CalculatedPosition> positionData;
+  final int runNumber;
   late Color runColor = _createColor();
 
   EnrichedTestRun(
@@ -26,6 +27,7 @@ class EnrichedTestRun {
     this.maxSpeed,
     this.skiName,
     this.positionData,
+    this.runNumber,
   );
 
   @override
@@ -34,7 +36,8 @@ class EnrichedTestRun {
   }
 
   Color _createColor() {
-    final hash = '$id-$glideTestId-$elapsedSeconds-$traveledDistance-$skiName'.hashCode; // Or use a combination: '${run.id}_${run.skiName}'.hashCode
+    final hash =
+        '$id-$glideTestId-$elapsedSeconds-$traveledDistance-$skiName-$runNumber'.hashCode;
     final r = (hash & 0xFF0000) >> 16;
     final g = (hash & 0x00FF00) >> 8;
     final b = (hash & 0x0000FF);

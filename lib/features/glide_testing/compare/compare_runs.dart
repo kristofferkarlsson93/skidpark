@@ -147,8 +147,6 @@ class _CompareRunsState extends State<CompareRuns> {
         touchTooltipData: LineTouchTooltipData(
           getTooltipItems: (touchedSpots) {
             return touchedSpots.map((spot) {
-              // Försök hitta vilket åk detta är (kräver mer logik,
-              // men vi visar bara värdena just nu)
               return LineTooltipItem(
                 '${spot.y.toStringAsFixed(1)} km/h\n${spot.x.toStringAsFixed(0)} m',
                 const TextStyle(color: Colors.white),
