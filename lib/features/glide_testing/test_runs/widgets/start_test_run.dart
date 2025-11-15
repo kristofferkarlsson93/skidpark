@@ -6,26 +6,17 @@ import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_b
 import '../../../../common/database/database.dart';
 import '../screen/run_recording_screen.dart';
 import '../../../../common/shared_widgets/simple_ski_list_item.dart';
+import '../viewModel/run_recorder_view_model.dart';
 
-class StartTestRunWidget extends StatefulWidget {
+class StartTestRunWidget extends StatelessWidget {
   final List<StoredSkiData> selectableSkis;
-  final void Function(StoredSkiData) onStartClick;
-
-  final DataRecorder viewModel;
+  final RunRecorderViewModel viewModel;
 
   const StartTestRunWidget({
     super.key,
     required this.selectableSkis,
-    required this.onStartClick,
     required this.viewModel,
   });
-
-  @override
-  State<StartTestRunWidget> createState() => _StartTestRunWidgetState();
-}
-
-class _StartTestRunWidgetState extends State<StartTestRunWidget> {
-  StoredSkiData? selectedSki;
 
   @override
   Widget build(BuildContext context) {
@@ -36,39 +27,38 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
         child: Column(
           children: [
             ListenableBuilder(
-              listenable: widget.viewModel,
+              listenable: viewModel.dataRecorder,
               builder: (context, child) {
                 return Padding(
                   padding: const EdgeInsets.all(
                     RunRecorderScreen.paddingFromEdge,
                   ),
                   child: GpsAccuracyBanner(
-                    accuracyGrade: widget.viewModel.accuracyGrade,
+                    accuracyGrade: viewModel.dataRecorder.accuracyGrade,
                   ),
                 );
               },
             ),
-            SizedBox(height: 48),
+            const SizedBox(height: 48),
             Text("Välj skida för åket", style: theme.textTheme.titleMedium),
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.all(
                   RunRecorderScreen.paddingFromEdge,
                 ),
-                itemCount: widget.selectableSkis.length,
+                itemCount: selectableSkis.length,
                 separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
+                const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final currentSki = widget.selectableSkis[index];
+                  final currentSki = selectableSkis[index];
+                  final isSelected = viewModel.selectedSki != null &&
+                      viewModel.selectedSki!.id == currentSki.id;
                   return SimpleSkiListItem(
                     skiDetails: currentSki,
-                    isSelected:
-                        selectedSki != null && selectedSki!.id == currentSki.id,
+                    isSelected: isSelected,
                     isMarked: false,
                     onSelected: () {
-                      setState(() {
-                        selectedSki = currentSki;
-                      });
+                      viewModel.selectSki(currentSki);
                     },
                   );
                 },
@@ -81,11 +71,11 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
               child: BigButton(
                 backgroundColor: theme.colorScheme.secondary,
                 title: 'STARTA TEST',
-                onPress: selectedSki == null
+                onPress: viewModel.selectedSki == null
                     ? null
                     : () {
-                        widget.onStartClick(selectedSki!);
-                      },
+                  viewModel.startRun();
+                },
               ),
             ),
             TextButton(
@@ -99,7 +89,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
           ],
         ),
       ),

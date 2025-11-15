@@ -1,55 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
 import 'package:skidpark/common/shared_widgets/big_button.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 
-import '../../../../common/database/database.dart';
 import '../../../../common/shared_widgets/flat_stats_card.dart';
+import '../viewModel/run_recorder_view_model.dart';
 
-class RecordTestRun extends StatefulWidget {
-  final StoredSkiData testSki;
-
-  final void Function(List<Position>, int elapsedSeconds) onStopAndSave;
-
+class RecordTestRun extends StatelessWidget {
+  final RunRecorderViewModel viewModel;
+  final VoidCallback onStopAndSave;
   final VoidCallback onAbort;
-  final DataRecorder dataRecorder;
 
   const RecordTestRun({
     super.key,
-    required this.testSki,
+    required this.viewModel,
     required this.onStopAndSave,
     required this.onAbort,
-    required this.dataRecorder,
   });
-
-  @override
-  State<RecordTestRun> createState() => _RecordTestRunState();
-}
-
-class _RecordTestRunState extends State<RecordTestRun> {
-  @override
-  void initState() {
-    super.initState();
-    widget.dataRecorder.startRecording();
-  }
-
-  void _storeAndStopRecording() {
-    widget.dataRecorder.stopRecording();
-    final positions = List<Position>.from(
-      widget.dataRecorder.recordedPositions,
-    );
-    final elapsedSeconds = widget.dataRecorder.elapsedSeconds;
-
-    widget.dataRecorder.resetForNewRun();
-
-    widget.onStopAndSave(positions, elapsedSeconds);
-  }
-
-  void _discardTestRun() {
-    widget.dataRecorder.stopRecording();
-    widget.dataRecorder.resetForNewRun();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,13 +26,13 @@ class _RecordTestRunState extends State<RecordTestRun> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListenableBuilder(
-          listenable: widget.dataRecorder,
+          listenable: viewModel.dataRecorder,
           builder: (context, child) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GpsAccuracyBanner(
-                  accuracyGrade: widget.dataRecorder.accuracyGrade,
+                  accuracyGrade: viewModel.dataRecorder.accuracyGrade,
                 ),
                 SizedBox(height: 16),
                 Row(
@@ -90,7 +56,7 @@ class _RecordTestRunState extends State<RecordTestRun> {
                     width: double.infinity,
                     child: Padding(
                       padding: EdgeInsets.all(12.0),
-                      child: Text(widget.testSki.name),
+                      child: Text(viewModel.selectedSki!.name),
                     ),
                   ),
                 ),
@@ -102,7 +68,7 @@ class _RecordTestRunState extends State<RecordTestRun> {
                         Expanded(
                           child: FlatStatsCard(
                             label: 'Nuvarande hastighet',
-                            value: widget.dataRecorder.currentSpeedKmh
+                            value: viewModel.dataRecorder.currentSpeedKmh
                                 .toStringAsFixed(2),
                             unit: 'km/h',
                             borderColor: theme.colorScheme.primary,
@@ -113,7 +79,7 @@ class _RecordTestRunState extends State<RecordTestRun> {
                         Expanded(
                           child: FlatStatsCard(
                             label: 'Duration',
-                            value: widget.dataRecorder.elapsedSeconds
+                            value: viewModel.dataRecorder.elapsedSeconds
                                 .toString(),
                             unit: 'seconds',
                             borderColor: theme.colorScheme.secondary,
@@ -125,7 +91,7 @@ class _RecordTestRunState extends State<RecordTestRun> {
                     const SizedBox(height: 16),
                     Center(
                       child: Text(
-                        '${widget.dataRecorder.dataPoints} data points collected',
+                        '${viewModel.dataRecorder.dataPoints} data points collected',
                         style: textTheme.bodySmall,
                       ),
                     ),
@@ -135,15 +101,12 @@ class _RecordTestRunState extends State<RecordTestRun> {
                 BigButton(
                   backgroundColor: theme.colorScheme.error,
                   title: 'SPARA',
-                  onPress: _storeAndStopRecording,
+                  onPress: onStopAndSave,
                 ),
                 const SizedBox(height: 42),
                 Center(
                   child: TextButton(
-                    onPressed: () {
-                      _discardTestRun();
-                      widget.onAbort();
-                    },
+                    onPressed: onAbort,
                     child: Text(
                       'Avbryt',
                       style: TextStyle(
