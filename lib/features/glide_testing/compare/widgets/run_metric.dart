@@ -34,13 +34,13 @@ class RunMetrics extends StatelessWidget {
             children: [
               Text(
                 value,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: isLarge ? 24 : null,
+                  fontSize: isLarge ? 22 : null,
                   color: color
                 ),
               ),
-              const SizedBox(width: 4),
             ],
           ),
           Text(unit, style: theme.textTheme.bodySmall),

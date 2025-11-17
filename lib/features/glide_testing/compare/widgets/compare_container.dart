@@ -14,9 +14,8 @@ class CompareContainer extends StatelessWidget {
     final selectedRuns = viewModel.currentSelectedTestRuns;
     return Column(
       children: [
-        Flexible(flex: 2, child: CompareGraph(runs: selectedRuns)),
-        Flexible(flex: 2, child: CompareList(runs: selectedRuns)),
-        SizedBox(height: 64),
+        Expanded(flex: 3, child: CompareGraph(runs: selectedRuns)),
+        Expanded(flex: 2, child: CompareList(runs: selectedRuns)),
       ],
     );
   }

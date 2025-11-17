@@ -41,7 +41,10 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
         context,
         MaterialPageRoute(
           fullscreenDialog: true,
-          builder: (context) => RunRecorderScreen(glideTestId: widget.glideTestId, dataRecorder: _dataRecorder),
+          builder: (context) => RunRecorderScreen(
+            glideTestId: widget.glideTestId,
+            dataRecorder: _dataRecorder,
+          ),
         ),
       );
     }
@@ -72,37 +75,42 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                 glideTest: glideTest,
               ),
             ),
-            ChangeNotifierProvider(
-              create: (_) => _dataRecorder,
-            ),
+            ChangeNotifierProvider(create: (_) => _dataRecorder),
           ],
-          child: Scaffold(
-            extendBodyBehindAppBar: true,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              actions: [
-                FilledButton.icon(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(
-                      theme.colorScheme.onPrimary,
+          child: SafeArea(
+            child: Scaffold(
+              extendBodyBehindAppBar: true,
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                actions: [
+                  FilledButton.icon(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(
+                        theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                    onPressed: () {
+                      goToRecordPage(context);
+                    },
+                    label: Text(
+                      'Nytt åk',
+                      style: TextStyle(color: theme.colorScheme.onSurface),
+                    ),
+                    icon: Icon(
+                      Icons.play_circle_outline,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  onPressed: () {
-                    goToRecordPage(context);
-                  },
-                  label: Text(
-                    'Nytt åk',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                  icon: Icon(
-                    Icons.play_circle_outline,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
-              ],
+                  GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
+                ],
+              ),
+              body: Stack(
+                children: [
+                  CompareContainer(),
+                  // CompareControls(glideTest: glideTest),
+                ],
+              ),
             ),
-            body: Stack(children: [CompareContainer(), CompareControls(glideTest: glideTest)]),
           ),
         );
       },

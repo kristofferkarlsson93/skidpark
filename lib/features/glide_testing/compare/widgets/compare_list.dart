@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 
@@ -12,6 +14,7 @@ class CompareList extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView.builder(
+      padding: EdgeInsets.fromLTRB(0, 24, 0, 64),
       itemCount: runs.length,
       itemBuilder: (context, index) {
         final run = runs[index];
@@ -39,9 +42,10 @@ class CompareList extends StatelessWidget {
                   ],
                 ),
                 Row(
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
+                      flex: 3,
                       child: RunMetrics(
                         label: 'Med.',
                         value: run.averageSpeed.toStringAsFixed(2),
@@ -51,6 +55,7 @@ class CompareList extends StatelessWidget {
                       ),
                     ),
                     Expanded(
+                      flex: 3,
                       child: RunMetrics(
                         label: 'Max.',
                         value: run.maxSpeed.toStringAsFixed(2),
@@ -59,13 +64,15 @@ class CompareList extends StatelessWidget {
                       ),
                     ),
                     Expanded(
+                      flex: 2,
                       child: RunMetrics(
                         label: 'Dist.',
-                        value: runDistance.toStringAsFixed(2),
+                        value: runDistance.toStringAsFixed(1),
                         unit: distanceUnit,
                       ),
                     ),
                     Expanded(
+                      flex: 2,
                       child: RunMetrics(
                         label: 'Tid',
                         value: run.elapsedSeconds.toString(),

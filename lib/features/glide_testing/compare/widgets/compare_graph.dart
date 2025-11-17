@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
@@ -9,8 +11,10 @@ class CompareGraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+      // margin: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+      elevation: 12,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: runs.isEmpty
@@ -43,8 +47,11 @@ class CompareGraph extends StatelessWidget {
       );
     }
 
+    final highestSpeedOverall = runs.map((r) => r.maxSpeed).reduce(max);
+    final graphMaxY = _calculateExtendedMaxY(highestSpeedOverall);
     return LineChartData(
       lineTouchData: getLineTouchData(),
+      maxY: graphMaxY,
       gridData: FlGridData(show: true),
       lineBarsData: lines,
       titlesData: FlTitlesData(
@@ -91,5 +98,32 @@ class CompareGraph extends StatelessWidget {
       // Set which axis can be scaled
       scaleAxis: FlScaleAxis.horizontal, // Or .vertical, or .all
     );
+  }
+
+  // Trying to figure out the intervals fl_chart uses, and add an extra.
+  double _calculateExtendedMaxY(double highestValue) {
+    if (highestValue <= 0) return 1;
+    final rawStep = highestValue / 5;
+    final niceStep = _intervalFriendlyNumber(rawStep);
+    final roundedMax = (highestValue / niceStep).ceil() * niceStep;
+    return roundedMax + niceStep;
+  }
+
+  double _intervalFriendlyNumber(double value) {
+    final exponent = (log(value) / ln10).floor();
+    final fraction = value / pow(10, exponent);
+
+    double niceFraction;
+    if (fraction < 1.5) {
+      niceFraction = 1;
+    } else if (fraction < 3) {
+      niceFraction = 2;
+    } else if (fraction < 7) {
+      niceFraction = 5;
+    } else {
+      niceFraction = 10;
+    }
+
+    return niceFraction * pow(10, exponent);
   }
 }

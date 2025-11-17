@@ -110,11 +110,11 @@ class CompareRunsViewModel extends ChangeNotifier {
   double _calculateAverageSpeed(List<CalculatedPosition> positions) {
     if (positions.isEmpty) return 0.0;
     final totalSpeed = positions.fold(0.0, (sum, pos) => sum + pos.speed);
-    return totalSpeed / positions.length;
+    return (totalSpeed / positions.length) * 3.6;
   }
 
   double _calculateMaxSpeed(List<CalculatedPosition> positions) {
     if (positions.isEmpty) return 0.0;
-    return positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b);
+    return (positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b)) * 3.6;
   }
 }
