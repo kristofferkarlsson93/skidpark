@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
@@ -10,6 +11,7 @@ import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
+  StreamSubscription? _runsSubscription;
 
   final StoredGlideTestData _glideTest;
   List<EnrichedTestRun> _testRuns = [];
@@ -41,7 +43,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void _listenToData() {
-    _testRunRepository.streamByGlideTest(_glideTest.id).listen((storedRuns) {
+    _runsSubscription = _testRunRepository.streamByGlideTest(_glideTest.id).listen((storedRuns) {
       _testRuns = storedRuns.indexed.map(((int, DecodedTestRun) entry) {
         return _enrichRun(entry.$2, entry.$1 + 1);
       }).toList();
@@ -116,5 +118,11 @@ class CompareRunsViewModel extends ChangeNotifier {
   double _calculateMaxSpeed(List<CalculatedPosition> positions) {
     if (positions.isEmpty) return 0.0;
     return (positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b)) * 3.6;
+  }
+
+  @override
+  void dispose() {
+    _runsSubscription?.cancel();
+    super.dispose();
   }
 }

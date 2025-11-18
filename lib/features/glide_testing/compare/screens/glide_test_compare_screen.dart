@@ -21,6 +21,7 @@ class GlideTestCompareScreen extends StatefulWidget {
 
 class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
   late final DataRecorder _dataRecorder;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -78,8 +79,10 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
             ChangeNotifierProvider(create: (_) => _dataRecorder),
           ],
           child: SafeArea(
+            bottom: false,
             child: Scaffold(
               extendBodyBehindAppBar: true,
+              key: _scaffoldKey,
               appBar: AppBar(
                 backgroundColor: Colors.transparent,
                 actions: [
@@ -101,15 +104,34 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
-                  GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
+                  GlideTestMoreMenu(
+                    onSelectEdit: () {},
+                    onSelectArchive: () {},
+                  ),
                 ],
               ),
-              body: Stack(
-                children: [
-                  CompareContainer(),
-                  // CompareControls(glideTest: glideTest),
-                ],
+              endDrawer: Drawer(
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  child: CompareControls(glideTest: glideTest)
               ),
+              body: Stack(children: [
+                CompareContainer(),
+                Positioned(
+                  top: kToolbarHeight,
+                  right: 8, // 16.0 from the right edge
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black,
+                    child: IconButton(
+                      icon: const Icon(Icons.tune),
+                      color: Colors.white,
+                      tooltip: 'Filter runs',
+                      onPressed: () {
+                        _scaffoldKey.currentState?.openEndDrawer();
+                      },
+                    ),
+                  ),
+                ),
+              ]),
             ),
           ),
         );

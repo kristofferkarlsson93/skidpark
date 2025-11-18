@@ -21,23 +21,19 @@ class SelectRunCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      color: isSelected
-          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.2)
-          : null,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        leading: Icon(
-          isSelected ? Icons.circle : Icons.circle_outlined,
-          color: isSelected
-              ? testRun.runColor
-              : testRun.runColor.withValues(alpha: 0.2),
-        ),
-        title: Text("Åk $runNumber - ${testRun.skiName}"),
-        subtitle: Text("Varaktighet: ${testRun.elapsedSeconds} sekunder"),
-        trailing: Text("${testRun.positionData.length} datapunkter"),
-        onTap: onTap,
+    return ListTile(
+      selected: isSelected,
+      selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+      leading: Icon(
+        Icons.circle,
+        color: isSelected
+            ? testRun.runColor
+            : testRun.runColor.withValues(alpha: 0.2),
       ),
+      title: Text("Åk ${testRun.runNumber} - ${testRun.skiName}", style: theme.textTheme.titleSmall,),
+      // subtitle: Text("Varaktighet: ${testRun.elapsedSeconds} sekunder"),
+      // trailing: Text("${testRun.positionData.length} datapunkter"),
+      onTap: onTap,
     );
   }
 }

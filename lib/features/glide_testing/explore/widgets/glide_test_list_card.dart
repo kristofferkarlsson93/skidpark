@@ -23,10 +23,6 @@ class GlideTestListCard extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Badge(label: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Text("0 åk"),
-          ), backgroundColor: theme.colorScheme.error),
           SizedBox(width: 8),
           Icon(Icons.chevron_right),
         ],

@@ -6,7 +6,7 @@ import 'package:skidpark/legacy/compare_runs.dart';
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
-import '../../compare/compare_runs_view_model.dart';
+import '../../../features/glide_testing/compare/compare_runs_view_model.dart';
 
 class GlideTestScreen extends StatelessWidget {
   final int glideTestId;
