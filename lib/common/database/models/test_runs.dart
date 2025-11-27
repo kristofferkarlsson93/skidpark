@@ -13,5 +13,5 @@ class TestRun extends Table {
   IntColumn get elapsedSeconds => integer()();
 
   BlobColumn get gpsData => blob()();
-  BlobColumn get accelerometerData => blob().nullable()();
+  BlobColumn get accelerometerData => blob()();
 }

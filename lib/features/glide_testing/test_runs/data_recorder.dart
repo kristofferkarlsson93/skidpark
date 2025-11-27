@@ -3,6 +3,9 @@ import 'dart:developer';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+
+import 'models/raw_accelerometer_event.dart';
 
 enum GpsMode { record, passive }
 
@@ -10,8 +13,12 @@ enum GpsAccuracy { unknown, bad, decent, good, excellent }
 
 class DataRecorder extends ChangeNotifier {
   StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<UserAccelerometerEvent>? _accelerometerStreamSubscription;
+
   Timer? _stopwatchTimer;
   final List<Position> _positions = [];
+  final List<RawAccelerometerEvent> _accelEvents = [];
+
   GpsAccuracy _accuracyGrade = GpsAccuracy.unknown;
   double _currentSpeedKmh = 0.0;
   int _elapsedSeconds = 0;
@@ -25,9 +32,12 @@ class DataRecorder extends ChangeNotifier {
 
   List<Position> get recordedPositions => _positions;
 
+  List<RawAccelerometerEvent> get recordedAccelerometerEvents => _accelEvents;
+
   int get dataPoints => _positions.length;
 
   void startGPSSubscription(GpsMode startInMode) {
+    log("starting GPS in $startInMode mode");
     _gpsMode = startInMode;
     final LocationSettings locationSettings = _getLocationSettings();
     _positionStreamSubscription =
@@ -49,9 +59,27 @@ class DataRecorder extends ChangeNotifier {
         );
   }
 
+  void _startAccelerometerSubscription() {
+    log("Starting accelerometer subscription");
+    _accelerometerStreamSubscription =
+        userAccelerometerEventStream(
+          samplingPeriod: SensorInterval.gameInterval,
+        ).listen(
+          (UserAccelerometerEvent event) {
+            _accelEvents.add(RawAccelerometerEvent.fromSensorPlusEvent(event));
+          },
+          onError: (error) {
+            log("Accelerometer-fel: $error");
+          },
+        );
+  }
+
   void startRecording() {
+    log("Starting recording");
     _positions.clear();
+    _accelEvents.clear();
     _gpsMode = GpsMode.record;
+    _startAccelerometerSubscription();
 
     _stopwatchTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _elapsedSeconds++;
@@ -63,6 +91,7 @@ class DataRecorder extends ChangeNotifier {
     _gpsMode = GpsMode.passive;
     _stopwatchTimer?.cancel();
     _stopwatchTimer = null;
+    _accelerometerStreamSubscription?.cancel();
   }
 
   void resetForNewRun() {
@@ -71,6 +100,7 @@ class DataRecorder extends ChangeNotifier {
     _stopwatchTimer = null;
     _positions.clear();
     _elapsedSeconds = 0;
+    _accelEvents.clear();
   }
 
   @override
@@ -80,6 +110,8 @@ class DataRecorder extends ChangeNotifier {
     _positionStreamSubscription = null;
     _stopwatchTimer?.cancel();
     _stopwatchTimer = null;
+    _accelerometerStreamSubscription?.cancel();
+    _accelerometerStreamSubscription = null;
     super.dispose();
   }
 

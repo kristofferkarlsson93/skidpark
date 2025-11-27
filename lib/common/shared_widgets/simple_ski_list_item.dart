@@ -24,10 +24,10 @@ class SimpleSkiListItem extends StatelessWidget {
     var borderColor = theme.colorScheme.outline;
     var cardColor = theme.cardTheme.color;
     if (isMarked || isSelected) {
-      borderColor = theme.colorScheme.secondary;
+      borderColor = theme.colorScheme.primary;
     }
     if (isSelected) {
-      cardColor = theme.colorScheme.secondary.withValues(alpha: 0.2);
+      cardColor = theme.colorScheme.primary.withValues(alpha: 0.2);
     }
 
     return InkWell(

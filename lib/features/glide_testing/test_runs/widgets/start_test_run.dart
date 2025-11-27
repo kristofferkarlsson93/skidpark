@@ -68,7 +68,7 @@ class StartTestRunWidget extends StatelessWidget {
                 RunRecorderScreen.paddingFromEdge,
               ),
               child: BigButton(
-                backgroundColor: theme.colorScheme.secondary,
+                backgroundColor: theme.colorScheme.primary,
                 title: 'STARTA TEST',
                 onPress: viewModel.selectedSki == null
                     ? null

@@ -7,10 +7,12 @@ import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
+import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
+
   StreamSubscription? _runsSubscription;
 
   final StoredGlideTestData _glideTest;
@@ -19,7 +21,8 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   List<EnrichedTestRun> get testRuns => _testRuns;
 
-  List<EnrichedTestRun> get currentSelectedTestRuns => _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
+  List<EnrichedTestRun> get currentSelectedTestRuns =>
+      _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
 
   CompareRunsViewModel({
     required testRunRepository,
@@ -43,12 +46,49 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void _listenToData() {
-    _runsSubscription = _testRunRepository.streamByGlideTest(_glideTest.id).listen((storedRuns) {
-      _testRuns = storedRuns.indexed.map(((int, DecodedTestRun) entry) {
-        return _enrichRun(entry.$2, entry.$1 + 1);
-      }).toList();
-      notifyListeners();
-    });
+    _runsSubscription = _testRunRepository
+        .streamByGlideTest(_glideTest.id)
+        .listen((storedRuns) {
+          _testRuns = storedRuns.indexed.map(((int, DecodedTestRun) entry) {
+            // return _enrichRun(entry.$2, entry.$1 + 1);
+            return _calculateTestRunData(entry.$2, entry.$1 + 1);
+          }).toList();
+          notifyListeners();
+        });
+  }
+
+  EnrichedTestRun _calculateTestRunData(
+    DecodedTestRun storedRun,
+    int runNumber,
+  ) {
+    // calculate max speed on raw data, to not lose speed by interpolation.
+    final maxSpeed = RunDataProcessor.calculateMaxSpeed(storedRun.gpsData);
+    final normalizedPositions = RunDataProcessor.processRun(
+      rawPositions: storedRun.gpsData,
+    );
+    final totalDistance = normalizedPositions.isNotEmpty
+        ? normalizedPositions.last.distanceTraveled
+        : 0.0;
+    final averageSpeed = RunDataProcessor.calculateAverageSpeed(
+      normalizedPositions,
+    );
+    return EnrichedTestRun(
+      storedRun.id,
+      storedRun.startedAt,
+      storedRun.skiId,
+      storedRun.glideTestId,
+      storedRun.elapsedSeconds,
+      totalDistance,
+      _msToKmh(averageSpeed),
+      _msToKmh(maxSpeed),
+      storedRun.skiName,
+      normalizedPositions,
+      runNumber,
+    );
+  }
+
+  double _msToKmh(double ms) {
+    return ms * 3.6;
   }
 
   EnrichedTestRun _enrichRun(DecodedTestRun storedRun, int runNumber) {
@@ -117,7 +157,8 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   double _calculateMaxSpeed(List<CalculatedPosition> positions) {
     if (positions.isEmpty) return 0.0;
-    return (positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b)) * 3.6;
+    return (positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b)) *
+        3.6;
   }
 
   @override

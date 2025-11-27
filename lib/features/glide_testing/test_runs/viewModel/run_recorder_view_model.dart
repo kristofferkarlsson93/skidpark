@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
 import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
 import '../../../../common/database/database.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
 
@@ -16,13 +19,15 @@ class RunRecorderViewModel extends ChangeNotifier {
     required TestRunRepository testRunRepository,
     required this.dataRecorder,
     required int glideTestId,
-  })  : _testRunRepository = testRunRepository,
-        _glideTestId = glideTestId;
+  }) : _testRunRepository = testRunRepository,
+       _glideTestId = glideTestId;
 
   RunViewState _viewState = RunViewState.selectSki;
+
   RunViewState get viewState => _viewState;
 
   StoredSkiData? _selectedSki;
+
   StoredSkiData? get selectedSki => _selectedSki;
 
   DateTime? _startedAt;
@@ -45,24 +50,28 @@ class RunRecorderViewModel extends ChangeNotifier {
     dataRecorder.stopRecording();
     final positions = List<Position>.from(dataRecorder.recordedPositions);
     final elapsedSeconds = dataRecorder.elapsedSeconds;
+    final accelerometerEvents = List<RawAccelerometerEvent>.from(
+      dataRecorder.recordedAccelerometerEvents,
+    );
 
     dataRecorder.resetForNewRun();
+    log(
+      "Stop and save: ${accelerometerEvents.length} events and ${positions.length} GPS positions",
+    );
 
-    // Logic moved from the old _RunRecorderScreenState
     final candidate = TestRunCandidate(
       startedAt: _startedAt!,
       skiId: _selectedSki!.id,
       glideTestId: _glideTestId,
       elapsedSeconds: elapsedSeconds,
       gpsData: positions,
+      accelerometerEvents: accelerometerEvents,
     );
     await _testRunRepository.storeTestRun(candidate);
   }
 
-  /// Called when the user presses "Avbryt" during recording.
   void abortRun() {
     dataRecorder.stopRecording();
     dataRecorder.resetForNewRun();
-    // Navigation will be handled by the View
   }
 }

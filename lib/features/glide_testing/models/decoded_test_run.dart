@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
 
 class DecodedTestRun {
   final int id;
@@ -8,6 +9,7 @@ class DecodedTestRun {
   final int elapsedSeconds;
   final String skiName;
   final List<Position> gpsData;
+  final List<RawAccelerometerEvent> accelerometerEvents;
 
   DecodedTestRun(
     this.id,
@@ -17,5 +19,6 @@ class DecodedTestRun {
     this.elapsedSeconds,
     this.skiName,
     this.gpsData,
+    this.accelerometerEvents,
   );
 }

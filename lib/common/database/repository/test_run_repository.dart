@@ -5,6 +5,7 @@ import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
 import 'package:drift/drift.dart' as drift;
 
 import '../../../features/glide_testing/models/decoded_test_run.dart';
+import '../../../features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
 import '../database.dart';
 
 class TestRunRepository {
@@ -13,7 +14,10 @@ class TestRunRepository {
   TestRunRepository(this._db);
 
   Future<int> storeTestRun(TestRunCandidate testRunCandidate) {
-    drift.Uint8List compressedGpsData = _encodePositions(testRunCandidate);
+    drift.Uint8List compressedGpsData = _encodeGpsPositions(testRunCandidate);
+    drift.Uint8List compressedAccelData = _encodeAccelEvents(
+      testRunCandidate.accelerometerEvents,
+    );
 
     final companion = TestRunCompanion(
       startedAt: drift.Value(testRunCandidate.startedAt),
@@ -21,6 +25,7 @@ class TestRunRepository {
       glideTestId: drift.Value(testRunCandidate.glideTestId),
       elapsedSeconds: drift.Value(testRunCandidate.elapsedSeconds),
       gpsData: drift.Value(compressedGpsData),
+      accelerometerData: drift.Value(compressedAccelData),
     );
 
     return _db.into(_db.testRun).insert(companion);
@@ -54,16 +59,10 @@ class TestRunRepository {
   }
 
   DecodedTestRun _decodeRun(TestRunData rawRun, StoredSkiData skiData) {
-    final gzipDecoder = GZipDecoder();
-    final decompressedBytes = gzipDecoder.decodeBytes(rawRun.gpsData);
+    final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
 
-    final jsonString = utf8.decode(decompressedBytes);
-
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-
-    final List<Position> positions = jsonList
-        .map((jsonMap) => Position.fromMap(jsonMap as Map<String, dynamic>))
-        .toList();
+    final List<RawAccelerometerEvent> accelerometerEvents =
+    _decodeAccelEvents(rawRun.accelerometerData);
 
     return DecodedTestRun(
       rawRun.id,
@@ -73,11 +72,42 @@ class TestRunRepository {
       rawRun.elapsedSeconds,
       skiData.name,
       positions,
+      accelerometerEvents,
     );
   }
 
-  // To save some space when storing.
-  drift.Uint8List _encodePositions(TestRunCandidate testRunCandidate) {
+  List<Position> _decodeGpsPositions(drift.Uint8List compressedData) {
+    final gzipDecoder = GZipDecoder();
+    final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
+
+    final jsonString = utf8.decode(decompressedBytes);
+
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+
+    return jsonList
+        .map((jsonMap) => Position.fromMap(jsonMap as Map<String, dynamic>))
+        .toList();
+  }
+
+  List<RawAccelerometerEvent> _decodeAccelEvents(drift.Uint8List? compressedData) {
+    if (compressedData == null || compressedData.isEmpty) {
+      return [];
+    }
+
+    final gzipDecoder = GZipDecoder();
+    final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
+
+    final jsonString = utf8.decode(decompressedBytes);
+
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+
+    return jsonList
+        .map((jsonMap) => RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Save space in storage
+  drift.Uint8List _encodeGpsPositions(TestRunCandidate testRunCandidate) {
     final List<Map<String, dynamic>> positionListAsMap = testRunCandidate
         .gpsData
         .map((pos) => pos.toJson())
@@ -90,5 +120,20 @@ class TestRunRepository {
       gpsDataBytes,
     );
     return compressedGpsData;
+  }
+
+  // Save space in storage
+  drift.Uint8List _encodeAccelEvents(List<RawAccelerometerEvent> accelEvents) {
+    final List<Map<String, dynamic>> accelListAsMap = accelEvents
+        .map((event) => event.toJson())
+        .toList();
+    final String accelDataJsonString = jsonEncode(accelListAsMap);
+    final accelDataBytes = utf8.encode(accelDataJsonString);
+
+    final gzipEncoder = GZipEncoder();
+    final drift.Uint8List compressedAccelData = gzipEncoder.encodeBytes(
+      accelDataBytes,
+    );
+    return compressedAccelData;
   }
 }

@@ -23,4 +23,28 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) {
+      return m.createAll();
+    },
+
+    /*
+    beforeOpen: (details) async {
+      // ⚠️ DESTRUCTIVE, DANGEROUS CLEANING HACK.
+
+      final m = Migrator(this);
+
+      log('DEVELOPMENT WARNING: Wiping all data in specified tables to reset database schema.');
+      await m.drop(testRun);
+      await m.drop(storedSki);
+      await m.drop(storedGlideTest);
+
+      await m.createAll();
+
+      // ⚠️ IMPORTANT: Remove or comment out this entire code block after use
+    },
+      */
+  );
 }
