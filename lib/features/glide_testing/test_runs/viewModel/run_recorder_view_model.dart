@@ -31,6 +31,9 @@ class RunRecorderViewModel extends ChangeNotifier {
 
   late final StreamSubscription<VolumeButton> _longPressSubscription;
 
+  Timer? _autoSaveTimer;
+  int _autoSaveCountdownSeconds = 0;
+
   RunRecorderViewModel({
     required TestRunRepository testRunRepository,
     required SkiRepository skiRepository,
@@ -43,6 +46,7 @@ class RunRecorderViewModel extends ChangeNotifier {
        _onStopAndSaveCallback = onStopAndSaveCallback {
     _listenToSkis();
     _setupVolumeKeyListeners();
+    dataRecorder.addListener(_handleDataRecorderChange);
   }
 
   List<StoredSkiData> get availableSkis => _availableSkis;
@@ -52,6 +56,8 @@ class RunRecorderViewModel extends ChangeNotifier {
   StoredSkiData? get selectedSki => _selectedSki;
 
   int get markedSkiIndex => _currentMarkedSkiIndex;
+
+  int get autoSaveCountdownSeconds => _autoSaveCountdownSeconds;
 
   void selectSki(StoredSkiData inputSki) {
     _selectedSki = inputSki;
@@ -98,6 +104,7 @@ class RunRecorderViewModel extends ChangeNotifier {
   }
 
   void abortRun() {
+    _cancelAutoSave();
     dataRecorder.stopRecording();
     dataRecorder.resetForNewRun();
     _currentMarkedSkiIndex = -1;
@@ -158,12 +165,60 @@ class RunRecorderViewModel extends ChangeNotifier {
     });
   }
 
+  void _handleDataRecorderChange() {
+    if (viewState != RunViewState.recordRun) {
+      _cancelAutoSave();
+      return;
+    }
+
+    if (dataRecorder.recordedPositions.length >= 2) {
+      final last2Positions = dataRecorder.recordedPositions.sublist(
+        dataRecorder.recordedPositions.length - 2,
+      );
+      final hasStopped = last2Positions.every((pos) => pos.speed <= 0.5);
+      if (hasStopped) {
+        _startAutoSaveCountdown();
+      } else {
+        _cancelAutoSave();
+      }
+    }
+  }
+
+  void _startAutoSaveCountdown() {
+    if (_autoSaveTimer != null) return;
+
+    _autoSaveCountdownSeconds = 3;
+    notifyListeners();
+
+    _autoSaveTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      _autoSaveCountdownSeconds--;
+      notifyListeners();
+
+      if (_autoSaveCountdownSeconds <= 0) {
+        timer.cancel();
+        log("Auto-saving run after stop detection.");
+        await stopAndSaveRun();
+      }
+    });
+  }
+
+  void _cancelAutoSave() {
+    if (_autoSaveTimer != null) {
+      _autoSaveTimer!.cancel();
+      _autoSaveTimer = null;
+      _autoSaveCountdownSeconds = 0;
+      notifyListeners();
+    }
+  }
+
   @override
   void dispose() {
     log("Disposing RunRecorderViewModel");
     _shortPressSubscription.cancel();
     _longPressSubscription.cancel();
     _volumePressHandler.dispose();
+    _autoSaveTimer?.cancel();
+    dataRecorder.removeListener(_handleDataRecorderChange);
     super.dispose();
   }
 }

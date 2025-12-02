@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/common/shared_widgets/big_button.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
+import 'package:skidpark/features/glide_testing/test_runs/widgets/stop_and_save_button.dart';
 
 import '../../../../common/shared_widgets/flat_stats_card.dart';
 import '../viewModel/run_recorder_view_model.dart';
@@ -28,6 +28,7 @@ class RecordTestRun extends StatelessWidget {
         child: ListenableBuilder(
           listenable: viewModel.dataRecorder,
           builder: (context, child) {
+            final countdown = viewModel.autoSaveCountdownSeconds;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -91,17 +92,29 @@ class RecordTestRun extends StatelessWidget {
                     const SizedBox(height: 16),
                     Center(
                       child: Text(
-                        '${viewModel.dataRecorder.dataPoints} data points collected',
+                        '${viewModel.dataRecorder.dataPoints} GPS punkter sparade',
                         style: textTheme.bodySmall,
                       ),
                     ),
                   ],
                 ),
                 const Spacer(),
-                BigButton(
-                  backgroundColor: theme.colorScheme.error,
-                  title: 'SPARA',
-                  onPress: onStopAndSave,
+                Container(
+                  child: countdown > 0
+                      ? Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Stopp upptäckt...",
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                StopAndSaveButton(
+                  countdownSeconds: countdown,
+                  onStopAndSave: onStopAndSave,
                 ),
                 const SizedBox(height: 42),
                 Center(
