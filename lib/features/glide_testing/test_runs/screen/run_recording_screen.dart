@@ -29,6 +29,7 @@ class RunRecorderScreen extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => RunRecorderViewModel(
             testRunRepository: testRunRepository,
+            skiRepository: skiRepository,
             dataRecorder: dataRecorder,
             glideTestId: glideTestId,
           ),
@@ -39,18 +40,8 @@ class RunRecorderScreen extends StatelessWidget {
         body: Consumer<RunRecorderViewModel>(
           builder: (context, viewModel, child) {
             if (viewModel.viewState == RunViewState.selectSki) {
-              return StreamBuilder(
-                stream: skiRepository.watchSkis(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final skis = snapshot.data!;
-                  return StartTestRunWidget(
-                    selectableSkis: skis,
-                    viewModel: viewModel,
-                  );
-                },
+              return StartTestRunWidget(
+                viewModel: viewModel,
               );
             } else {
               return RecordTestRun(

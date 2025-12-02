@@ -2,24 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:skidpark/common/shared_widgets/big_button.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 
-import '../../../../common/database/database.dart';
 import '../screen/run_recording_screen.dart';
 import '../../../../common/shared_widgets/simple_ski_list_item.dart';
 import '../viewModel/run_recorder_view_model.dart';
 
 class StartTestRunWidget extends StatelessWidget {
-  final List<StoredSkiData> selectableSkis;
   final RunRecorderViewModel viewModel;
 
   const StartTestRunWidget({
     super.key,
-    required this.selectableSkis,
     required this.viewModel,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selectableSkis = viewModel.availableSkis;
+    final currentMarkedIndex = viewModel.markedSkiIndex;
 
     return SafeArea(
       child: Center(
@@ -55,7 +54,7 @@ class StartTestRunWidget extends StatelessWidget {
                   return SimpleSkiListItem(
                     skiDetails: currentSki,
                     isSelected: isSelected,
-                    isMarked: false,
+                    isMarked: index == currentMarkedIndex,
                     onSelected: () {
                       viewModel.selectSki(currentSki);
                     },
