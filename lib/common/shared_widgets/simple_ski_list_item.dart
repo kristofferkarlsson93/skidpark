@@ -9,12 +9,15 @@ class SimpleSkiListItem extends StatelessWidget {
   final bool isMarked;
   final VoidCallback onSelected;
 
+  final double height;
+
   const SimpleSkiListItem({
     super.key,
     required this.skiDetails,
     required this.isSelected,
     required this.isMarked,
     required this.onSelected,
+    required this.height,
   });
 
   @override
@@ -34,23 +37,26 @@ class SimpleSkiListItem extends StatelessWidget {
       onTap: () {
         onSelected();
       },
-      child: Card(
-        color: cardColor,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: borderColor, width: 1.0),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(skiDetails.name, style: theme.textTheme.headlineMedium),
-              Text(
-                skiDetails.brandAndModel ?? "",
-                style: TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ],
+      child: SizedBox(
+        height: height,
+        child: Card(
+          color: cardColor,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: borderColor, width: 1.0),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(skiDetails.name, style: theme.textTheme.headlineMedium),
+                Text(
+                  skiDetails.brandAndModel ?? "",
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
           ),
         ),
       ),

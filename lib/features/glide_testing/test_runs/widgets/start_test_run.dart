@@ -6,7 +6,7 @@ import '../screen/run_recording_screen.dart';
 import '../../../../common/shared_widgets/simple_ski_list_item.dart';
 import '../viewModel/run_recorder_view_model.dart';
 
-class StartTestRunWidget extends StatelessWidget {
+class StartTestRunWidget extends StatefulWidget {
   final RunRecorderViewModel viewModel;
 
   const StartTestRunWidget({
@@ -15,24 +15,58 @@ class StartTestRunWidget extends StatelessWidget {
   });
 
   @override
+  State<StartTestRunWidget> createState() => _StartTestRunWidgetState();
+}
+
+class _StartTestRunWidgetState extends State<StartTestRunWidget> {
+  final ScrollController _scrollController = ScrollController();
+  static const double _itemHeight = 100.0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_scrollToCurrentIndex);
+  }
+
+  @override
+  void dispose() {
+    widget.viewModel.removeListener(_scrollToCurrentIndex);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToCurrentIndex() {
+    final index = widget.viewModel.markedSkiIndex;
+
+    if (index >= 0) {
+      final targetOffset = index * _itemHeight;
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selectableSkis = viewModel.availableSkis;
-    final currentMarkedIndex = viewModel.markedSkiIndex;
+    final selectableSkis = widget.viewModel.availableSkis;
+    final currentMarkedIndex = widget.viewModel.markedSkiIndex;
 
     return SafeArea(
       child: Center(
         child: Column(
           children: [
             ListenableBuilder(
-              listenable: viewModel.dataRecorder,
+              listenable: widget.viewModel.dataRecorder,
               builder: (context, child) {
                 return Padding(
                   padding: const EdgeInsets.all(
                     RunRecorderScreen.paddingFromEdge,
                   ),
                   child: GpsAccuracyBanner(
-                    accuracyGrade: viewModel.dataRecorder.accuracyGrade,
+                    accuracyGrade: widget.viewModel.dataRecorder.accuracyGrade,
                   ),
                 );
               },
@@ -45,18 +79,19 @@ class StartTestRunWidget extends StatelessWidget {
                   RunRecorderScreen.paddingFromEdge,
                 ),
                 itemCount: selectableSkis.length,
-                separatorBuilder: (context, index) =>
-                const SizedBox(height: 10),
+                controller: _scrollController,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final currentSki = selectableSkis[index];
-                  final isSelected = viewModel.selectedSki != null &&
-                      viewModel.selectedSki!.id == currentSki.id;
+                  final isSelected = widget.viewModel.selectedSki != null &&
+                      widget.viewModel.selectedSki!.id == currentSki.id;
                   return SimpleSkiListItem(
+                    height: _itemHeight,
                     skiDetails: currentSki,
                     isSelected: isSelected,
                     isMarked: index == currentMarkedIndex,
                     onSelected: () {
-                      viewModel.selectSki(currentSki);
+                      widget.viewModel.selectSki(currentSki);
                     },
                   );
                 },
@@ -69,10 +104,10 @@ class StartTestRunWidget extends StatelessWidget {
               child: BigButton(
                 backgroundColor: theme.colorScheme.primary,
                 title: 'STARTA TEST',
-                onPress: viewModel.selectedSki == null
+                onPress: widget.viewModel.selectedSki == null
                     ? null
                     : () {
-                  viewModel.startRun();
+                  widget.viewModel.startRun();
                 },
               ),
             ),
