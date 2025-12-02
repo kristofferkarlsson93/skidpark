@@ -30,6 +30,9 @@ class VolumePressHandler {
     var isKeyDown = call.method == 'onVolumePress';
     var isKeyUp = call.method == 'onVolumeRelease';
     if (isKeyDown) {
+      if (_keyDownTime.containsKey(buttonId)) {
+        return;
+      }
       _keyDownTime[buttonId] = DateTime.now();
       _activeTimers[buttonId] = Timer(_longPressThreshold, () {
         _handleLongPress(buttonId);

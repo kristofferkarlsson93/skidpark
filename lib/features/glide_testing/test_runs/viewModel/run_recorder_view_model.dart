@@ -14,12 +14,12 @@ import '../../../../common/services/VolumePressHandler.dart';
 enum RunViewState { selectSki, recordRun }
 
 class RunRecorderViewModel extends ChangeNotifier {
-  final VolumePressHandler _volumePressHandler =
-      VolumePressHandler(); // todo maybe inject this.
+  final VolumePressHandler _volumePressHandler = VolumePressHandler();
   final TestRunRepository _testRunRepository;
   final SkiRepository _skiRepository;
   final DataRecorder dataRecorder;
   final int _glideTestId;
+  final VoidCallback _onStopAndSaveCallback;
 
   List<StoredSkiData> _availableSkis = [];
 
@@ -36,9 +36,11 @@ class RunRecorderViewModel extends ChangeNotifier {
     required SkiRepository skiRepository,
     required this.dataRecorder,
     required int glideTestId,
+    required VoidCallback onStopAndSaveCallback,
   }) : _testRunRepository = testRunRepository,
        _skiRepository = skiRepository,
-       _glideTestId = glideTestId {
+       _glideTestId = glideTestId,
+       _onStopAndSaveCallback = onStopAndSaveCallback {
     _listenToSkis();
     _setupVolumeKeyListeners();
   }
@@ -53,6 +55,9 @@ class RunRecorderViewModel extends ChangeNotifier {
 
   void selectSki(StoredSkiData inputSki) {
     _selectedSki = inputSki;
+    _currentMarkedSkiIndex = _availableSkis.indexWhere(
+      (ski) => ski.id == inputSki.id,
+    );
     notifyListeners();
   }
 
@@ -89,6 +94,7 @@ class RunRecorderViewModel extends ChangeNotifier {
       accelerometerEvents: accelerometerEvents,
     );
     await _testRunRepository.storeTestRun(candidate);
+    _onStopAndSaveCallback();
   }
 
   void abortRun() {
@@ -100,10 +106,12 @@ class RunRecorderViewModel extends ChangeNotifier {
   void _setupVolumeKeyListeners() {
     _shortPressSubscription = _volumePressHandler.shortPressStream.listen((
       VolumeButton buttonId,
-    ) {
-      log("Pressed ${buttonId}");
+    ) async {
+      log("Pressed $buttonId");
       if (viewState == RunViewState.recordRun) {
-        return;
+        if (buttonId == VolumeButton.down) {
+          await stopAndSaveRun();
+        }
       } else {
         handleSkiSelectVolumeNavigation(buttonId);
         notifyListeners();
@@ -112,12 +120,13 @@ class RunRecorderViewModel extends ChangeNotifier {
 
     _longPressSubscription = _volumePressHandler.longPressStream.listen((
       VolumeButton volumeButton,
-    ) {
+    ) async {
       log("Long press ${volumeButton}");
       if (viewState == RunViewState.selectSki) {
         if (volumeButton == VolumeButton.down && _currentMarkedSkiIndex >= 0) {
           final selectedSki = _availableSkis[_currentMarkedSkiIndex];
           selectSki(selectedSki);
+          await Future.delayed(const Duration(milliseconds: 500));
           startRun();
         }
       }
@@ -126,7 +135,8 @@ class RunRecorderViewModel extends ChangeNotifier {
 
   void handleSkiSelectVolumeNavigation(VolumeButton buttonId) {
     if (buttonId == VolumeButton.up) {
-      if (_currentMarkedSkiIndex == 0) {
+      // If is start value (-1) or zero - go to last list item.
+      if (_currentMarkedSkiIndex <= 0) {
         _currentMarkedSkiIndex = availableSkis.length - 1;
       } else {
         _currentMarkedSkiIndex -= 1;
@@ -146,5 +156,14 @@ class RunRecorderViewModel extends ChangeNotifier {
       log("skis: ${storedSkis.length}");
       notifyListeners();
     });
+  }
+
+  @override
+  void dispose() {
+    log("Disposing RunRecorderViewModel");
+    _shortPressSubscription.cancel();
+    _longPressSubscription.cancel();
+    _volumePressHandler.dispose();
+    super.dispose();
   }
 }

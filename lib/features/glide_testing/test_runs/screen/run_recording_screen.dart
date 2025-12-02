@@ -32,6 +32,9 @@ class RunRecorderScreen extends StatelessWidget {
             skiRepository: skiRepository,
             dataRecorder: dataRecorder,
             glideTestId: glideTestId,
+            onStopAndSaveCallback: () {
+              if (context.mounted) Navigator.pop(context);
+            }
           ),
         ),
         ChangeNotifierProvider.value(value: dataRecorder),
@@ -48,7 +51,6 @@ class RunRecorderScreen extends StatelessWidget {
                 viewModel: viewModel,
                 onStopAndSave: () async {
                   await viewModel.stopAndSaveRun();
-                  if (context.mounted) Navigator.pop(context);
                 },
                 onAbort: () {
                   viewModel.abortRun();
