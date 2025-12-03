@@ -158,7 +158,7 @@ class RunRecorderViewModel extends ChangeNotifier {
   }
 
   void _listenToSkis() {
-    _skiRepository.watchSkis().listen((List<StoredSkiData> storedSkis) {
+    _skiRepository.watchActiveSkis().listen((List<StoredSkiData> storedSkis) {
       _availableSkis = storedSkis;
       log("skis: ${storedSkis.length}");
       notifyListeners();

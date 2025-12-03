@@ -11,6 +11,7 @@ class SkiDetailScreen extends StatelessWidget {
   final int skiId;
 
   const SkiDetailScreen({super.key, required this.skiId});
+
   @override
   Widget build(BuildContext context) {
     final skiRepository = context.read<SkiRepository>();
@@ -18,7 +19,6 @@ class SkiDetailScreen extends StatelessWidget {
     return StreamBuilder<StoredSkiData>(
       stream: skiRepository.watchSkiById(skiId),
       builder: (context, snapshot) {
-
         if (!snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(),
@@ -33,7 +33,7 @@ class SkiDetailScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmDelete(context, skiRepository, ski),
+                onPressed: () => _confirmArchive(context, skiRepository, ski),
               ),
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
@@ -76,11 +76,11 @@ class SkiDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoTile(
-      BuildContext context, {
-        required IconData icon,
-        required String label,
-        required String? value,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String? value,
+  }) {
     if (value == null || value.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -108,10 +108,10 @@ class SkiDetailScreen extends StatelessWidget {
   }
 
   void _editSki(
-      BuildContext context,
-      SkiRepository skiRepository,
-      StoredSkiData ski,
-      ) async {
+    BuildContext context,
+    SkiRepository skiRepository,
+    StoredSkiData ski,
+  ) async {
     final updatedCandidate = await showModalBottomSheet<SkiCandidate>(
       context: context,
       isScrollControlled: true,
@@ -123,16 +123,19 @@ class SkiDetailScreen extends StatelessWidget {
     }
   }
 
-  void _confirmDelete(
-      BuildContext context,
-      SkiRepository skiRepository,
-      StoredSkiData ski,
-      ) async {
+  void _confirmArchive(
+    BuildContext context,
+    SkiRepository skiRepository,
+    StoredSkiData ski,
+  ) async {
     final bool? didConfirm = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Radera skida?'),
-        content: Text('Är du säker på att du vill radera "${ski.name}"?'),
+        title: const Text('Arkivera skida?'),
+        content: Text(
+          'Är du säker på att du vill arkivera "${ski.name}"? '
+          'Du kommer fortfarande se din i dina nuvarande glidtester, men den kommer inte vara tillgänglig i nya test',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -143,14 +146,14 @@ class SkiDetailScreen extends StatelessWidget {
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Radera'),
+            child: const Text('Arkivera'),
           ),
         ],
       ),
     );
 
     if (didConfirm == true) {
-      await skiRepository.deleteSki(ski);
+      await skiRepository.archiveSki(ski);
       if (context.mounted) {
         Navigator.pop(context);
       }

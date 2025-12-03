@@ -8,13 +8,17 @@ class SkiRepository {
 
   SkiRepository(this._db);
 
-  Stream<List<StoredSkiData>> watchSkis() {
-    return _db.select(_db.storedSki).watch();
+  Stream<List<StoredSkiData>> watchActiveSkis() {
+    final activeSkisQuery = _db.select(_db.storedSki)
+      ..where((t) => t.archivedAt.isNull());
+
+    return activeSkisQuery.watch();
   }
 
   Stream<StoredSkiData> watchSkiById(int id) {
-    return (_db.select(_db.storedSki)..where((t) => t.id.equals(id)))
-        .watchSingle();
+    return (_db.select(
+      _db.storedSki,
+    )..where((t) => t.id.equals(id))).watchSingle();
   }
 
   Future<int> save(SkiCandidate ski) {
@@ -36,11 +40,17 @@ class SkiRepository {
       notes: drift.Value(candidate.notes),
     );
 
-    return (_db.update(_db.storedSki)..where((t) => t.id.equals(ski.id)))
-        .write(companion);
+    return (_db.update(
+      _db.storedSki,
+    )..where((t) => t.id.equals(ski.id))).write(companion);
   }
 
-  Future<int> deleteSki(StoredSkiData ski) {
-    return (_db.delete(_db.storedSki)..where((t) => t.id.equals(ski.id))).go();
+  Future<int> archiveSki(StoredSkiData ski) {
+    final companion = StoredSkiCompanion(
+      archivedAt: drift.Value(DateTime.now()),
+    );
+    return (_db.update(
+      _db.storedSki,
+    )..where((t) => t.id.equals(ski.id))).write(companion);
   }
 }

@@ -35,7 +35,7 @@ class SkiManagementScreen extends StatelessWidget {
         },
       ),
       body: StreamBuilder<List<StoredSkiData>>(
-        stream: skiRepository.watchSkis(),
+        stream: skiRepository.watchActiveSkis(),
         builder: (context, snapshot) {
           final skis = snapshot.data ?? [];
           return MySkisComponent(skis: skis);

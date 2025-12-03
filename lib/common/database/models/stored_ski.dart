@@ -7,4 +7,5 @@ class StoredSki extends Table {
   TextColumn get brandAndModel => text().nullable()();
   TextColumn get technicalData => text().nullable()();
   TextColumn get notes => text().nullable()();
+  DateTimeColumn get archivedAt => dateTime().nullable()();
 }
