@@ -175,7 +175,8 @@ class RunRecorderViewModel extends ChangeNotifier {
       final last2Positions = dataRecorder.recordedPositions.sublist(
         dataRecorder.recordedPositions.length - 2,
       );
-      final hasStopped = last2Positions.every((pos) => pos.speed <= 0.5);
+      // 0.15 ms ~= 0.54 kmh.
+      final hasStopped = last2Positions.every((pos) => pos.speed <= 0.15);
       if (hasStopped) {
         _startAutoSaveCountdown();
       } else {
