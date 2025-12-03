@@ -171,7 +171,7 @@ class RunRecorderViewModel extends ChangeNotifier {
       return;
     }
 
-    if (dataRecorder.recordedPositions.length >= 2) {
+    if (dataRecorder.recordedPositions.length >= 20) {
       final last2Positions = dataRecorder.recordedPositions.sublist(
         dataRecorder.recordedPositions.length - 2,
       );
