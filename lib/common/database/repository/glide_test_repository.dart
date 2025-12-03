@@ -10,7 +10,7 @@ class GlideTestRepository {
 
   Stream<List<StoredGlideTestData>> watchTests() {
     return (_db.select(_db.storedGlideTest)..orderBy([
-          (t) => drift.OrderingTerm.desc(t.createdAt), // newest first
+          (t) => drift.OrderingTerm.desc(t.id), // newest first
         ]))
         .watch();
   }

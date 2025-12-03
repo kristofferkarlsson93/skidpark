@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:skidpark/common/database/models/stored_glide_test.dart';
 import 'package:skidpark/common/database/models/stored_ski.dart';
 
-
+@TableIndex(name: 'glide_test_id_id_index', columns: {#glideTestId, #id})
 class TestRun extends Table {
   IntColumn get id => integer().autoIncrement()();
 
