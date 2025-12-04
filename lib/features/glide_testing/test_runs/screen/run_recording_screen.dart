@@ -6,6 +6,7 @@ import 'package:skidpark/features/glide_testing/test_runs/widgets/start_test_run
 
 import '../../../../common/database/repository/ski_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
+import '../../../../common/services/volume_press_handler.dart';
 import '../viewModel/run_recorder_view_model.dart';
 
 class RunRecorderScreen extends StatelessWidget {
@@ -23,6 +24,7 @@ class RunRecorderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final skiRepository = context.read<SkiRepository>();
     final testRunRepository = context.read<TestRunRepository>();
+    final volumePressHandler = context.read<VolumePressHandler>();
 
     return MultiProvider(
       providers: [
@@ -30,6 +32,7 @@ class RunRecorderScreen extends StatelessWidget {
           create: (_) => RunRecorderViewModel(
             testRunRepository: testRunRepository,
             skiRepository: skiRepository,
+            volumePressHandler: volumePressHandler,
             dataRecorder: dataRecorder,
             glideTestId: glideTestId,
             onStopAndSaveCallback: () {

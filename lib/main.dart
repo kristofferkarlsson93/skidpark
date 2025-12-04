@@ -7,6 +7,7 @@ import 'common/database/repository/glide_test_repository.dart';
 import 'common/database/repository/ski_repository.dart';
 import 'common/database/repository/test_run_repository.dart';
 import 'common/navigation/bottom_navigation.dart';
+import 'common/services/volume_press_handler.dart';
 
 void main() {
   runApp(
@@ -25,6 +26,10 @@ void main() {
         ProxyProvider<AppDatabase, TestRunRepository>(
           update: (_, db, __) => TestRunRepository(db),
         ),
+        Provider<VolumePressHandler>(
+          create: (_) => VolumePressHandler(),
+          dispose: (_, handler) => handler.dispose(),
+        )
       ],
       child: const MyApp(),
     ),

@@ -18,7 +18,17 @@ class CompareGraph extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: runs.isEmpty
-            ? Center(child: Text("Välj ett eller flera åk i kontrollpanelen."))
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Välj ett eller flera åk i kontrollpanelen"),
+                  SizedBox(height: 12),
+                  Text(
+                    "Tips: Håll in volym ner för att spela in ett nytt åk.",
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ],
+              )
             : LineChart(
                 transformationConfig: _enableZoom(),
                 _buildChartData(runs),

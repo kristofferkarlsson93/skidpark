@@ -9,12 +9,12 @@ import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
 import 'package:skidpark/features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
 import '../../../../common/database/database.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
-import '../../../../common/services/VolumePressHandler.dart';
+import '../../../../common/services/volume_press_handler.dart';
 
 enum RunViewState { selectSki, recordRun }
 
 class RunRecorderViewModel extends ChangeNotifier {
-  final VolumePressHandler _volumePressHandler = VolumePressHandler();
+  final VolumePressHandler _volumePressHandler;
   final TestRunRepository _testRunRepository;
   final SkiRepository _skiRepository;
   final DataRecorder dataRecorder;
@@ -37,11 +37,13 @@ class RunRecorderViewModel extends ChangeNotifier {
   RunRecorderViewModel({
     required TestRunRepository testRunRepository,
     required SkiRepository skiRepository,
+    required VolumePressHandler volumePressHandler,
     required this.dataRecorder,
     required int glideTestId,
     required VoidCallback onStopAndSaveCallback,
   }) : _testRunRepository = testRunRepository,
        _skiRepository = skiRepository,
+       _volumePressHandler = volumePressHandler,
        _glideTestId = glideTestId,
        _onStopAndSaveCallback = onStopAndSaveCallback {
     _listenToSkis();
@@ -217,7 +219,6 @@ class RunRecorderViewModel extends ChangeNotifier {
     log("Disposing RunRecorderViewModel");
     _shortPressSubscription.cancel();
     _longPressSubscription.cancel();
-    _volumePressHandler.dispose();
     _autoSaveTimer?.cancel();
     dataRecorder.removeListener(_handleDataRecorderChange);
     super.dispose();
