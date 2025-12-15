@@ -27,6 +27,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
   late final DataRecorder _dataRecorder;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _activateVolumeKeys = true;
+  bool _indicateNewRunMarked = false;
 
   @override
   void initState() {
@@ -59,6 +60,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
       );
       // The await above makes it so that we run this code when we return here.
       setState(() {
+        _indicateNewRunMarked = false;
         _activateVolumeKeys = true;
       });
     }
@@ -95,10 +97,16 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
             bottom: false,
             child: VolumeInputHandler(
               shouldPublishEvents: _activateVolumeKeys,
-              onLongPress: (button) {
+              onLongPress: (button) async {
                 if (button == VolumeButton.down) {
                   log("Go to record page via volume down");
-                  goToRecordPage(context);
+                  setState(() {
+                    _indicateNewRunMarked = true;
+                  });
+                  await Future.delayed(const Duration(milliseconds: 250));
+                  if (context.mounted) {
+                    goToRecordPage(context);
+                  }
                 }
               },
               child: Scaffold(
@@ -110,7 +118,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                     FilledButton.icon(
                       style: ButtonStyle(
                         backgroundColor: WidgetStateProperty.all(
-                          theme.colorScheme.onPrimary,
+                          _indicateNewRunMarked ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
                         ),
                       ),
                       onPressed: () {

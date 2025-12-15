@@ -65,6 +65,8 @@ class CompareRunsViewModel extends ChangeNotifier {
     final maxSpeed = RunDataProcessor.calculateMaxSpeed(storedRun.gpsData);
     final normalizedPositions = RunDataProcessor.processRun(
       rawPositions: storedRun.gpsData,
+      accelerometerReadings: storedRun.accelerometerEvents,
+      useSensorFusion: true // todo toggle.
     );
     final totalDistance = normalizedPositions.isNotEmpty
         ? normalizedPositions.last.distanceTraveled
