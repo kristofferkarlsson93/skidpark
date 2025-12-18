@@ -19,8 +19,7 @@ class SensorFusionToggle extends StatelessWidget {
         'Sensor fusion',
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
-          fontWeight:
-              FontWeight.w500,
+          fontWeight: FontWeight.w500,
         ),
       ),
       activeThumbColor: theme.colorScheme.primaryContainer,
@@ -54,16 +53,63 @@ class SensorFusionToggle extends StatelessWidget {
             context: context,
             builder: (context) => AlertDialog(
               backgroundColor: theme.colorScheme.surfaceContainerHigh,
-              title: const Text('Sensor Fusion'),
-              content: const Text(
-                'Appen samlar in data från flera olika sensorer för att mäta ett åk. Vissa sensorer är väldigt känsliga för små rörelser. \n\n'
-                'Genom att aktivera sensor-fusionsläget slår du ihop datan från alla sensorer och får de mest exakta värdena och mest tillförlitliga kurvorna. \n\n'
-                'MEN - Detta kräver att du kan montera din telefon på ett stadigt och korrekt sätt. Kan du inte göra detta rekommenderas att ha detta läge avstängt.\n\n'
-                'Att montera korrekt:\n'
-                '- Telefonen ska ha skärmen uppåt, och den främre kortsidan (där selfie-kameran sitter) i åkriktningen\n'
-                '- Telefonen ska monteras så att den är så stilla som möjligt. Tex på ditt lår i fartställning, eller på din skida eller pjäxa\n\n'
-                'OBS: Vikten av ovanstående kan inte nog understrykas. För att kunna lita på datan krävs nogrannhet i dessa punkter.',
+              title: const Text('Om Sensorfusion'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Under ett teståk spelar appen in data från olika sensorer. Vissa sensorer är väldigt känsliga för rörelser. När du aktiverar Sensorfusion slås datan från alla sensorer ihop. Detta ger de mest tillförlitliga siffrorna och kurvorna',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
 
+                    Text(
+                      'Krav för korrekt data',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'För att kunna lita på datan från alla känsliga sensorer måste telefonen ligga stilla i förhållande till skidan. Om du tex håller telefonen i handen kommer datan att ljuga.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+
+                    _buildIconRow(
+                      theme,
+                      Icons.layers,
+                      'Telefonen ska sitta stadigt (t.ex. kardborre på pjäxa/skida eller mot låret i fartställning).',
+                    ),
+                    _buildIconRow(theme, Icons.screen_lock_portrait, 'Skärmen ska peka uppåt.'),
+                    _buildIconRow(
+                      theme,
+                      Icons.arrow_upward,
+                      'Överkanten (selfiekameran) ska peka framåt i åkriktningen.',
+                    ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      'Kan du inte montera telefonen enligt ovan så är det bättre att slå av sensorfusionen. Då förlitar sig appen på GPS, vilket är mer tillförlitligt om datan är brusig.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Ingen data går förlorad',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Appen spelar alltid in all rådata oavsett hur denna knapp står. Detta är endast ett analysfilter som styr vilken data som läses används.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -74,6 +120,22 @@ class SensorFusionToggle extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildIconRow(ThemeData theme, IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: theme.textTheme.bodyMedium),
+          ),
+        ],
       ),
     );
   }
