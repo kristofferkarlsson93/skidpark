@@ -5,4 +5,5 @@ class StoredGlideTest extends Table {
   DateTimeColumn get createdAt => dateTime().clientDefault(() => DateTime.now())();
   TextColumn get title => text()();
   TextColumn get notes => text().nullable()();
+  BoolColumn get useSensorFusion => boolean().withDefault(const Constant(false))();
 }

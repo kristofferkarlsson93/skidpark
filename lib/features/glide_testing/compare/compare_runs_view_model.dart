@@ -2,34 +2,43 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/cupertino.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/common/database/database.dart';
+import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
-import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
+  final GlideTestRepository _glideTestRepository;
 
   StreamSubscription? _runsSubscription;
+  StreamSubscription? _glideTestSubscription;
 
-  final StoredGlideTestData _glideTest;
+  StoredGlideTestData? _glideTest;
+  List<DecodedTestRun> _rawRuns = [];
   List<EnrichedTestRun> _testRuns = [];
   final List<int> _deselectedRunIds = [];
 
+  bool get isLoading => _glideTest == null;
   List<EnrichedTestRun> get testRuns => _testRuns;
 
   List<EnrichedTestRun> get currentSelectedTestRuns =>
       _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
 
+  bool get useSensorFusion => _glideTest?.useSensorFusion ?? false;
+  String get testTitle => _glideTest?.title ?? "";
+
   CompareRunsViewModel({
     required testRunRepository,
-    required StoredGlideTestData glideTest,
+    required GlideTestRepository glideTestRepository,
+    required int glideTestId,
   }) : _testRunRepository = testRunRepository,
-       _glideTest = glideTest {
-    _listenToData();
+       _glideTestRepository = glideTestRepository {
+    log("Starting CompareRunsViewModel for glideTest $glideTestId");
+    _listenToGlideTest(glideTestId);
+    _listenToRuns(glideTestId);
   }
 
   void toggleSelectedTestRun(EnrichedTestRun testRun) {
@@ -45,16 +54,42 @@ class CompareRunsViewModel extends ChangeNotifier {
     return !_deselectedRunIds.contains(testRunId);
   }
 
-  void _listenToData() {
+  void setUseSensorFusion(bool shouldUse) {
+    _glideTestRepository.setUseSensorFusion(_glideTest!.id, shouldUse);
+    notifyListeners();
+  }
+
+  void _listenToGlideTest(int glideTestId) {
+    _glideTestSubscription = _glideTestRepository
+        .watchTestById(glideTestId)
+        .listen((test) {
+          final sensorFusionChanged =
+              _glideTest?.useSensorFusion != test.useSensorFusion;
+          _glideTest = test;
+          if (sensorFusionChanged) {
+            _recalculate();
+          } else {
+            notifyListeners();
+          }
+        });
+  }
+
+  void _listenToRuns(int glideTestId) {
     _runsSubscription = _testRunRepository
-        .streamByGlideTest(_glideTest.id)
+        .streamByGlideTest(glideTestId)
         .listen((storedRuns) {
-          _testRuns = storedRuns.indexed.map(((int, DecodedTestRun) entry) {
-            // return _enrichRun(entry.$2, entry.$1 + 1);
-            return _calculateTestRunData(entry.$2, entry.$1 + 1);
-          }).toList();
+          _rawRuns = storedRuns;
+          _recalculate();
           notifyListeners();
         });
+  }
+
+  void _recalculate() {
+    log("Recalculating runs. SensorFusion: $useSensorFusion");
+    _testRuns = _rawRuns.indexed.map(((int, DecodedTestRun) entry) {
+      return _calculateTestRunData(entry.$2, entry.$1 + 1);
+    }).toList();
+    notifyListeners();
   }
 
   EnrichedTestRun _calculateTestRunData(
@@ -66,7 +101,7 @@ class CompareRunsViewModel extends ChangeNotifier {
     final normalizedPositions = RunDataProcessor.processRun(
       rawPositions: storedRun.gpsData,
       accelerometerReadings: storedRun.accelerometerEvents,
-      useSensorFusion: true // todo toggle.
+      useSensorFusion: useSensorFusion,
     );
     final totalDistance = normalizedPositions.isNotEmpty
         ? normalizedPositions.last.distanceTraveled
@@ -93,79 +128,10 @@ class CompareRunsViewModel extends ChangeNotifier {
     return ms * 3.6;
   }
 
-  EnrichedTestRun _enrichRun(DecodedTestRun storedRun, int runNumber) {
-    final gpsData = storedRun.gpsData;
-    // Need at least 2 data points to do anything useful.
-    if (gpsData.length < 2) {
-      log('Got less than 2 data points, skipping data enrichment.');
-      return EnrichedTestRun(
-        storedRun.id,
-        storedRun.startedAt,
-        storedRun.skiId,
-        storedRun.glideTestId,
-        storedRun.elapsedSeconds,
-        0,
-        0,
-        0,
-        storedRun.skiName,
-        List.empty(),
-        runNumber,
-      );
-    }
-    var totalDistance = 0.0;
-    List<CalculatedPosition> positions = [];
-    for (int i = 1; i < gpsData.length; i++) {
-      final previousPosition = gpsData[i - 1];
-      final currentPosition = gpsData[i];
-
-      final distanceInMeters = Geolocator.distanceBetween(
-        previousPosition.latitude,
-        previousPosition.longitude,
-        currentPosition.latitude,
-        currentPosition.longitude,
-      );
-
-      totalDistance += distanceInMeters;
-
-      positions.add(
-        CalculatedPosition(
-          currentPosition.speed,
-          currentPosition.timestamp,
-          totalDistance,
-        ),
-      );
-    }
-
-    return EnrichedTestRun(
-      storedRun.id,
-      storedRun.startedAt,
-      storedRun.skiId,
-      storedRun.glideTestId,
-      storedRun.elapsedSeconds,
-      totalDistance,
-      _calculateAverageSpeed(positions),
-      _calculateMaxSpeed(positions),
-      storedRun.skiName,
-      positions,
-      runNumber,
-    );
-  }
-
-  double _calculateAverageSpeed(List<CalculatedPosition> positions) {
-    if (positions.isEmpty) return 0.0;
-    final totalSpeed = positions.fold(0.0, (sum, pos) => sum + pos.speed);
-    return (totalSpeed / positions.length) * 3.6;
-  }
-
-  double _calculateMaxSpeed(List<CalculatedPosition> positions) {
-    if (positions.isEmpty) return 0.0;
-    return (positions.map((pos) => pos.speed).reduce((a, b) => a > b ? a : b)) *
-        3.6;
-  }
-
   @override
   void dispose() {
     _runsSubscription?.cancel();
+    _glideTestSubscription?.cancel();
     super.dispose();
   }
 }

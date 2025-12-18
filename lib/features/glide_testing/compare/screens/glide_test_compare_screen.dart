@@ -71,79 +71,72 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
     final glideTestRepository = context.read<GlideTestRepository>();
     final testRunRepository = context.read<TestRunRepository>();
     final theme = Theme.of(context);
-    return StreamBuilder(
-      stream: glideTestRepository.watchTestById(widget.glideTestId),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final glideTest = snapshot.data!;
-
-        return MultiProvider(
-          providers: [
-            ChangeNotifierProvider(
-              create: (_) => CompareRunsViewModel(
-                testRunRepository: testRunRepository,
-                glideTest: glideTest,
-              ),
-            ),
-            ChangeNotifierProvider(create: (_) => _dataRecorder),
-          ],
-          child: SafeArea(
-            bottom: false,
-            child: VolumeInputHandler(
-              shouldPublishEvents: _activateVolumeKeys,
-              onLongPress: (button) async {
-                if (button == VolumeButton.down) {
-                  log("Go to record page via volume down");
-                  setState(() {
-                    _indicateNewRunMarked = true;
-                  });
-                  await Future.delayed(const Duration(milliseconds: 250));
-                  if (context.mounted) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => CompareRunsViewModel(
+            testRunRepository: testRunRepository,
+            glideTestRepository: glideTestRepository,
+            glideTestId: widget.glideTestId,
+          ),
+        ),
+        ChangeNotifierProvider(create: (_) => _dataRecorder),
+      ],
+      child: SafeArea(
+        bottom: false,
+        child: VolumeInputHandler(
+          shouldPublishEvents: _activateVolumeKeys,
+          onLongPress: (button) async {
+            if (button == VolumeButton.down) {
+              log("Go to record page via volume down");
+              setState(() {
+                _indicateNewRunMarked = true;
+              });
+              await Future.delayed(const Duration(milliseconds: 250));
+              if (context.mounted) {
+                goToRecordPage(context);
+              }
+            }
+          },
+          child: Scaffold(
+            extendBodyBehindAppBar: true,
+            key: _scaffoldKey,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              actions: [
+                FilledButton.icon(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(
+                      _indicateNewRunMarked
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onPrimary,
+                    ),
+                  ),
+                  onPressed: () {
                     goToRecordPage(context);
-                  }
+                  },
+                  label: Text(
+                    'Nytt åk',
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                  ),
+                  icon: Icon(
+                    Icons.play_circle_outline,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
+              ],
+            ),
+            endDrawer: Drawer(
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              child: CompareControls(),
+            ),
+            body: Consumer<CompareRunsViewModel>(
+              builder: (context, viewModel, child) {
+                if (viewModel.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
                 }
-              },
-              child: Scaffold(
-                extendBodyBehindAppBar: true,
-                key: _scaffoldKey,
-                appBar: AppBar(
-                  backgroundColor: Colors.transparent,
-                  actions: [
-                    FilledButton.icon(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
-                          _indicateNewRunMarked ? theme.colorScheme.primary : theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                      onPressed: () {
-                        goToRecordPage(context);
-                      },
-                      label: Text(
-                        'Nytt åk',
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                      icon: Icon(
-                        Icons.play_circle_outline,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    GlideTestMoreMenu(
-                      onSelectEdit: () {},
-                      onSelectArchive: () {},
-                    ),
-                  ],
-                ),
-                endDrawer: Drawer(
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  child: CompareControls(glideTest: glideTest),
-                ),
-                body: Stack(
+                return Stack(
                   children: [
                     CompareContainer(),
                     Positioned(
@@ -162,12 +155,12 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

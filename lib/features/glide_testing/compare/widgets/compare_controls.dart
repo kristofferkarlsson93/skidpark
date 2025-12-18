@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/common/database/database.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/sensor_fusion_switch.dart';
 
 import '../../compare/compare_runs_view_model.dart';
 import '../../../../legacy/select_run_card.dart';
 
 class CompareControls extends StatelessWidget {
-  final StoredGlideTestData glideTest;
 
-  const CompareControls({super.key, required this.glideTest});
+  const CompareControls({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +25,22 @@ class CompareControls extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  glideTest.title,
-                  style: theme.textTheme.headlineSmall,
-                ),
+                Text(viewModel.testTitle, style: theme.textTheme.headlineSmall),
               ],
             ),
           ),
+          SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Text('Inställningar', style: theme.textTheme.labelLarge),
+          ),
+          SensorFusionToggle(
+            isActive: viewModel.useSensorFusion,
+            onChanged: (newValue) {
+              viewModel.setUseSensorFusion(newValue);
+            },
+          ),
+          const Divider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Text(

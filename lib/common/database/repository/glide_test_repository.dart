@@ -29,4 +29,14 @@ class GlideTestRepository {
 
     return _db.into(_db.storedGlideTest).insert(companion);
   }
+
+  Future<int> setUseSensorFusion(int id, bool shouldUseSensorFusion) {
+    return (_db.update(
+      _db.storedGlideTest,
+    )..where((t) => t.id.equals(id))).write(
+      StoredGlideTestCompanion(
+        useSensorFusion: drift.Value(shouldUseSensorFusion),
+      ),
+    );
+  }
 }
