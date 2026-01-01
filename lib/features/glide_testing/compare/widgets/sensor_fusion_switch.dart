@@ -16,7 +16,7 @@ class SensorFusionToggle extends StatelessWidget {
     return SwitchListTile(
       contentPadding: const EdgeInsets.fromLTRB(8, 0, 16, 0),
       title: Text(
-        'Sensor fusion',
+        'Sensorfusion',
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurface,
           fontWeight: FontWeight.w500,
@@ -104,7 +104,7 @@ class SensorFusionToggle extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Appen spelar alltid in all rådata oavsett hur denna knapp står. Detta är endast ett analysfilter som styr vilken data som läses används.',
+                      'Appen spelar alltid in all rådata oavsett hur denna knapp står. Detta är endast ett analysfilter som styr vilken data används.',
                       style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
