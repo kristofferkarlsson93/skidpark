@@ -1,7 +1,11 @@
+import 'dart:developer';
+import 'dart:math' as math;
+
 import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/features/glide_testing/compare/services/speed_kalman_filter.dart';
 import '../../test_runs/models/raw_accelerometer_event.dart';
 import '../models/calculated_position.dart';
+import 'low_pass_filter.dart';
 
 class RunDataProcessor {
   // Constants for trimming
@@ -16,14 +20,19 @@ class RunDataProcessor {
     required List<Position> rawPositions,
     List<RawAccelerometerEvent>? accelerometerReadings,
     double resampleIntervalMeters = 2.0,
-    bool useSensorFusion = false
+    bool useSensorFusion = false,
   }) {
     if (rawPositions.length < 2) return [];
 
     List<Position> processedPositions = rawPositions;
 
-    if (useSensorFusion && accelerometerReadings != null && accelerometerReadings.isNotEmpty) {
-      processedPositions = _fuseGpsAndAccel(rawPositions, accelerometerReadings);
+    if (useSensorFusion &&
+        accelerometerReadings != null &&
+        accelerometerReadings.isNotEmpty) {
+      processedPositions = _fuseGpsAndAccel(
+        rawPositions,
+        accelerometerReadings,
+      );
     }
 
     final rawCalculated = _calculateRawCumulativeDistance(processedPositions);
@@ -49,9 +58,9 @@ class RunDataProcessor {
   /// It uses a Kalman Filter to smooth out the speed curve, but ignores accelerometer
   /// data when the speed is below the trigger threshold (to avoid handling noise).
   static List<Position> _fuseGpsAndAccel(
-      List<Position> gpsPositions,
-      List<RawAccelerometerEvent> accelReadings,
-      ) {
+    List<Position> gpsPositions,
+    List<RawAccelerometerEvent> accelReadings,
+  ) {
     // 1. Sort lists by time to ensure chronological playback
     gpsPositions.sort((a, b) => a.timestamp.compareTo(b.timestamp));
     accelReadings.sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -60,8 +69,8 @@ class RunDataProcessor {
     int accelIndex = 0;
 
     // We keep the filter nullable so we can initialize it only when the run actually starts
-    SpeedKalmanFilter? filter;
-
+    SpeedKalmanFilter? kalmanFilter;
+    final accelSmoother = LowPassFilter(alpha: 0.1);
     // 2. Iterate through every GPS point (The "Main" timeline)
     for (int i = 0; i < gpsPositions.length; i++) {
       final currentGpsPoint = gpsPositions[i];
@@ -77,9 +86,12 @@ class RunDataProcessor {
         // Discard all accelerometer events that happened up to this point
         // since they are likely just noise/handling artifacts.
         while (accelIndex < accelReadings.length &&
-            accelReadings[accelIndex].timestamp.isBefore(currentGpsPoint.timestamp)) {
+            accelReadings[accelIndex].timestamp.isBefore(
+              currentGpsPoint.timestamp,
+            )) {
           accelIndex++;
         }
+        accelSmoother.reset();
         // Move to the next GPS point
         continue;
       }
@@ -87,12 +99,13 @@ class RunDataProcessor {
       // --- ACTIVE RUN LOGIC ---
 
       // If this is the first point above the threshold, initialize the filter now.
-      filter ??= SpeedKalmanFilter(initialSpeed: currentGpsPoint.speed);
+      kalmanFilter ??= SpeedKalmanFilter(initialSpeed: currentGpsPoint.speed);
 
       // 3. "Catch up" with all accelerometer events that happened BEFORE this GPS point
       while (accelIndex < accelReadings.length &&
-          accelReadings[accelIndex].timestamp.isBefore(currentGpsPoint.timestamp)) {
-
+          accelReadings[accelIndex].timestamp.isBefore(
+            currentGpsPoint.timestamp,
+          )) {
         final currentAccelEvent = accelReadings[accelIndex];
 
         // Calculate time passed since the previous accelerometer event (dt)
@@ -102,13 +115,27 @@ class RunDataProcessor {
         if (accelIndex > 0) {
           final previousAccelTime = accelReadings[accelIndex - 1].timestamp;
           // Convert microseconds to seconds
-          timeDeltaSeconds = currentAccelEvent.timestamp.difference(previousAccelTime).inMicroseconds / 1000000.0;
+          timeDeltaSeconds =
+              currentAccelEvent.timestamp
+                  .difference(previousAccelTime)
+                  .inMicroseconds /
+              1000000.0;
         }
 
-        // PREDICT: Tell the filter how the speed changed based on force (Y-axis)
-        // Assumption: Y-axis is pointing forward.
-        filter.predict(
-          accelerationY: currentAccelEvent.y,
+        // Use Pythagoras to capture force independent of phone orientation
+        double magnitude = math.sqrt(
+          math.pow(currentAccelEvent.x, 2) +
+              math.pow(currentAccelEvent.y, 2) +
+              math.pow(currentAccelEvent.z, 2),
+        );
+
+        double sign = currentAccelEvent.y < 0 ? -1.0 : 1.0;
+        double rawForce = magnitude * sign;
+
+        double smoothedForce = accelSmoother.filter(rawForce);
+
+        kalmanFilter.predict(
+          accelerationY: smoothedForce,
           secondsSinceLastUpdate: timeDeltaSeconds,
         );
 
@@ -117,27 +144,30 @@ class RunDataProcessor {
 
       // 4. UPDATE: Now that we have caught up to the current time,
       // correct the prediction using the actual GPS speed.
-      filter.update(currentGpsPoint.speed);
+      kalmanFilter.update(currentGpsPoint.speed);
 
       // 5. Store the result
       // We create a new Position object that is identical to the GPS point,
       // BUT we replace the 'speed' with our new filtered speed.
-      fusedGpsPoints.add(Position(
-        longitude: currentGpsPoint.longitude,
-        latitude: currentGpsPoint.latitude,
-        timestamp: currentGpsPoint.timestamp,
-        accuracy: currentGpsPoint.accuracy,
-        altitude: currentGpsPoint.altitude,
-        altitudeAccuracy: currentGpsPoint.altitudeAccuracy,
-        heading: currentGpsPoint.heading,
-        headingAccuracy: currentGpsPoint.headingAccuracy,
-        speed: filter.speed, // <--- This is the smoothed value
-        speedAccuracy: currentGpsPoint.speedAccuracy,
-      ));
+      fusedGpsPoints.add(
+        Position(
+          longitude: currentGpsPoint.longitude,
+          latitude: currentGpsPoint.latitude,
+          timestamp: currentGpsPoint.timestamp,
+          accuracy: currentGpsPoint.accuracy,
+          altitude: currentGpsPoint.altitude,
+          altitudeAccuracy: currentGpsPoint.altitudeAccuracy,
+          heading: currentGpsPoint.heading,
+          headingAccuracy: currentGpsPoint.headingAccuracy,
+          speed: kalmanFilter.speed,
+          speedAccuracy: currentGpsPoint.speedAccuracy,
+        ),
+      );
     }
 
     return fusedGpsPoints;
   }
+
   /// Converts raw Position objects into CalculatedPosition objects,
   /// calculating the initial cumulative distance.
   static List<CalculatedPosition> _calculateRawCumulativeDistance(
@@ -157,12 +187,19 @@ class RunDataProcessor {
       final prev = rawPositions[i - 1];
       final curr = rawPositions[i];
 
-      final distanceDelta = Geolocator.distanceBetween(
-        prev.latitude,
-        prev.longitude,
-        curr.latitude,
-        curr.longitude,
-      );
+      final double positionsTimeDiff =
+          curr.timestamp.difference(prev.timestamp).inMicroseconds / 1000000.0;
+      // max to make sure we don't get -1 which can happen in cases of gps loss.
+      final double avgSpeed = (math.max(0.0, prev.speed) + math.max(0.0, curr.speed)) / 2.0;
+
+      // final distanceDelta = Geolocator.distanceBetween(
+      //   prev.latitude,
+      //   prev.longitude,
+      //   curr.latitude,
+      //   curr.longitude,
+      // );
+
+      final double distanceDelta = avgSpeed * positionsTimeDiff;
 
       totalDistance += distanceDelta;
 

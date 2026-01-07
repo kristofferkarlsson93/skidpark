@@ -1,68 +1,70 @@
 class SpeedKalmanFilter {
-  // The current estimated speed (what we believe is the truth)
+  // Aktuell uppskattad hastighet
   double _currentSpeedEstimate = 0.0;
 
-  // How unsure we are about our current estimate.
-  // Starts high because we haven't seen any data yet.
+  // NYTT: "Bias" representerar det osynliga glidet (lutningen)
+  // som accelerometern inte känner av.
+  double _accelerationBias = 0.0;
+
+  // Osäkerhet i våra uppskattningar
   double _estimationUncertainty = 1.0;
 
   // --- TUNING PARAMETERS ---
 
-  // How much uncertainty we add for every second of prediction (using accelerometer).
-  // A lower number means we trust the physics/accelerometer more.
-  // A higher number means we think the speed changes randomly or the accel is noisy.
-  final double _predictionUncertaintyPerSecond = 0.2;
+  // Hur snabbt vi vågar lita på att "biasen" (lutningen) ändras.
+  // Högre värde = anpassar sig snabbare till backens lutning, men kan "overshoota".
+  final double _biasProcessNoise = 0.1;
 
-  // How much "noise" we expect from the GPS.
-  // A higher number means we trust the GPS less (it's jumpy).
-  // A lower number means we trust the GPS completely.
-  final double _gpsMeasurementUncertainty = 3.0;
+  // Vi litar MER på GPS nu för den absoluta hastigheten.
+  // Lägre siffra = Vi litar mer på GPS.
+  // Tidigare var denna 1.0, nu sänker vi den drastiskt.
+  final double _gpsMeasurementUncertainty = 0.3;
+
+  // Hur mycket vi tror accel fladdrar.
+  final double _predictionUncertaintyPerSecond = 0.5;
 
   SpeedKalmanFilter({double initialSpeed = 0.0}) {
     _currentSpeedEstimate = initialSpeed;
   }
 
-  /// STEP 1: PREDICT (Physics Step)
-  /// Uses the accelerometer to guess the new speed based on the old speed.
-  ///
-  /// [accelerationY]: The forward acceleration in m/s².
-  /// [secondsSinceLastUpdate]: Time elapsed since the last prediction (previously 'dt').
+  /// STEP 1: PREDICT
+  /// Vi gissar ny fart baserat på sensor + vår inlärda bias (lutning).
   void predict({required double accelerationY, required double secondsSinceLastUpdate}) {
-    // 1. Apply Physics Formula: velocity = velocity + (acceleration * time)
-    // NOTE: Depending on phone orientation, we might need to negate accelerationY (-accelerationY).
-    _currentSpeedEstimate += (accelerationY * secondsSinceLastUpdate);
+    // 1. Fysikformel: Fart = Fart + (SensorKraft + OsynligKraft) * tid
+    // Här lägger vi till _accelerationBias för att kompensera för gravitationen.
+    _currentSpeedEstimate += (accelerationY + _accelerationBias) * secondsSinceLastUpdate;
 
-    // 2. Increase our uncertainty.
-    // Since we are just calculating based on sensors, errors might accumulate.
-    // The longer time passes without a GPS fix, the less sure we are.
+    // 2. Öka osäkerheten (entropi ökar över tid)
     _estimationUncertainty += _predictionUncertaintyPerSecond * secondsSinceLastUpdate;
 
-    // Physical constraint: We assume you don't ski backwards during a glide test.
     if (_currentSpeedEstimate < 0) _currentSpeedEstimate = 0;
   }
 
-  /// STEP 2: UPDATE (Correction Step)
-  /// Uses the actual GPS reading to correct our calculated guess.
-  ///
-  /// [measuredGpsSpeed]: The speed reported by the GPS in m/s.
+  /// STEP 2: UPDATE
+  /// Korrigera både fart OCH bias baserat på verkligheten (GPS).
   void update(double measuredGpsSpeed) {
-    // 3. Calculate "Kalman Gain" (Trust Factor).
-    // This calculates a value between 0.0 and 1.0.
-    // Near 1.0 = Trust GPS entirely.
-    // Near 0.0 = Trust our calculated prediction entirely.
+    // Skillnaden mellan karta (GPS) och verklighet (Vår gissning)
+    double error = measuredGpsSpeed - _currentSpeedEstimate;
+
+    // Kalman Gain: Vem litar vi på?
     double trustFactor = _estimationUncertainty / (_estimationUncertainty + _gpsMeasurementUncertainty);
 
-    // 4. Correct the speed.
-    // We take the difference between GPS and our guess, scale it by the Trust Factor,
-    // and apply it to our estimate.
-    double difference = measuredGpsSpeed - _currentSpeedEstimate;
-    _currentSpeedEstimate = _currentSpeedEstimate + (trustFactor * difference);
+    // 1. Korrigera hastigheten
+    _currentSpeedEstimate = _currentSpeedEstimate + (trustFactor * error);
 
-    // 5. Decrease uncertainty.
-    // Since we just got a real measurement, we are now more confident in our value.
+    // 2. NYTT: Korrigera Biasen (Lär oss lutningen)
+    // Om vi konstant gissar för lågt (error > 0), betyder det att vi har medlut.
+    // Vi ökar biasen lite grann så vi gissar rätt nästa gång.
+    // Faktorn 0.5 * trustFactor är "Learning Rate".
+    // Kan justeras (små steg är säkrast).
+    _accelerationBias += error * 0.1 * trustFactor;
+
+    // Minska osäkerheten nu när vi fått en mätpunkt
     _estimationUncertainty = (1.0 - trustFactor) * _estimationUncertainty;
   }
 
-  // Getter for the UI to use
   double get speed => _currentSpeedEstimate;
+
+  // Debug-info om du vill se hur mycket "gratis-fart" backen ger
+  double get slopeBias => _accelerationBias;
 }
