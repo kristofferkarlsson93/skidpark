@@ -14,6 +14,8 @@ import '../../test_runs/data_recorder.dart';
 import '../../test_runs/screen/run_recording_screen.dart';
 import '../widgets/compare_controls.dart';
 
+enum AnalysisPage { overview, deepAnalysis }
+
 class GlideTestCompareScreen extends StatefulWidget {
   final int glideTestId;
 
@@ -26,6 +28,7 @@ class GlideTestCompareScreen extends StatefulWidget {
 class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
   late final DataRecorder _dataRecorder;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final PageController _pageController = PageController();
   bool _activateVolumeKeys = true;
   bool _indicateNewRunMarked = false;
 
@@ -39,6 +42,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
   @override
   void dispose() {
     _dataRecorder.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,14 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
         _activateVolumeKeys = true;
       });
     }
+  }
+
+  void _animateToPage(AnalysisPage page) {
+    _pageController.animateToPage(
+      page.index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -138,20 +150,75 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                 }
                 return Stack(
                   children: [
-                    CompareContainer(),
+                    PageView(
+                      controller: _pageController,
+                      physics: NeverScrollableScrollPhysics(),
+                      children: [
+                        // todo rename to overview container.
+                        CompareContainer(),
+                        Text("Hello"),
+                      ],
+                    ),
                     Positioned(
                       top: kToolbarHeight,
                       right: 8, // 16.0 from the right edge
-                      child: CircleAvatar(
-                        backgroundColor: Colors.black,
-                        child: IconButton(
-                          icon: const Icon(Icons.tune),
-                          color: Colors.white,
-                          tooltip: 'Filter runs',
-                          onPressed: () {
-                            _scaffoldKey.currentState?.openEndDrawer();
-                          },
-                        ),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.black,
+                            child: IconButton(
+                              icon: const Icon(Icons.tune),
+                              color: Colors.white,
+                              tooltip: 'Filtrera',
+                              onPressed: () {
+                                _scaffoldKey.currentState?.openEndDrawer();
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 36),
+                          Theme(
+                            data: Theme.of(context).copyWith(
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Material(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(20),
+                              child: ToggleButtons(
+                                direction: Axis.vertical,
+                                borderRadius: BorderRadius.circular(20),
+                                renderBorder: false,
+                                fillColor: theme.colorScheme.primary,
+                                selectedColor: theme.colorScheme.onPrimary,
+                                constraints: const BoxConstraints(
+                                  minHeight: 48,
+                                  minWidth: 40,
+                                ),
+                                isSelected: [
+                                  viewModel.activeAnalysisPage ==
+                                      AnalysisPage.overview,
+                                  viewModel.activeAnalysisPage ==
+                                      AnalysisPage.deepAnalysis,
+                                ],
+
+                                onPressed: (index) {
+                                  final newPage = index == 0
+                                      ? AnalysisPage.overview
+                                      : AnalysisPage.deepAnalysis;
+
+                                  if (viewModel.activeAnalysisPage != newPage) {
+                                    viewModel.setCurrentAnalysisPage(newPage);
+                                    _animateToPage(newPage);
+                                  }
+                                },
+
+                                children: const [
+                                  Icon(Icons.home_outlined, size: 20), // Översikt
+                                  Icon(Icons.compare_arrows, size: 20), // Analys
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

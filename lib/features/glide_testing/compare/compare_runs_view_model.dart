@@ -6,6 +6,7 @@ import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
+import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
@@ -21,13 +22,19 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _testRuns = [];
   final List<int> _deselectedRunIds = [];
 
+  AnalysisPage _activeAnalysisPage = AnalysisPage.overview;
+
+  AnalysisPage get activeAnalysisPage => _activeAnalysisPage;
+
   bool get isLoading => _glideTest == null;
+
   List<EnrichedTestRun> get testRuns => _testRuns;
 
   List<EnrichedTestRun> get currentSelectedTestRuns =>
       _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
 
   bool get useSensorFusion => _glideTest?.useSensorFusion ?? false;
+
   String get testTitle => _glideTest?.title ?? "";
 
   CompareRunsViewModel({
@@ -56,6 +63,11 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void setUseSensorFusion(bool shouldUse) {
     _glideTestRepository.setUseSensorFusion(_glideTest!.id, shouldUse);
+    notifyListeners();
+  }
+
+  void setCurrentAnalysisPage(AnalysisPage page) {
+    _activeAnalysisPage = page;
     notifyListeners();
   }
 
