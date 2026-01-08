@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:skidpark/common/database/database.dart';
@@ -7,7 +8,9 @@ import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
+import 'package:skidpark/features/glide_testing/compare/services/release_point_analysis.dart';
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
@@ -20,9 +23,35 @@ class CompareRunsViewModel extends ChangeNotifier {
   StoredGlideTestData? _glideTest;
   List<DecodedTestRun> _rawRuns = [];
   List<EnrichedTestRun> _testRuns = [];
+  List<EnrichedTestRun> _releasePointTestRuns = [];
+
+  List<EnrichedTestRun> get releasePointTestRuns => _releasePointTestRuns;
   final List<int> _deselectedRunIds = [];
 
   AnalysisPage _activeAnalysisPage = AnalysisPage.overview;
+
+  double? _releasePoint;
+
+  ReleasePointAnalysisMode _releasePointAnalysisMode =
+      ReleasePointAnalysisMode.edit;
+
+  ReleasePointAnalysisMode get releasePointAnalysisMode =>
+      _releasePointAnalysisMode;
+
+  double get releasePoint {
+    if (_releasePoint != null) {
+      return _releasePoint!;
+    } else if (currentSelectedTestRuns.isNotEmpty) {
+      return currentSelectedTestRuns
+          .expand((r) => r.positionData)
+          .reduce(
+            (a, b) => a.speed > b.speed ? a : b,
+          ) // Finding max speed of any run
+          .distanceTraveled;
+    } else {
+      return 0;
+    }
+  }
 
   AnalysisPage get activeAnalysisPage => _activeAnalysisPage;
 
@@ -32,6 +61,11 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   List<EnrichedTestRun> get currentSelectedTestRuns =>
       _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
+
+  List<EnrichedTestRun> get currentSelectedReleasePointTestRuns =>
+      releasePointTestRuns
+          .where((run) => !_deselectedRunIds.contains(run.id))
+          .toList();
 
   bool get useSensorFusion => _glideTest?.useSensorFusion ?? false;
 
@@ -68,6 +102,26 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void setCurrentAnalysisPage(AnalysisPage page) {
     _activeAnalysisPage = page;
+    notifyListeners();
+  }
+
+  void setReleasePoint(double newValue) {
+    _releasePoint = newValue;
+    notifyListeners();
+  }
+
+  void triggerReleasePointAnalysis() {
+    _releasePointAnalysisMode = ReleasePointAnalysisMode.view;
+    _releasePointTestRuns = ReleasePointAnalysis.performAnalysis(
+      testRuns: testRuns,
+      releasePoint: releasePoint,
+    );
+
+    notifyListeners();
+  }
+
+  void enterEditReleasePointAnalysisMode() {
+    _releasePointAnalysisMode = ReleasePointAnalysisMode.edit;
     notifyListeners();
   }
 

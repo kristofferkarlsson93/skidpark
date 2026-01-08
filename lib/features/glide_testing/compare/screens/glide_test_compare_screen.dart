@@ -3,8 +3,9 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/common/shared_widgets/volume_input_handler.dart';
-import 'package:skidpark/features/glide_testing/compare/widgets/compare_container.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/overview_container.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/glide_test_more_menu.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_container.dart';
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
@@ -155,8 +156,8 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       physics: NeverScrollableScrollPhysics(),
                       children: [
                         // todo rename to overview container.
-                        CompareContainer(),
-                        Text("Hello"),
+                        OverviewContainer(),
+                        ReleasePointContainer(),
                       ],
                     ),
                     Positioned(
@@ -175,20 +176,24 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                               },
                             ),
                           ),
-                          SizedBox(height: 36),
+                          SizedBox(height: 8),
                           Theme(
                             data: Theme.of(context).copyWith(
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Material(
                               color: Colors.black,
                               borderRadius: BorderRadius.circular(20),
                               child: ToggleButtons(
                                 direction: Axis.vertical,
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
                                 renderBorder: false,
-                                fillColor: theme.colorScheme.primary,
-                                selectedColor: theme.colorScheme.onPrimary,
+                                fillColor: theme.colorScheme.primary.withAlpha(
+                                  155,
+                                ),
+                                selectedColor: Colors.white,
                                 constraints: const BoxConstraints(
                                   minHeight: 48,
                                   minWidth: 40,
@@ -212,8 +217,8 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                                 },
 
                                 children: const [
-                                  Icon(Icons.home_outlined, size: 20), // Översikt
-                                  Icon(Icons.compare_arrows, size: 20), // Analys
+                                  Icon(Icons.home_outlined, size: 20),
+                                  Icon(Icons.compare_arrows, size: 20),
                                 ],
                               ),
                             ),

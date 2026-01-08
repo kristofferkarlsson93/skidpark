@@ -2,42 +2,41 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
+import 'package:skidpark/features/glide_testing/compare/models/graph_line.dart';
 
 class CompareGraph extends StatelessWidget {
-  final List<EnrichedTestRun> runs;
+  final List<GraphLine> lines;
+  final double maxY;
+  final Widget emptyGraphContent;
+  final double? maybeVerticalLineXCoordinate;
 
-  const CompareGraph({super.key, required this.runs});
+  const CompareGraph({
+    super.key,
+    required this.lines,
+    required this.maxY,
+    required this.emptyGraphContent,
+    this.maybeVerticalLineXCoordinate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // final theme = Theme.of(context);
+    final theme = Theme.of(context);
     return Card(
       // margin: const EdgeInsets.fromLTRB(16, 32, 16, 0),
       elevation: 12,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: runs.isEmpty
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Välj ett eller flera åk i kontrollpanelen"),
-                  SizedBox(height: 12),
-                  Text(
-                    "Tips: Håll in volym ner för att spela in ett nytt åk.",
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
-                ],
-              )
+        child: lines.isEmpty
+            ? emptyGraphContent
             : LineChart(
                 transformationConfig: _enableZoom(),
-                _buildChartData(runs),
+                _buildChartData(lines, theme),
               ),
       ),
     );
   }
 
-  LineChartData _buildChartData(List<EnrichedTestRun> runs) {
+  LineChartData _buildChartData(List<GraphLine> runs, ThemeData theme) {
     final List<LineChartBarData> lines = [];
     for (int i = 0; i < runs.length; i++) {
       final run = runs[i];
@@ -48,8 +47,8 @@ class CompareGraph extends StatelessWidget {
       lines.add(
         LineChartBarData(
           spots: spots,
-          isCurved: true,
-          preventCurveOverShooting: true,
+          // isCurved: true,
+          // preventCurveOverShooting: true,
           color: run.runColor,
           barWidth: 3,
           dotData: FlDotData(show: false),
@@ -57,10 +56,35 @@ class CompareGraph extends StatelessWidget {
       );
     }
 
-    final highestSpeedOverall = runs.map((r) => r.maxSpeed).reduce(max);
-    final graphMaxY = _calculateExtendedMaxY(highestSpeedOverall);
+    ExtraLinesData? extraLines;
+    if (maybeVerticalLineXCoordinate != null) {
+      extraLines = ExtraLinesData(
+        verticalLines: [
+          VerticalLine(
+            strokeCap: StrokeCap.square,
+            x: maybeVerticalLineXCoordinate!,
+            color: theme.colorScheme.error,
+            strokeWidth: 2,
+            dashArray: [5, 5],
+            label: VerticalLineLabel(
+              show: true,
+              alignment: Alignment.bottomRight,
+              padding: const EdgeInsets.only(right: 5, bottom: 10, left: 5),
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final graphMaxY = _calculateExtendedMaxY(maxY);
     return LineChartData(
-      lineTouchData: getLineTouchData(),
+      lineTouchData: getLineTouchData(theme),
+      extraLinesData: extraLines,
       maxY: graphMaxY,
       gridData: FlGridData(show: true),
       lineBarsData: lines,
@@ -83,14 +107,17 @@ class CompareGraph extends StatelessWidget {
   }
 
   // What happens when a line is touched.
-  LineTouchData getLineTouchData() {
+  LineTouchData getLineTouchData(ThemeData theme) {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
+        fitInsideVertically: true,
+        fitInsideHorizontally: true,
+        getTooltipColor: (touchedSpot) => theme.cardColor,
         getTooltipItems: (touchedSpots) {
           return touchedSpots.map((spot) {
             return LineTooltipItem(
-              '${spot.y.toStringAsFixed(1)} km/h\n${spot.x.toStringAsFixed(0)} m',
-              const TextStyle(color: Colors.white),
+              '${spot.y.toStringAsFixed(1)} km/h',
+              TextStyle(color: spot.bar.color),
             );
           }).toList();
         },
