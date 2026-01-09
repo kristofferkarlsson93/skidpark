@@ -9,6 +9,13 @@ import 'package:skidpark/features/glide_testing/compare/widgets/release_point_an
 import '../../compare_runs_view_model.dart';
 import '../../models/graph_line.dart';
 
+// NEXT STEPS
+/**
+ * FLytta slidern upp närmare grafen
+ * Visa skid-legends så man vet vilken linje som är vilken skida.
+ * Räkna om vid sensor-fursion toggle.
+ */
+
 class ReleasePointContainer extends StatelessWidget {
   const ReleasePointContainer({super.key});
 

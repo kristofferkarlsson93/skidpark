@@ -43,9 +43,7 @@ class ReleasePointControls extends StatelessWidget {
               ? IconButton(
                   onPressed: () {
                     // Don't do anything if no runs are selected. Graph is hidden
-                    if (viewModel
-                        .currentSelectedTestRuns
-                        .isNotEmpty) {
+                    if (viewModel.currentSelectedTestRuns.isNotEmpty) {
                       viewModel.triggerReleasePointAnalysis();
                     }
                   },
@@ -53,9 +51,7 @@ class ReleasePointControls extends StatelessWidget {
                 )
               : IconButton(
                   onPressed: () {
-                    if (viewModel
-                        .currentSelectedTestRuns
-                        .isNotEmpty) {
+                    if (viewModel.currentSelectedTestRuns.isNotEmpty) {
                       viewModel.enterEditReleasePointAnalysisMode();
                     }
                   },

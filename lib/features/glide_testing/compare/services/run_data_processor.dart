@@ -36,7 +36,7 @@ class RunDataProcessor {
     }
 
     final rawCalculated = _calculateRawCumulativeDistance(processedPositions);
-    final trimmedPositions = _trimStartOfRun(rawCalculated);
+    final trimmedPositions = _trimRun(rawCalculated);
 
     if (trimmedPositions.isEmpty) return [];
 
@@ -190,7 +190,8 @@ class RunDataProcessor {
       final double positionsTimeDiff =
           curr.timestamp.difference(prev.timestamp).inMicroseconds / 1000000.0;
       // max to make sure we don't get -1 which can happen in cases of gps loss.
-      final double avgSpeed = (math.max(0.0, prev.speed) + math.max(0.0, curr.speed)) / 2.0;
+      final double avgSpeed =
+          (math.max(0.0, prev.speed) + math.max(0.0, curr.speed)) / 2.0;
 
       // final distanceDelta = Geolocator.distanceBetween(
       //   prev.latitude,
@@ -210,34 +211,46 @@ class RunDataProcessor {
 
   /// Finds the actual run start, slices the list, and functionally resets
   /// the distance counter so the first point is 0.0 meters.
-  static List<CalculatedPosition> _trimStartOfRun(
+  static List<CalculatedPosition> _trimRun(
     List<CalculatedPosition> calculatedPositions,
   ) {
-    final triggerIndex = calculatedPositions.indexWhere(
+    final startTriggerIndex = calculatedPositions.indexWhere(
       (p) => p.speed > _triggerSpeedMs,
     );
 
-    if (triggerIndex == -1) {
-      return []; // No movement detected
+    if (startTriggerIndex == -1) {
+      return [];
     }
 
     final startIndex = _backTrackToActualStart(
       calculatedPositions,
-      triggerIndex,
+      startTriggerIndex,
     );
+
+    final endTriggerIndex = calculatedPositions.lastIndexWhere(
+      (p) => p.speed > _triggerSpeedMs,
+    );
+
+    int endIndex = calculatedPositions.length - 1;
+
+    // Om vi hittar en punkt med fart, leta framåt därifrån tills vi stannar.
+    if (endTriggerIndex != -1 && endTriggerIndex > startIndex) {
+      endIndex = _forwardTrackToActualEnd(calculatedPositions, endTriggerIndex);
+    }
+
+    if (startIndex >= endIndex) return [];
 
     // Calculate the distance offset BEFORE slicing
     final double startOffset = calculatedPositions[startIndex].distanceTraveled;
 
-    // Slice the list to remove pre-run messing around time
-    final rawSliced = calculatedPositions.sublist(startIndex);
+    // Slice the list to remove pre- and post- run messing around time
+    final rawSliced = calculatedPositions.sublist(startIndex, endIndex + 1);
 
-    // removing the distance collected before the run started, on each data point
     return rawSliced.map((p) {
       return CalculatedPosition(
         p.speed,
         p.timestamp,
-        p.distanceTraveled - startOffset, // Reset distance to start at 0
+        p.distanceTraveled - startOffset,
       );
     }).toList();
   }
@@ -252,6 +265,19 @@ class RunDataProcessor {
       }
     }
     return 0;
+  }
+
+  static int _forwardTrackToActualEnd(
+    List<CalculatedPosition> positions,
+    int triggerIndex,
+  ) {
+    for (int i = triggerIndex; i < positions.length; i++) {
+      if (positions[i].speed < _staticSpeedThresholdMs) {
+        return i;
+      }
+    }
+    // If never stop, return last point.
+    return positions.length - 1;
   }
 
   // Create points at specific distances, so that all runs will have the same points.
