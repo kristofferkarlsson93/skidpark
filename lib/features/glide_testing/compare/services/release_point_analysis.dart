@@ -3,8 +3,12 @@ import '../models/calculated_position.dart';
 import '../models/enriched_test_run.dart';
 
 class ReleasePointAnalysis {
-  /// Aligns all runs to start at [releasePoint] with the same velocity.
-  /// This simulates a "fair start" where friction is the main variable.
+  /// Aligns all runs to start at [releasePoint] with the same velocity
+  /// using MULTIPLICATION (Scaling).
+  ///
+  /// This scales the entire speed curve relative to the target speed.
+  /// If a skier starts 10% slower, this method assumes they would act
+  /// 10% "larger" throughout the run, effectively scaling up their curve.
   static List<EnrichedTestRun> performAnalysis({
     required List<EnrichedTestRun> testRuns,
     required double releasePoint,
@@ -15,13 +19,12 @@ class ReleasePointAnalysis {
     final Map<int, double> startSpeeds = {};
 
     for (var run in testRuns) {
-      // Since data is interpolated, finding the first point >= releasePoint is accurate.
       final CalculatedPosition? match = run.positionData
           .cast<CalculatedPosition?>()
           .firstWhere(
             (p) => p != null && p.distanceTraveled >= releasePoint,
-            orElse: () => null,
-          );
+        orElse: () => null,
+      );
 
       if (match != null) {
         startSpeeds[run.id] = match.speed;
@@ -31,7 +34,6 @@ class ReleasePointAnalysis {
     if (startSpeeds.isEmpty) return [];
 
     // 2. Determine target speed (max speed among runs at this point).
-    // This prevents curves from being shifted unnaturally high.
     final double targetSpeed = startSpeeds.values.reduce(math.max);
 
     List<EnrichedTestRun> analyzedRuns = [];
@@ -40,9 +42,16 @@ class ReleasePointAnalysis {
       if (!startSpeeds.containsKey(run.id)) continue;
 
       final double originalSpeedAtStart = startSpeeds[run.id]!;
-      final double speedOffset = targetSpeed - originalSpeedAtStart;
 
-      // 3. Create new positions with adjusted speed and reset distance.
+      // Calculate the SCALING FACTOR instead of offset.
+      // Example: Target 25, Start 20. Factor = 1.25.
+      // We multiply every point in the curve by 1.25.
+      // Safety check: Avoid division by zero.
+      final double speedFactor = originalSpeedAtStart > 0.01
+          ? targetSpeed / originalSpeedAtStart
+          : 1.0;
+
+      // 3. Create new positions with SCALED speed and reset distance.
       final List<CalculatedPosition> newPositions = [];
 
       for (var p in run.positionData) {
@@ -50,9 +59,9 @@ class ReleasePointAnalysis {
 
         newPositions.add(
           CalculatedPosition(
-            p.speed + speedOffset, // Normalize speed
+            p.speed * speedFactor, // <--- MULTIPLICATION HERE
             p.timestamp,
-            p.distanceTraveled - releasePoint, // Reset distance to 0
+            p.distanceTraveled - releasePoint,
           ),
         );
       }
@@ -66,9 +75,8 @@ class ReleasePointAnalysis {
           .reduce(math.max);
       final double newAvgSpeed =
           newPositions.map((p) => p.speed).fold(0.0, (a, b) => a + b) /
-          newPositions.length;
+              newPositions.length;
 
-      // Create new instance. Note: Passing runNumber ensures consistent colors.
       analyzedRuns.add(
         EnrichedTestRun(
           run.id,
