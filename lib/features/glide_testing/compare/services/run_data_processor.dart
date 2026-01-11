@@ -24,23 +24,85 @@ class RunDataProcessor {
   }) {
     if (rawPositions.length < 2) return [];
 
-    List<Position> processedPositions = rawPositions;
+    final startAndStop = _findStartAndStopIndices(rawPositions);
+    if (startAndStop == null) {
+      log("No valid run detected in raw data.");
+      return [];
+    }
 
-    if (useSensorFusion &&
-        accelerometerReadings != null &&
-        accelerometerReadings.isNotEmpty) {
-      processedPositions = _fuseGpsAndAccel(
-        rawPositions,
-        accelerometerReadings,
+    final trimmedGpsPositions = rawPositions.sublist(startAndStop.start, startAndStop.stop + 1);
+
+    List<RawAccelerometerEvent> trimmedAccelEvents = [];
+    if (accelerometerReadings != null && accelerometerReadings.isNotEmpty) {
+      trimmedAccelEvents = _sliceAccelData(
+          accelerometerReadings,
+          trimmedGpsPositions.first.timestamp,
+          trimmedGpsPositions.last.timestamp
       );
     }
 
-    final rawCalculated = _calculateRawCumulativeDistance(processedPositions);
-    final trimmedPositions = _trimRun(rawCalculated);
+    List<Position> processedPositions = trimmedGpsPositions;
 
-    if (trimmedPositions.isEmpty) return [];
+    if (useSensorFusion && trimmedAccelEvents.isNotEmpty) {
+      processedPositions = _fuseGpsAndAccel(
+        trimmedGpsPositions,
+        trimmedAccelEvents,
+      );
+    }
 
-    return _resampleByDistance(trimmedPositions, resampleIntervalMeters);
+    final calculatedPositions = _calculateRawCumulativeDistance(processedPositions);
+
+    if (calculatedPositions.isEmpty) return [];
+
+    final startOffset = calculatedPositions.first.distanceTraveled;
+    final finalPositions = calculatedPositions.map((p) => CalculatedPosition(
+        p.speed,
+        p.timestamp,
+        p.distanceTraveled - startOffset
+    )).toList();
+
+    return _resampleByDistance(finalPositions, resampleIntervalMeters);
+  }
+
+  static ({int start, int stop})? _findStartAndStopIndices(List<Position> positions) {
+    final startTriggerIndex = positions.indexWhere((p) => p.speed > _triggerSpeedMs);
+    if (startTriggerIndex == -1) return null;
+
+    int startIndex = 0;
+    for (int i = startTriggerIndex; i >= 0; i--) {
+      if (positions[i].speed < _staticSpeedThresholdMs) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    final stopTriggerIndex = positions.lastIndexWhere((p) => p.speed > _triggerSpeedMs);
+    if (stopTriggerIndex == -1 || stopTriggerIndex < startIndex) return null;
+
+    int endIndex = positions.length - 1;
+    for (int i = stopTriggerIndex; i < positions.length; i++) {
+      if (positions[i].speed < _staticSpeedThresholdMs) {
+        endIndex = i;
+        break;
+      }
+    }
+
+    return (start: startIndex, stop: endIndex);
+  }
+
+  static List<RawAccelerometerEvent> _sliceAccelData(
+      List<RawAccelerometerEvent> allEvents,
+      DateTime start,
+      DateTime end
+      ) {
+
+    // minor buffer to make sure we don't differ by a micro sec.
+    final safeStart = start.subtract(const Duration(seconds: 1));
+    final safeEnd = end.add(const Duration(seconds: 1));
+
+    return allEvents.where((e) {
+      return e.timestamp.isAfter(safeStart) && e.timestamp.isBefore(safeEnd);
+    }).toList();
   }
 
   static double calculateAverageSpeed(List<CalculatedPosition> positions) {
