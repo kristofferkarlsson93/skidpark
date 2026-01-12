@@ -31,8 +31,6 @@ class SelectRunCard extends StatelessWidget {
             : testRun.runColor.withValues(alpha: 0.2),
       ),
       title: Text("Åk ${testRun.runNumber} - ${testRun.skiName}", style: theme.textTheme.titleSmall,),
-      // subtitle: Text("Varaktighet: ${testRun.elapsedSeconds} sekunder"),
-      // trailing: Text("${testRun.positionData.length} datapunkter"),
       onTap: onTap,
     );
   }
