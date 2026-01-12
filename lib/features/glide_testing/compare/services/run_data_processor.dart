@@ -30,14 +30,17 @@ class RunDataProcessor {
       return [];
     }
 
-    final trimmedGpsPositions = rawPositions.sublist(startAndStop.start, startAndStop.stop + 1);
+    final trimmedGpsPositions = rawPositions.sublist(
+      startAndStop.start,
+      startAndStop.stop + 1,
+    );
 
     List<RawAccelerometerEvent> trimmedAccelEvents = [];
     if (accelerometerReadings != null && accelerometerReadings.isNotEmpty) {
       trimmedAccelEvents = _sliceAccelData(
-          accelerometerReadings,
-          trimmedGpsPositions.first.timestamp,
-          trimmedGpsPositions.last.timestamp
+        accelerometerReadings,
+        trimmedGpsPositions.first.timestamp,
+        trimmedGpsPositions.last.timestamp,
       );
     }
 
@@ -50,52 +53,74 @@ class RunDataProcessor {
       );
     }
 
-    final calculatedPositions = _calculateRawCumulativeDistance(processedPositions);
+    final calculatedPositions = _calculateRawCumulativeDistance(
+      processedPositions,
+    );
 
     if (calculatedPositions.isEmpty) return [];
 
     final startOffset = calculatedPositions.first.distanceTraveled;
-    final finalPositions = calculatedPositions.map((p) => CalculatedPosition(
-        p.speed,
-        p.timestamp,
-        p.distanceTraveled - startOffset
-    )).toList();
+    final finalPositions = calculatedPositions
+        .map(
+          (p) => CalculatedPosition(
+            p.speed,
+            p.timestamp,
+            p.distanceTraveled - startOffset,
+          ),
+        )
+        .toList();
+
+    // Maybe add this to force 0 as stop.
+    // if (finalPositions.isNotEmpty && finalPositions.last.speed > 0.01) {
+    //   final last = finalPositions.last;
+    //   finalPositions.add(CalculatedPosition(
+    //       0.0, // Tvinga noll
+    //       last.timestamp.add(const Duration(milliseconds: 500)),
+    //       last.distanceTraveled + 0.2 // Liten distans för lutning
+    //   ));
+    // }
 
     return _resampleByDistance(finalPositions, resampleIntervalMeters);
   }
 
-  static ({int start, int stop})? _findStartAndStopIndices(List<Position> positions) {
-    final startTriggerIndex = positions.indexWhere((p) => p.speed > _triggerSpeedMs);
+  static ({int start, int stop})? _findStartAndStopIndices(
+    List<Position> positions,
+  ) {
+    final startTriggerIndex = positions.indexWhere(
+      (p) => p.speed > _triggerSpeedMs,
+    );
     if (startTriggerIndex == -1) return null;
 
     int startIndex = 0;
     for (int i = startTriggerIndex; i >= 0; i--) {
       if (positions[i].speed < _staticSpeedThresholdMs) {
-        startIndex = i;
+        startIndex = math.max(0, i - 3);
         break;
       }
     }
 
-    final stopTriggerIndex = positions.lastIndexWhere((p) => p.speed > _triggerSpeedMs);
+    final stopTriggerIndex = positions.lastIndexWhere(
+      (p) => p.speed > _triggerSpeedMs,
+    );
     if (stopTriggerIndex == -1 || stopTriggerIndex < startIndex) return null;
 
-    int endIndex = positions.length - 1;
+    int stopIndex = positions.length - 1;
     for (int i = stopTriggerIndex; i < positions.length; i++) {
       if (positions[i].speed < _staticSpeedThresholdMs) {
-        endIndex = i;
+        // We found a stop, but to try to include the actual zeros, we add some more points.
+        stopIndex = math.min(positions.length - 1, i + 3);
         break;
       }
     }
 
-    return (start: startIndex, stop: endIndex);
+    return (start: startIndex, stop: stopIndex);
   }
 
   static List<RawAccelerometerEvent> _sliceAccelData(
-      List<RawAccelerometerEvent> allEvents,
-      DateTime start,
-      DateTime end
-      ) {
-
+    List<RawAccelerometerEvent> allEvents,
+    DateTime start,
+    DateTime end,
+  ) {
     // minor buffer to make sure we don't differ by a micro sec.
     final safeStart = start.subtract(const Duration(seconds: 1));
     final safeEnd = end.add(const Duration(seconds: 1));
@@ -271,77 +296,6 @@ class RunDataProcessor {
     return result;
   }
 
-  /// Finds the actual run start, slices the list, and functionally resets
-  /// the distance counter so the first point is 0.0 meters.
-  static List<CalculatedPosition> _trimRun(
-    List<CalculatedPosition> calculatedPositions,
-  ) {
-    final startTriggerIndex = calculatedPositions.indexWhere(
-      (p) => p.speed > _triggerSpeedMs,
-    );
-
-    if (startTriggerIndex == -1) {
-      return [];
-    }
-
-    final startIndex = _backTrackToActualStart(
-      calculatedPositions,
-      startTriggerIndex,
-    );
-
-    final endTriggerIndex = calculatedPositions.lastIndexWhere(
-      (p) => p.speed > _triggerSpeedMs,
-    );
-
-    int endIndex = calculatedPositions.length - 1;
-
-    // Om vi hittar en punkt med fart, leta framåt därifrån tills vi stannar.
-    if (endTriggerIndex != -1 && endTriggerIndex > startIndex) {
-      endIndex = _forwardTrackToActualEnd(calculatedPositions, endTriggerIndex);
-    }
-
-    if (startIndex >= endIndex) return [];
-
-    // Calculate the distance offset BEFORE slicing
-    final double startOffset = calculatedPositions[startIndex].distanceTraveled;
-
-    // Slice the list to remove pre- and post- run messing around time
-    final rawSliced = calculatedPositions.sublist(startIndex, endIndex + 1);
-
-    return rawSliced.map((p) {
-      return CalculatedPosition(
-        p.speed,
-        p.timestamp,
-        p.distanceTraveled - startOffset,
-      );
-    }).toList();
-  }
-
-  static int _backTrackToActualStart(
-    List<CalculatedPosition> positions,
-    int triggerIndex,
-  ) {
-    for (int i = triggerIndex; i >= 0; i--) {
-      if (positions[i].speed < _staticSpeedThresholdMs) {
-        return i;
-      }
-    }
-    return 0;
-  }
-
-  static int _forwardTrackToActualEnd(
-    List<CalculatedPosition> positions,
-    int triggerIndex,
-  ) {
-    for (int i = triggerIndex; i < positions.length; i++) {
-      if (positions[i].speed < _staticSpeedThresholdMs) {
-        return i;
-      }
-    }
-    // If never stop, return last point.
-    return positions.length - 1;
-  }
-
   // Create points at specific distances, so that all runs will have the same points.
   static List<CalculatedPosition> _resampleByDistance(
     List<CalculatedPosition> input,
@@ -361,6 +315,14 @@ class RunDataProcessor {
       if (interpolatedPoint != null) {
         output.add(interpolatedPoint);
       }
+    }
+
+    // if run ended just after the interpolated distance - add the next point.
+    if (output.isNotEmpty &&
+        (output.last.distanceTraveled - maxDistance).abs() > 0.001) {
+      output.add(input.last);
+    } else if (output.isEmpty) {
+      output.add(input.last);
     }
 
     return output;

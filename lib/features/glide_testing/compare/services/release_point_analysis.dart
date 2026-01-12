@@ -3,63 +3,73 @@ import '../models/calculated_position.dart';
 import '../models/enriched_test_run.dart';
 
 class ReleasePointAnalysis {
-  /// Aligns all runs to start at [releasePoint] with the same velocity
-  /// using MULTIPLICATION (Scaling).
-  ///
-  /// This scales the entire speed curve relative to the target speed.
-  /// If a skier starts 10% slower, this method assumes they would act
-  /// 10% "larger" throughout the run, effectively scaling up their curve.
+
+  // Öka fönstret något eftersom du har interpolering varannan meter.
+  // +/- 4 meter ger oss ca 4-5 punkter att snitta på. Det blir stabilare.
+  static const double _samplingWindowRadius = 4.0;
+
   static List<EnrichedTestRun> performAnalysis({
     required List<EnrichedTestRun> testRuns,
     required double releasePoint,
   }) {
     if (testRuns.isEmpty) return [];
 
-    // 1. Identify speed for each run at the release point.
-    final Map<int, double> startSpeeds = {};
+    // 1. Calculate smoothed start speeds (Stable "Truth").
+    final Map<int, double> smoothedStartSpeeds = {};
 
     for (var run in testRuns) {
-      final CalculatedPosition? match = run.positionData
+      final double? avgSpeed = _getAverageSpeedAround(
+          run.positionData,
+          releasePoint,
+          _samplingWindowRadius
+      );
+      if (avgSpeed != null) {
+        smoothedStartSpeeds[run.id] = avgSpeed;
+      }
+    }
+
+    if (smoothedStartSpeeds.isEmpty) return [];
+
+    // 2. Determine target speed (max of the smoothed averages).
+    final double targetSpeed = smoothedStartSpeeds.values.reduce(math.max);
+
+    List<EnrichedTestRun> analyzedRuns = [];
+
+    for (var run in testRuns) {
+      if (!smoothedStartSpeeds.containsKey(run.id)) continue;
+
+      final CalculatedPosition? firstPoint = run.positionData
           .cast<CalculatedPosition?>()
           .firstWhere(
             (p) => p != null && p.distanceTraveled >= releasePoint,
         orElse: () => null,
       );
 
-      if (match != null) {
-        startSpeeds[run.id] = match.speed;
-      }
-    }
+      if (firstPoint == null) continue;
 
-    if (startSpeeds.isEmpty) return [];
+      final double smoothedSpeed = smoothedStartSpeeds[run.id]!;
 
-    // 2. Determine target speed (max speed among runs at this point).
-    final double targetSpeed = startSpeeds.values.reduce(math.max);
+      // Safety check
+      if (smoothedSpeed < 0.1) continue;
 
-    List<EnrichedTestRun> analyzedRuns = [];
+      final double scalingFactor = targetSpeed / smoothedSpeed;
 
-    for (var run in testRuns) {
-      if (!startSpeeds.containsKey(run.id)) continue;
-
-      final double originalSpeedAtStart = startSpeeds[run.id]!;
-
-      // Calculate the SCALING FACTOR instead of offset.
-      // Example: Target 25, Start 20. Factor = 1.25.
-      // We multiply every point in the curve by 1.25.
-      // Safety check: Avoid division by zero.
-      final double speedFactor = originalSpeedAtStart > 0.01
-          ? targetSpeed / originalSpeedAtStart
-          : 1.0;
-
-      // 3. Create new positions with SCALED speed and reset distance.
       final List<CalculatedPosition> newPositions = [];
+
+      final double projectedStartSpeed = firstPoint.speed * scalingFactor;
+
+      final double cosmeticCorrection = targetSpeed - projectedStartSpeed;
 
       for (var p in run.positionData) {
         if (p.distanceTraveled < releasePoint) continue;
 
+        double newSpeed = (p.speed * scalingFactor) + cosmeticCorrection;
+
+        if(newSpeed < 0) newSpeed = 0;
+
         newPositions.add(
           CalculatedPosition(
-            p.speed * speedFactor, // <--- MULTIPLICATION HERE
+            newSpeed,
             p.timestamp,
             p.distanceTraveled - releasePoint,
           ),
@@ -68,14 +78,10 @@ class ReleasePointAnalysis {
 
       if (newPositions.isEmpty) continue;
 
-      // 4. Calculate stats for this specific segment.
+      // Stats calculation...
       final double newDistance = newPositions.last.distanceTraveled;
-      final double newMaxSpeed = newPositions
-          .map((p) => p.speed)
-          .reduce(math.max);
-      final double newAvgSpeed =
-          newPositions.map((p) => p.speed).fold(0.0, (a, b) => a + b) /
-              newPositions.length;
+      final double newMaxSpeed = newPositions.map((p) => p.speed).reduce(math.max);
+      final double newAvgSpeed = newPositions.map((p) => p.speed).fold(0.0, (a, b) => a + b) / newPositions.length;
 
       analyzedRuns.add(
         EnrichedTestRun(
@@ -95,6 +101,24 @@ class ReleasePointAnalysis {
     }
 
     return analyzedRuns;
+  }
+
+  static double? _getAverageSpeedAround(
+      List<CalculatedPosition> positions,
+      double center,
+      double radius
+      ) {
+    final double startDist = center - radius;
+    final double endDist = center + radius;
+
+    final pointsInWindow = positions.where(
+            (p) => p.distanceTraveled >= startDist && p.distanceTraveled <= endDist
+    ).toList();
+
+    if (pointsInWindow.isEmpty) return null;
+
+    final double totalSpeed = pointsInWindow.fold(0.0, (sum, p) => sum + p.speed);
+    return totalSpeed / pointsInWindow.length;
   }
 
   static double _msToKmh(double ms) {
