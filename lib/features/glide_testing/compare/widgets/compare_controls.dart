@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/common/database/database.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/average_per_ski_switch.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/sensor_fusion_switch.dart';
 
 import '../../compare/compare_runs_view_model.dart';
 import '../../../../legacy/select_run_card.dart';
 
 class CompareControls extends StatelessWidget {
-
   const CompareControls({super.key});
 
   @override
@@ -38,6 +37,12 @@ class CompareControls extends StatelessWidget {
             isActive: viewModel.useSensorFusion,
             onChanged: (newValue) {
               viewModel.setUseSensorFusion(newValue);
+            },
+          ),
+          AveragePerSkiSwitch(
+            isActive: viewModel.useAverageView,
+            onChanged: (newValue) {
+              viewModel.toggleAverageView(newValue);
             },
           ),
           const Divider(),

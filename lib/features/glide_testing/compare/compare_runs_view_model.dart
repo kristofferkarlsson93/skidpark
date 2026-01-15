@@ -7,11 +7,11 @@ import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
+import 'package:skidpark/features/glide_testing/compare/services/average_per_ski_calculator.dart';
 import 'package:skidpark/features/glide_testing/compare/services/release_point_analysis.dart';
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
-
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
@@ -24,8 +24,12 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<DecodedTestRun> _rawRuns = [];
   List<EnrichedTestRun> _testRuns = [];
   List<EnrichedTestRun> _releasePointTestRuns = [];
+  List<EnrichedTestRun> _averageRunPerSki = [];
 
-  List<EnrichedTestRun> get releasePointTestRuns => _releasePointTestRuns;
+  bool _useAverageView = false;
+
+  bool get useAverageView => _useAverageView;
+
   final List<int> _deselectedRunIds = [];
 
   AnalysisPage _activeAnalysisPage = AnalysisPage.overview;
@@ -62,14 +66,27 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> get currentSelectedTestRuns =>
       _testRuns.where((run) => !_deselectedRunIds.contains(run.id)).toList();
 
-  List<EnrichedTestRun> get currentSelectedReleasePointTestRuns =>
-      releasePointTestRuns
+  List<EnrichedTestRun> get currentSelectedReleasePointTestRuns {
+    if (_useAverageView) {
+      return _releasePointTestRuns;
+    } else {
+      return _releasePointTestRuns
           .where((run) => !_deselectedRunIds.contains(run.id))
           .toList();
+    }
+  }
 
   bool get useSensorFusion => _glideTest?.useSensorFusion ?? false;
 
   String get testTitle => _glideTest?.title ?? "";
+
+  List<EnrichedTestRun> get currentDisplayRuns {
+    if (useAverageView) {
+      return _averageRunPerSki;
+    } else {
+      return currentSelectedTestRuns;
+    }
+  }
 
   CompareRunsViewModel({
     required testRunRepository,
@@ -87,6 +104,9 @@ class CompareRunsViewModel extends ChangeNotifier {
       _deselectedRunIds.remove(testRun.id);
     } else {
       _deselectedRunIds.add(testRun.id);
+    }
+    if (_useAverageView) {
+      _recalculateAverages();
     }
     notifyListeners();
   }
@@ -110,10 +130,19 @@ class CompareRunsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleAverageView(bool shouldUse) {
+    _useAverageView = shouldUse;
+    if (shouldUse) {
+      _recalculateAverages();
+    }
+    notifyListeners();
+  }
+
   void triggerReleasePointAnalysis() {
     _releasePointAnalysisMode = ReleasePointAnalysisMode.view;
+    final runs = _useAverageView ? _averageRunPerSki : testRuns;
     _releasePointTestRuns = ReleasePointAnalysis.performAnalysis(
-      testRuns: testRuns,
+      testRuns: runs,
       releasePoint: releasePoint,
     );
 
@@ -134,6 +163,9 @@ class CompareRunsViewModel extends ChangeNotifier {
           _glideTest = test;
           if (sensorFusionChanged) {
             _recalculate();
+            if (_useAverageView) {
+              _recalculateAverages();
+            }
           } else {
             notifyListeners();
           }
@@ -156,6 +188,13 @@ class CompareRunsViewModel extends ChangeNotifier {
       return _calculateTestRunData(entry.$2, entry.$1 + 1);
     }).toList();
     notifyListeners();
+  }
+
+  void _recalculateAverages() {
+    log("Recalculating average per ski");
+    _averageRunPerSki = AveragePerSkiCalculator.calculateAveragedRuns(
+      currentSelectedTestRuns,
+    );
   }
 
   EnrichedTestRun _calculateTestRunData(

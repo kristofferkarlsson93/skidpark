@@ -86,6 +86,7 @@ class CompareGraph extends StatelessWidget {
       lineTouchData: getLineTouchData(theme),
       extraLinesData: extraLines,
       maxY: graphMaxY,
+      minY: 0,
       minX: 0,
       gridData: FlGridData(show: true),
       lineBarsData: lines,

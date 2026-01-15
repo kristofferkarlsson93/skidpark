@@ -7,8 +7,13 @@ import 'run_metric.dart';
 
 class CompareList extends StatelessWidget {
   final List<EnrichedTestRun> runs;
+  final bool isAverageView;
 
-  const CompareList({super.key, required this.runs});
+  const CompareList({
+    super.key,
+    required this.runs,
+    required this.isAverageView,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +29,9 @@ class CompareList extends StatelessWidget {
           runDistance = run.traveledDistance / 1000;
           distanceUnit = "km";
         }
+        var title = isAverageView
+            ? '${run.skiName} (${run.runNumber} åk)'
+            : 'Åk ${run.runNumber} - ${run.skiName}';
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
           child: Padding(
@@ -35,7 +43,7 @@ class CompareList extends StatelessWidget {
                     Icon(Icons.circle, color: run.runColor, size: 28),
                     SizedBox(width: 16),
                     Text(
-                      'Åk ${run.runNumber} - ${run.skiName}',
+                      title,
                       style: theme.textTheme.titleLarge,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -48,17 +56,17 @@ class CompareList extends StatelessWidget {
                       flex: 3,
                       child: RunMetrics(
                         label: 'Med.',
-                        value: run.averageSpeed.toStringAsFixed(2),
+                        value: run.averageSpeedKmh.toStringAsFixed(2),
                         unit: 'km/h',
                         size: RunMetricsSize.large,
-                        color: theme.colorScheme.primary
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                     Expanded(
                       flex: 3,
                       child: RunMetrics(
                         label: 'Max.',
-                        value: run.maxSpeed.toStringAsFixed(2),
+                        value: run.maxSpeedKmh.toStringAsFixed(2),
                         unit: 'km/h',
                         size: RunMetricsSize.large,
                       ),

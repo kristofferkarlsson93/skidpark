@@ -14,7 +14,7 @@ class OverviewContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<CompareRunsViewModel>();
-    final selectedRuns = viewModel.currentSelectedTestRuns;
+    final selectedRuns = viewModel.currentDisplayRuns;
     return Column(
       children: [
         Expanded(
@@ -23,7 +23,7 @@ class OverviewContainer extends StatelessWidget {
             lines: selectedRuns
                 .map((r) => GraphLine.fromEnrichedTestRun(r))
                 .toList(),
-            maxY: selectedRuns.map((r) => r.maxSpeed).fold(0, math.max),
+            maxY: selectedRuns.map((r) => r.maxSpeedKmh).fold(0, math.max),
             emptyGraphContent: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -39,7 +39,7 @@ class OverviewContainer extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(flex: 2, child: CompareList(runs: selectedRuns)),
+        Expanded(flex: 2, child: CompareList(runs: selectedRuns, isAverageView: viewModel.useAverageView,)),
       ],
     );
   }

@@ -15,67 +15,40 @@ class ReleasePointControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isEditMode) return const SizedBox.shrink();
+
     final viewModel = context.watch<CompareRunsViewModel>();
-
-    final shortestDistance = viewModel.currentSelectedTestRuns.isNotEmpty
-        ? viewModel.currentSelectedTestRuns
-        .map((r) => r.traveledDistance)
-        .fold(100.0, math.min)
-        : 100.0;
-
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: isEditMode
-          ? _buildEditControls(context, viewModel, shortestDistance)
-          : _buildViewControls(context, viewModel),
-    );
-  }
-
-  Widget _buildEditControls(
-      BuildContext context,
-      CompareRunsViewModel viewModel,
-      double maxDist
-      ) {
     final hasRuns = viewModel.currentSelectedTestRuns.isNotEmpty;
 
+    final shortestDistance = hasRuns
+        ? viewModel.currentSelectedTestRuns
+              .map((r) => r.traveledDistance)
+              .fold(100.0, math.max)
+        : 100.0;
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
+        // Slider
         SizedBox(
           height: 40,
           child: ReleasePointSelector(
             enabled: hasRuns,
-            maxValue: maxDist,
+            maxValue: shortestDistance,
             value: viewModel.releasePoint,
             onChanged: (newValue) => viewModel.setReleasePoint(newValue),
           ),
         ),
-        const Spacer(),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          height: 40,
+          height: 45,
           child: FilledButton.icon(
-            onPressed: hasRuns ? () => viewModel.triggerReleasePointAnalysis() : null,
-            icon: const Icon(Icons.analytics_outlined),
+            onPressed: hasRuns
+                ? () => viewModel.triggerReleasePointAnalysis()
+                : null,
+            icon: const Icon(Icons.analytics),
             label: const Text("Analysera Glid"),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildViewControls(BuildContext context, CompareRunsViewModel viewModel) {
-    return Column(
-      children: [
-        const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          height: 40,
-          child: OutlinedButton.icon(
-            onPressed: () => viewModel.enterEditReleasePointAnalysisMode(),
-            icon: const Icon(Icons.edit),
-            label: const Text("Justera startpunkt"),
           ),
         ),
       ],
