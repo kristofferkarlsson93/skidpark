@@ -5,7 +5,8 @@ import '../models/calculated_position.dart';
 import '../models/enriched_test_run.dart';
 
 class AveragePerSkiCalculator {
-  static const double _snapToZeroThresholdMs = 0.8; // ~ 2.8 km/h
+  // Threshold to determine if the source runs came to a natural stop (approx 1.8 km/h).
+  static const double _naturalStopThresholdMs = 0.5;
 
   static List<EnrichedTestRun> calculateAveragedRuns(
     List<EnrichedTestRun> sourceRuns,
@@ -24,14 +25,31 @@ class AveragePerSkiCalculator {
         .map((List<EnrichedTestRun> runs) {
           final template = runs.first;
 
-          // 1. Calculate Average Distance
+          // 1. Calculate Average Distance (The target finish line)
           final double sumDist = runs.fold(
             0.0,
             (sum, r) => sum + r.traveledDistance,
           );
           final double avgTotalDistance = sumDist / runs.length;
 
-          // Infer interval
+          // 2. Analyze Source Data
+          // Check if the runs effectively stopped. If the average end speed
+          // is low, we assume a natural stop and will force the curve to 0.0.
+          final double avgSourceEndSpeed =
+              runs.fold(
+                0.0,
+                (sum, r) =>
+                    sum +
+                    (r.positionData.isNotEmpty
+                        ? r.positionData.last.speed
+                        : 0.0),
+              ) /
+              runs.length;
+
+          final bool shouldForceStop =
+              avgSourceEndSpeed < _naturalStopThresholdMs;
+
+          // Infer sampling interval from the first run
           final double interval = template.positionData.length > 1
               ? template.positionData[1].distanceTraveled -
                     template.positionData[0].distanceTraveled
@@ -39,10 +57,11 @@ class AveragePerSkiCalculator {
 
           final int steps = (avgTotalDistance / interval).floor();
 
+          // Generate averaged data points
           final avgPositions = List.generate(steps + 1, (index) {
             final currentDist = index * interval;
 
-            // Safety break if we drifted past avg distance
+            // Guard against float precision errors drifting past limit
             if (currentDist > avgTotalDistance) return null;
 
             double sumSpeed = 0.0;
@@ -51,13 +70,15 @@ class AveragePerSkiCalculator {
               if (currentDist <= run.traveledDistance &&
                   index < run.positionData.length) {
                 final point = run.positionData[index];
+                // Check for grid alignment
                 if ((point.distanceTraveled - currentDist).abs() < 0.1) {
                   sumSpeed += point.speed;
                 } else {
+                  // Grid misalignment fallback (treat as 0.0)
                   sumSpeed += 0.0;
                 }
               } else {
-                // Run ended -> 0.0
+                // Run ended early -> contributes 0.0 speed (Drag effect)
                 sumSpeed += 0.0;
               }
             }
@@ -71,28 +92,26 @@ class AveragePerSkiCalculator {
 
           if (avgPositions.isEmpty) return null;
 
-          // Check the speed of the very last calculated point.
-          final lastPoint = avgPositions.last;
+          // 3. Apply Forced Stop Logic
+          if (shouldForceStop) {
+            final lastCalculated = avgPositions.last;
 
-          // Only force to 0.0 if we are moving slowly (natural stop).
-          // If we are moving fast, let the graph end "in mid air" to show manual cutoff.
-          if (lastPoint.speed < _snapToZeroThresholdMs) {
-            if (lastPoint.distanceTraveled < avgTotalDistance) {
-              // If there is a small gap to the exact average distance, add a 0-point there.
+            if (lastCalculated.distanceTraveled < avgTotalDistance) {
+              // Append a final point at exact average distance
               avgPositions.add(
                 CalculatedPosition(0.0, DateTime.now(), avgTotalDistance),
               );
             } else {
-              // If we landed exactly on the limit, force the last point to 0.0
-              // (This cleans up micro-speeds like 0.05 km/h)
+              // Snap the last point to 0.0 if it landed exactly on the limit
               avgPositions[avgPositions.length - 1] = CalculatedPosition(
                 0.0,
-                lastPoint.timestamp,
-                lastPoint.distanceTraveled,
+                lastCalculated.timestamp,
+                avgTotalDistance,
               );
             }
           }
 
+          // Recalculate stats for the averaged run
           final newTotalDist = avgPositions.last.distanceTraveled;
           final newMaxSpeedMs = avgPositions
               .map((p) => p.speed)
@@ -107,6 +126,7 @@ class AveragePerSkiCalculator {
 
           final averagedRun = EnrichedTestRun(
             -template.skiId,
+            // Negative ID to indicate virtual run
             template.startedAt,
             template.skiId,
             template.glideTestId,
@@ -116,12 +136,10 @@ class AveragePerSkiCalculator {
             newMaxSpeedMs * 3.6,
             template.skiName,
             avgPositions,
-            runs.length, // OMG this is so hacky. Run number to indicate how many runs thee is in this ski.
+            runs.length,
           );
 
-          averagedRun.setColor(
-            getSafeColor(template.skiId),
-          );
+          averagedRun.setColor(getSafeColor(template.skiId));
           return averagedRun;
         })
         .whereType<EnrichedTestRun>()
