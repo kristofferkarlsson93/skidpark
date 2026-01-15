@@ -52,4 +52,27 @@ class EnrichedTestRun {
     );
     return hslColor.toColor();
   }
+
+  EnrichedTestRun simpleCopy(
+    double newAvgSpeed,
+    double newMaxSpeed,
+    double newDistance,
+    List<CalculatedPosition> newPositions,
+  ) {
+    final newRun = EnrichedTestRun(
+      id,
+      startedAt,
+      skiId,
+      glideTestId,
+      elapsedSeconds,
+      newDistance,
+      newAvgSpeed,
+      newMaxSpeed,
+      skiName,
+      newPositions,
+      runNumber,
+    );
+    newRun.setColor(runColor);
+    return newRun;
+  }
 }

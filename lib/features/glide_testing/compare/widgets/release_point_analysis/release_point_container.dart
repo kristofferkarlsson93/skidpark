@@ -15,6 +15,7 @@ class ReleasePointContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     final viewModel = context.watch<CompareRunsViewModel>();
+    final useAverageView = viewModel.useAverageView;
     final isEditMode =
         viewModel.releasePointAnalysisMode == ReleasePointAnalysisMode.edit;
 
@@ -68,7 +69,7 @@ class ReleasePointContainer extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 8,),
+                            SizedBox(width: 8),
                             Flexible(
                               child: Text(
                                 isEditMode
@@ -100,7 +101,7 @@ class ReleasePointContainer extends StatelessWidget {
                 Expanded(
                   child: isEditMode
                       ? _buildEditControlsPanel(context)
-                      : _buildResultList(context, runsToShow),
+                      : _buildResultList(context, runsToShow, useAverageView),
                 ),
               ],
             ),
@@ -141,7 +142,7 @@ class ReleasePointContainer extends StatelessWidget {
     );
   }
 
-  Widget _buildResultList(BuildContext context, var runs) {
+  Widget _buildResultList(BuildContext context, var runs, bool useAverageView) {
     if (runs.isEmpty) {
       return const Center(child: Text("Ingen data att visa"));
     }
@@ -152,6 +153,9 @@ class ReleasePointContainer extends StatelessWidget {
       itemCount: runs.length,
       itemBuilder: (context, index) {
         final run = runs[index];
+        var title = useAverageView
+            ? "${run.skiName} (${run.runNumber} åk)"
+            : "Åk ${run.runNumber} - ${run.skiName}";
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Row(
@@ -167,7 +171,7 @@ class ReleasePointContainer extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  "Åk ${run.runNumber} - ${run.skiName}",
+                  title,
                   style: theme.textTheme.bodyMedium,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -160,21 +160,12 @@ class ReleasePointAnalysis {
           newPositions.map((p) => p.speed).fold(0.0, (a, b) => a + b) /
           newPositions.length;
 
-      var recalculatedRun = EnrichedTestRun(
-        run.id,
-        run.startedAt,
-        run.skiId,
-        run.glideTestId,
-        run.elapsedSeconds,
-        newDistance,
+      var recalculatedRun = run.simpleCopy(
         _msToKmh(newAvgSpeed),
         _msToKmh(newMaxSpeed),
-        run.skiName,
+        newDistance,
         newPositions,
-        run.runNumber,
       );
-      // In average calculation we set the color by ski. Reuse color from original run to preserve that.
-      recalculatedRun.setColor(run.runColor);
       analyzedRuns.add(recalculatedRun);
     }
 

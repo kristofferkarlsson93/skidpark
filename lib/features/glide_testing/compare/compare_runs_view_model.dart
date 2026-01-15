@@ -105,9 +105,11 @@ class CompareRunsViewModel extends ChangeNotifier {
     } else {
       _deselectedRunIds.add(testRun.id);
     }
+
     if (_useAverageView) {
       _recalculateAverages();
     }
+    _recalculateReleasePointAnalysisIfActive();
     notifyListeners();
   }
 
@@ -135,16 +137,13 @@ class CompareRunsViewModel extends ChangeNotifier {
     if (shouldUse) {
       _recalculateAverages();
     }
+    _recalculateReleasePointAnalysisIfActive();
     notifyListeners();
   }
 
   void triggerReleasePointAnalysis() {
     _releasePointAnalysisMode = ReleasePointAnalysisMode.view;
-    final runs = _useAverageView ? _averageRunPerSki : testRuns;
-    _releasePointTestRuns = ReleasePointAnalysis.performAnalysis(
-      testRuns: runs,
-      releasePoint: releasePoint,
-    );
+    _recalculateReleasePointAnalysisIfActive();
 
     notifyListeners();
   }
@@ -178,6 +177,10 @@ class CompareRunsViewModel extends ChangeNotifier {
         .listen((storedRuns) {
           _rawRuns = storedRuns;
           _recalculate();
+          if (_useAverageView) {
+            _recalculateAverages();
+          }
+          _recalculateReleasePointAnalysisIfActive();
           notifyListeners();
         });
   }
@@ -195,6 +198,17 @@ class CompareRunsViewModel extends ChangeNotifier {
     _averageRunPerSki = AveragePerSkiCalculator.calculateAveragedRuns(
       currentSelectedTestRuns,
     );
+  }
+
+  void _recalculateReleasePointAnalysisIfActive() {
+    if (_activeAnalysisPage == AnalysisPage.deepAnalysis &&
+        _releasePointAnalysisMode == ReleasePointAnalysisMode.view) {
+      final runs = _useAverageView ? _averageRunPerSki : currentSelectedTestRuns;
+      _releasePointTestRuns = ReleasePointAnalysis.performAnalysis(
+        testRuns: runs,
+        releasePoint: releasePoint,
+      );
+    }
   }
 
   EnrichedTestRun _calculateTestRunData(
