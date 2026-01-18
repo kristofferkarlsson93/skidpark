@@ -22,16 +22,18 @@ class CompareGraph extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      // margin: const EdgeInsets.fromLTRB(16, 32, 16, 0),
       elevation: 12,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: lines.isEmpty
-            ? emptyGraphContent
-            : LineChart(
-                transformationConfig: _enableZoom(),
-                _buildChartData(lines, theme),
-              ),
+      child: Container(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: lines.isEmpty
+              ? emptyGraphContent
+              : LineChart(
+                  transformationConfig: _enableZoom(),
+                  _buildChartData(lines, theme),
+                ),
+        ),
       ),
     );
   }
@@ -100,7 +102,7 @@ class CompareGraph extends StatelessWidget {
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-          axisNameWidget: Text("Hastighet (km/h)"),
+          axisNameWidget: Text("Hastighet (km/h)", style: theme.textTheme.labelSmall),
           drawBelowEverything: true,
         ),
       ),

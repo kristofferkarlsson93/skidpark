@@ -25,7 +25,6 @@ class RunMetrics extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.all(8),
-      // color: theme.colorScheme.surfaceContainerHighest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -37,7 +36,7 @@ class RunMetrics extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: isLarge ? 22 : null,
+                  fontSize: isLarge ? 20 : null,
                   color: color
                 ),
               ),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 
@@ -17,74 +16,89 @@ class CompareList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(0, 24, 0, 64),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: runs.length,
       itemBuilder: (context, index) {
         final run = runs[index];
+
         double runDistance = run.traveledDistance;
         String distanceUnit = "m";
         if (run.traveledDistance >= 1000) {
           runDistance = run.traveledDistance / 1000;
           distanceUnit = "km";
         }
+
         var title = isAverageView
             ? '${run.skiName} (${run.runNumber} åk)'
             : 'Åk ${run.runNumber} - ${run.skiName}';
+
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+          elevation: 0,
+          color: theme.colorScheme.surfaceContainerLow,
+          clipBehavior: Clip.antiAlias,
+          margin: const EdgeInsets.only(bottom: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: theme.colorScheme.outlineVariant.withAlpha(
+                (0.3 * 255).toInt(),
+              ),
+            ),
+          ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(12.0, 12, 12, 0),
             child: Column(
               children: [
                 Row(
                   children: [
-                    Icon(Icons.circle, color: run.runColor, size: 28),
-                    SizedBox(width: 16),
-                    Text(
-                      title,
-                      style: theme.textTheme.titleLarge,
-                      overflow: TextOverflow.ellipsis,
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: run.runColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      flex: 3,
-                      child: RunMetrics(
-                        label: 'Med.',
-                        value: run.averageSpeedKmh.toStringAsFixed(2),
-                        unit: 'km/h',
-                        size: RunMetricsSize.large,
-                        color: theme.colorScheme.primary,
-                      ),
+                    RunMetrics(
+                      label: 'Med.',
+                      value: run.averageSpeedKmh.toStringAsFixed(1),
+                      size: RunMetricsSize.large,
+                      unit: 'km/h',
                     ),
-                    Expanded(
-                      flex: 3,
-                      child: RunMetrics(
-                        label: 'Max.',
-                        value: run.maxSpeedKmh.toStringAsFixed(2),
-                        unit: 'km/h',
-                        size: RunMetricsSize.large,
-                      ),
+                    RunMetrics(
+                      label: 'Max.',
+                      size: RunMetricsSize.large,
+                      value: run.maxSpeedKmh.toStringAsFixed(1),
+                      unit: 'km/h',
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: RunMetrics(
-                        label: 'Dist.',
-                        value: runDistance.toStringAsFixed(1),
-                        unit: distanceUnit,
-                      ),
+                    RunMetrics(
+                      label: 'Dist.',
+                      value: runDistance.toStringAsFixed(0),
+                      unit: distanceUnit,
                     ),
-                    Expanded(
-                      flex: 2,
-                      child: RunMetrics(
-                        label: 'Tid',
-                        value: run.elapsedSeconds.toString(),
-                        unit: 's',
-                      ),
+                    RunMetrics(
+                      label: 'Tid',
+                      value: run.elapsedSeconds.toString(),
+                      unit: 's',
                     ),
                   ],
                 ),
