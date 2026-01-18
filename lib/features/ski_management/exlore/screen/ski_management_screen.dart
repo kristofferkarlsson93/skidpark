@@ -18,8 +18,8 @@ class SkiManagementScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Min skidpark')),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new-ski-fab',
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        // backgroundColor: Theme.of(context).colorScheme.primary,
+        // foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: Text('Lägg till skida'),
         onPressed: () async {

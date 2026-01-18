@@ -24,12 +24,12 @@ class GlideTestingIntroCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: themeData.colorScheme.primaryContainer,
+                      color: themeData.colorScheme.primary,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.science,
-                      color: themeData.colorScheme.onPrimaryContainer,
+                      color: themeData.colorScheme.onPrimary,
                       size: 24,
                     ),
                   ),

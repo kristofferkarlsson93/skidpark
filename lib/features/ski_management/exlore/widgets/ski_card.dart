@@ -43,13 +43,13 @@ class SkiCard extends StatelessWidget {
                 height: 44,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
+                  color: theme.colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
                   'assets/icons/ski_icon.svg',
                   colorFilter: ColorFilter.mode(
-                    theme.colorScheme.onPrimaryContainer,
+                    theme.colorScheme.onPrimary,
                     BlendMode.srcIn,
                   ),
                 ),

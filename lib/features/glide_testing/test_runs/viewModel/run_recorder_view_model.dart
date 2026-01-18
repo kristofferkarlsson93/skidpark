@@ -27,6 +27,9 @@ class RunRecorderViewModel extends ChangeNotifier {
   int _currentMarkedSkiIndex = -1;
   DateTime? _startedAt;
   StoredSkiData? _selectedSki;
+  bool _isHardwareStartTriggered = false;
+
+  bool get isHardwareStartTriggered => _isHardwareStartTriggered;
   late final StreamSubscription<VolumeButton> _shortPressSubscription;
 
   late final StreamSubscription<VolumeButton> _longPressSubscription;
@@ -133,16 +136,21 @@ class RunRecorderViewModel extends ChangeNotifier {
       log("Long press ${volumeButton}");
       if (viewState == RunViewState.selectSki) {
         if (volumeButton == VolumeButton.down && _currentMarkedSkiIndex >= 0) {
+          _isHardwareStartTriggered = true;
+          notifyListeners();
           final selectedSki = _availableSkis[_currentMarkedSkiIndex];
           selectSki(selectedSki);
           await Future.delayed(const Duration(milliseconds: 500));
           startRun();
+          _isHardwareStartTriggered = false;
         }
       }
     });
   }
 
   void handleSkiSelectVolumeNavigation(VolumeButton buttonId) {
+    // If we navigate with hardware, we need to make sure to reset whatever we did with touch before
+    _selectedSki = null;
     if (buttonId == VolumeButton.up) {
       // If is start value (-1) or zero - go to last list item.
       if (_currentMarkedSkiIndex <= 0) {

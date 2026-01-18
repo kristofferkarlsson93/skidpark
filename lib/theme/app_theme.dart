@@ -14,7 +14,9 @@ class AppTheme {
     secondary: const Color(0xFF03DAC6),
     // 'accent'
     onSecondary: const Color(0xFF000000),
-    // 'accent-foreground'
+
+    primaryContainer: const Color(0xFF3700B3),
+    onPrimaryContainer: const Color(0xFFEADDFF),
 
     // Status Colors
     error: const Color(0xFFCF6679),
@@ -25,7 +27,7 @@ class AppTheme {
     // Borders & Inputs
     outline: const Color(0xFF2C2C2C),
     surfaceContainer: const Color(0xFF1E1E1E),
-
+    surfaceContainerLow: const Color(0xFF1A1A1A),
     surfaceContainerHighest: const Color(0xFF2C2C2C),
 
     onSurfaceVariant: const Color(0xFFB3B3B3),

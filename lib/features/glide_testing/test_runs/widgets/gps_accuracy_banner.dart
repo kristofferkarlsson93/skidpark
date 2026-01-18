@@ -8,41 +8,38 @@ class GpsAccuracyBanner extends StatelessWidget {
 
   const GpsAccuracyBanner({super.key, required this.accuracyGrade});
 
-  _GpsDisplayConfig _getConfig(
-    BuildContext context,
-    GpsAccuracy accuracyGrade,
-  ) {
+  _GpsDisplayConfig _getConfig(BuildContext context, GpsAccuracy accuracyGrade) {
     final theme = Theme.of(context);
     switch (accuracyGrade) {
       case GpsAccuracy.unknown:
         return (
-          icon: Icons.signal_cellular_nodata_outlined,
-          color: theme.colorScheme.onSurfaceVariant,
-          text: 'Söker GPS...  Prova stå stilla en stund',
+        icon: Icons.signal_cellular_nodata,
+        color: theme.colorScheme.onSurfaceVariant,
+        text: 'Söker GPS...',
         );
       case GpsAccuracy.bad:
         return (
-          icon: Icons.signal_cellular_off_outlined,
-          color: theme.colorScheme.error,
-          text: 'Dålig GPS-signal. Prova stå stilla en stund',
+        icon: Icons.signal_cellular_off,
+        color: theme.colorScheme.error,
+        text: 'Dålig signal. Prova stå still en stund',
         );
       case GpsAccuracy.decent:
         return (
-          icon: Icons.signal_cellular_alt_1_bar_outlined,
-          color: Colors.orangeAccent, // A good 'warning' color
-          text: 'Svag GPS-signal. Prova stå stilla en stund',
+        icon: Icons.signal_cellular_alt_1_bar,
+        color: Colors.orangeAccent,
+        text: 'Svag signal. Prova stå still en stund',
         );
       case GpsAccuracy.good:
         return (
-          icon: Icons.signal_cellular_alt_2_bar_outlined,
-          color: theme.colorScheme.secondary,
-          text: 'Bra GPS-signal',
+        icon: Icons.signal_cellular_alt_2_bar,
+        color: Colors.greenAccent, // Tydligare grön mot mörk bakgrund
+        text: 'Bra GPS-signal',
         );
       case GpsAccuracy.excellent:
         return (
-          icon: Icons.signal_cellular_4_bar_outlined,
-          color: theme.colorScheme.secondary,
-          text: 'Mycket bra GPS-signal',
+        icon: Icons.signal_cellular_4_bar,
+        color: Colors.greenAccent,
+        text: 'Utmärkt signal',
         );
     }
   }
@@ -52,49 +49,29 @@ class GpsAccuracyBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final config = _getConfig(context, accuracyGrade);
 
-    return Card(
-      color: config.color.withValues(alpha: 0.15),
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      // Ensures the child respects the border
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            // Icon with the dynamic color
-            Icon(config.icon, color: config.color, size: 20),
-            const SizedBox(width: 12),
-            // Text message
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, animation) {
-                  // Fade and slide text in from below
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.2),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    ),
-                  );
-                },
-                child: Text(
-                  config.text,
-                  // Key tells AnimatedSwitcher that the content has changed
-                  key: ValueKey('text_${config.text}'),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: config.color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: config.color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: config.color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(config.icon, color: config.color, size: 16),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              config.text,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: config.color,
+                fontWeight: FontWeight.bold,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
