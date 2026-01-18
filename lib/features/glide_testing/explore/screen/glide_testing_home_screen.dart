@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 import '../../../../common/database/repository/glide_test_repository.dart';
-import '../../create/add_glide_test_form.dart';
+import '../../create/glide_test_form.dart';
 import '../widgets/my_glide_tests_list.dart';
 import '../widgets/glide_testing_intro_card.dart';
 
@@ -25,7 +25,7 @@ class GlideTestingHomeScreen extends StatelessWidget {
           await showModalBottomSheet<GlideTestCandidate>(
             context: context,
             isScrollControlled: true,
-            builder: (ctx) => const AddGlideTestForm(),
+            builder: (ctx) => const GlideTestForm(),
           );
 
           if (newTestCandiate != null) {

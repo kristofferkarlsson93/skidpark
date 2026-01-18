@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 
-class AddGlideTestForm extends StatefulWidget {
-  const AddGlideTestForm({super.key});
+class GlideTestForm extends StatefulWidget {
+  final StoredGlideTestData? testToEdit;
+
+  const GlideTestForm({super.key, this.testToEdit});
 
   @override
-  State<AddGlideTestForm> createState() => _AddGlideTestFormState();
+  State<GlideTestForm> createState() => _GlideTestFormState();
 }
 
-class _AddGlideTestFormState extends State<AddGlideTestForm> {
+class _GlideTestFormState extends State<GlideTestForm> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _notesController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.testToEdit?.title ?? '');
+    _notesController = TextEditingController(text: widget.testToEdit?.notes ?? '');
+  }
 
   @override
   void dispose() {
@@ -26,15 +36,15 @@ class _AddGlideTestFormState extends State<AddGlideTestForm> {
         title: _titleController.text,
         notes: _notesController.text,
       );
+
       Navigator.pop(context, glideTestCandidate);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery
-        .of(context)
-        .viewInsets; // keyboards etc
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final isEditing = widget.testToEdit != null;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + viewInsets.bottom),
@@ -42,14 +52,18 @@ class _AddGlideTestFormState extends State<AddGlideTestForm> {
         child: Form(
           key: _formKey,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Skapa nytt glidtest"),
-              SizedBox(height: 16),
+              Text(
+                isEditing ? "Redigera glidtest" : "Skapa nytt glidtest",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: "Namnge testet",
-                  helperText: "T.ex.  Inför Vasan 25",
+                  helperText: "T.ex. Inför Vasan 25",
                 ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) {
@@ -65,7 +79,7 @@ class _AddGlideTestFormState extends State<AddGlideTestForm> {
                 controller: _notesController,
                 decoration: const InputDecoration(
                   alignLabelWithHint: true,
-                  labelText: 'Antekningar (valfritt)',
+                  labelText: 'Anteckningar (valfritt)',
                   helperText: 'T.ex snötyp, plats osv.',
                 ),
                 keyboardType: TextInputType.multiline,
@@ -74,7 +88,7 @@ class _AddGlideTestFormState extends State<AddGlideTestForm> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _submitForm,
-                child: const Text('Skapa'),
+                child: Text(isEditing ? 'Spara ändringar' : 'Skapa'),
               ),
               const SizedBox(height: 24),
             ],

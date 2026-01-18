@@ -12,6 +12,7 @@ import 'package:skidpark/features/glide_testing/compare/services/release_point_a
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
+import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
@@ -75,6 +76,8 @@ class CompareRunsViewModel extends ChangeNotifier {
           .toList();
     }
   }
+
+  StoredGlideTestData? get glideTest => _glideTest;
 
   bool get useSensorFusion => _glideTest?.useSensorFusion ?? false;
 
@@ -153,6 +156,10 @@ class CompareRunsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateGlideTestInfo(GlideTestCandidate updatedTest) {
+    _glideTestRepository.update(_glideTest!.id, updatedTest);
+  }
+
   void _listenToGlideTest(int glideTestId) {
     _glideTestSubscription = _glideTestRepository
         .watchTestById(glideTestId)
@@ -203,7 +210,9 @@ class CompareRunsViewModel extends ChangeNotifier {
   void _recalculateReleasePointAnalysisIfActive() {
     if (_activeAnalysisPage == AnalysisPage.deepAnalysis &&
         _releasePointAnalysisMode == ReleasePointAnalysisMode.view) {
-      final runs = _useAverageView ? _averageRunPerSki : currentSelectedTestRuns;
+      final runs = _useAverageView
+          ? _averageRunPerSki
+          : currentSelectedTestRuns;
       _releasePointTestRuns = ReleasePointAnalysis.performAnalysis(
         testRuns: runs,
         releasePoint: releasePoint,

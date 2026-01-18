@@ -23,7 +23,7 @@ class CompareGraph extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 12,
-      child: Container(
+      child: SizedBox(
         width: double.infinity,
         child: Padding(
           padding: const EdgeInsets.all(16.0),

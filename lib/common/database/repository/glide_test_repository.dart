@@ -39,4 +39,15 @@ class GlideTestRepository {
       ),
     );
   }
+
+  Future<int> update(int glideTestId, GlideTestCandidate updatedTest) {
+    final companion = StoredGlideTestCompanion(
+      title: drift.Value(updatedTest.title),
+      notes: drift.Value(updatedTest.notes),
+    );
+
+    return (_db.update(
+      _db.storedGlideTest,
+    )..where((t) => t.id.equals(glideTestId))).write(companion);
+  }
 }

@@ -19,11 +19,15 @@ class GlideTestMoreMenu extends StatelessWidget {
     return PopupMenuButton<GlideTestMoreMenuOptions>(
       position: PopupMenuPosition.under,
       icon: CircleAvatar(
-        backgroundColor: theme.colorScheme.onPrimary, // The circular background color
-        foregroundColor: theme.colorScheme.onSurface, // The icon color
+        backgroundColor: theme.colorScheme.onPrimary,
+        foregroundColor: theme.colorScheme.onSurface,
         child: const Icon(Icons.more_vert),
       ),
-      onSelected: (GlideTestMoreMenuOptions item) {},
+      onSelected: (GlideTestMoreMenuOptions item) {
+        if (item == GlideTestMoreMenuOptions.editGlideTest) {
+          return onSelectEdit();
+        }
+      },
       itemBuilder: (BuildContext context) =>
           <PopupMenuEntry<GlideTestMoreMenuOptions>>[
             const PopupMenuItem<GlideTestMoreMenuOptions>(

@@ -11,6 +11,8 @@ import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
 import '../../../../common/services/volume_press_handler.dart';
 import '../../compare/compare_runs_view_model.dart';
+import '../../create/glide_test_form.dart';
+import '../../models/glide_test_candidate.dart';
 import '../../test_runs/data_recorder.dart';
 import '../../test_runs/screen/run_recording_screen.dart';
 import '../widgets/compare_controls.dart';
@@ -79,6 +81,21 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
     );
   }
 
+  void _editTestInfo(
+    BuildContext context,
+    CompareRunsViewModel viewModel,
+  ) async {
+    final updatedTest = await showModalBottomSheet<GlideTestCandidate>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => GlideTestForm(testToEdit: viewModel.glideTest),
+    );
+
+    if (updatedTest != null) {
+      viewModel.updateGlideTestInfo(updatedTest);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final glideTestRepository = context.read<GlideTestRepository>();
@@ -137,7 +154,16 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
-                GlideTestMoreMenu(onSelectEdit: () {}, onSelectArchive: () {}),
+                Consumer<CompareRunsViewModel>(
+                  builder: (context, viewModel, _) {
+                    return GlideTestMoreMenu(
+                      onSelectEdit: () {
+                        _editTestInfo(context, viewModel);
+                      },
+                      onSelectArchive: () {},
+                    );
+                  },
+                ),
               ],
             ),
             endDrawer: Drawer(

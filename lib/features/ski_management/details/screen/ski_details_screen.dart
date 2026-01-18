@@ -115,7 +115,7 @@ class SkiDetailScreen extends StatelessWidget {
     final updatedCandidate = await showModalBottomSheet<SkiCandidate>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => AddSkiForm(skiToEdit: ski), // ★★★ Skicka med skidan
+      builder: (ctx) => AddSkiForm(skiToEdit: ski),
     );
 
     if (updatedCandidate != null) {
