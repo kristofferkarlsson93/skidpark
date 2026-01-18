@@ -4,6 +4,7 @@ import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../create/add_glide_test_form.dart';
 import '../widgets/my_glide_tests_list.dart';
+import '../widgets/glide_testing_intro_card.dart';
 
 class GlideTestingHomeScreen extends StatelessWidget {
   const GlideTestingHomeScreen({super.key});
@@ -11,20 +12,21 @@ class GlideTestingHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final glideTestRepository = context.read<GlideTestRepository>();
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('GlidLabbet')),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new-glide-test-fab',
         icon: const Icon(Icons.add),
-        label: Text('Skapa nytt test'),
+        label: const Text('Skapa nytt test'),
         onPressed: () async {
           final newTestCandiate =
-              await showModalBottomSheet<GlideTestCandidate>(
-                context: context,
-                isScrollControlled: true,
-                builder: (ctx) => const AddGlideTestForm(),
-              );
+          await showModalBottomSheet<GlideTestCandidate>(
+            context: context,
+            isScrollControlled: true,
+            builder: (ctx) => const AddGlideTestForm(),
+          );
 
           if (newTestCandiate != null) {
             await glideTestRepository.create(newTestCandiate);
@@ -33,39 +35,19 @@ class GlideTestingHomeScreen extends StatelessWidget {
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          buildIntroText(),
-          StreamBuilder(
-            stream: glideTestRepository.watchTests(),
-            builder: (context, snapshot) {
-              return MyGlideTestsList(glideTests: snapshot.data ?? []);
-            },
+          GlideTestingIntroCard(theme: theme),
+          Expanded(
+            child: StreamBuilder(
+              stream: glideTestRepository.watchTests(),
+              builder: (context, snapshot) {
+                return MyGlideTestsList(glideTests: snapshot.data ?? []);
+              },
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Row buildIntroText() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    "Här kan du skapa och titta på glidtester \nKlicka på + för att skapa ett nytt test",
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

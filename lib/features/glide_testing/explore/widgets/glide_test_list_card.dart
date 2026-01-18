@@ -7,27 +7,50 @@ class GlideTestListCard extends StatelessWidget {
 
   final VoidCallback onTestCardClicked;
 
-  const GlideTestListCard({super.key, required this.glideTest, required this.onTestCardClicked});
+  const GlideTestListCard({
+    super.key,
+    required this.glideTest,
+    required this.onTestCardClicked,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListTile(
-      tileColor: theme.colorScheme.surfaceContainer,
-      leading: Icon(Icons.science_outlined, color: theme.colorScheme.secondary),
-      title: Text(glideTest.title),
-      subtitle: Text(
-        DateFormat("yyyy-MM-dd HH:mm").format(glideTest.createdAt),
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+        ),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(width: 8),
-          Icon(Icons.chevron_right),
-        ],
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        onTap: onTestCardClicked,
+
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.science_outlined,
+            color: theme.colorScheme.onPrimaryContainer,
+            size: 24,
+          ),
+        ),
+        title: Text(glideTest.ti  tle),
+        subtitle: Text(
+          DateFormat("yyyy-MM-dd HH:mm").format(glideTest.createdAt),
+        ),
+        trailing: Icon(Icons.chevron_right),
       ),
-      onTap: onTestCardClicked,
     );
   }
 }

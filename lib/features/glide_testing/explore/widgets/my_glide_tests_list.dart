@@ -13,36 +13,33 @@ class MyGlideTestsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (glideTests.isNotEmpty) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ListView.builder(
-            itemCount: glideTests.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
-                child: GlideTestListCard(
-                  glideTest: glideTests[index],
-                  onTestCardClicked: () async {
-                    // should ideally be propagated to parent
-                    final hasPermissions =
-                        await DataRecorder.handleLocationPermissions(context);
-                    if (!hasPermissions) return;
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => GlideTestCompareScreen(
-                            glideTestId: glideTests[index].id,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              );
-            },
-          ),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+          separatorBuilder: (ctx, index) => const SizedBox(height: 8),
+          itemCount: glideTests.length,
+          itemBuilder: (context, index) {
+            return GlideTestListCard(
+              glideTest: glideTests[index],
+              onTestCardClicked: () async {
+                // should ideally be propagated to parent
+                final hasPermissions =
+                    await DataRecorder.handleLocationPermissions(context);
+                if (!hasPermissions) return;
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GlideTestCompareScreen(
+                        glideTestId: glideTests[index].id,
+                      ),
+                    ),
+                  );
+                }
+              },
+            );
+          },
         ),
       );
     } else {
