@@ -34,10 +34,11 @@ class GlideTestMoreMenu extends StatelessWidget {
               value: GlideTestMoreMenuOptions.editGlideTest,
               child: Text('Redigera testinfo'),
             ),
-            const PopupMenuItem<GlideTestMoreMenuOptions>(
-              value: GlideTestMoreMenuOptions.archiveGlideTest,
-              child: Text('Arkivera glidtestet'),
-            ),
+            // Not impplemented yet. Hiding.
+            // const PopupMenuItem<GlideTestMoreMenuOptions>(
+            //   value: GlideTestMoreMenuOptions.archiveGlideTest,
+            //   child: Text('Arkivera glidtestet'),
+            // ),
           ],
     );
   }
