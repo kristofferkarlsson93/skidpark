@@ -15,7 +15,15 @@ class SkiCard extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerLow,
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.4),
+        ),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -26,59 +34,70 @@ class SkiCard extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Center(
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: theme.colorScheme.primary,
-                  child: SvgPicture.asset(
-                    'assets/icons/ski_icon.svg',
-                    width: 24,
-                    height: 24,
-                    colorFilter: ColorFilter.mode(
-                      theme.colorScheme.onPrimary,
-                      BlendMode.srcIn,
-                    ),
-                    semanticsLabel: 'Skis icon',
+              Container(
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: SvgPicture.asset(
+                  'assets/icons/ski_icon.svg',
+                  colorFilter: ColorFilter.mode(
+                    theme.colorScheme.onPrimaryContainer,
+                    BlendMode.srcIn,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  ski.name,
-                  style: textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+
+              const SizedBox(height: 12),
+              Text(
+                ski.name,
+                textAlign: TextAlign.center,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              if (ski.brandAndModel != null)
-                Center(
+              const SizedBox(height: 4),
+              Text(
+                ski.brandAndModel ?? "Okänd modell",
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const SizedBox(height: 12),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.topLeft,
                   child: Text(
-                    ski.brandAndModel!,
-                    style: textTheme.bodySmall?.copyWith(
+                    ski.technicalData != null && ski.technicalData!.isNotEmpty
+                        ? ski.technicalData!
+                        : 'Ingen teknisk data tillagd ännu',
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontSize: 12,
                       color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
                     ),
-                    maxLines: 1,
+                    maxLines: 5,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (ski.technicalData != null)
-                      Text(
-                        ski.technicalData!,
-                        style: textTheme.bodySmall,
-                        maxLines: 5,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
                 ),
               ),
             ],

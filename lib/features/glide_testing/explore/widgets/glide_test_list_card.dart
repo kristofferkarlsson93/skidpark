@@ -45,7 +45,7 @@ class GlideTestListCard extends StatelessWidget {
             size: 24,
           ),
         ),
-        title: Text(glideTest.ti  tle),
+        title: Text(glideTest.title),
         subtitle: Text(
           DateFormat("yyyy-MM-dd HH:mm").format(glideTest.createdAt),
         ),
