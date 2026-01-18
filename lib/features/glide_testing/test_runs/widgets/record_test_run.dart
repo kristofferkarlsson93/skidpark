@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/stop_and_save_button.dart';
 
@@ -29,106 +30,194 @@ class RecordTestRun extends StatelessWidget {
           listenable: viewModel.dataRecorder,
           builder: (context, child) {
             final countdown = viewModel.autoSaveCountdownSeconds;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GpsAccuracyBanner(
-                  accuracyGrade: viewModel.dataRecorder.accuracyGrade,
+                Center(
+                  child: GpsAccuracyBanner(
+                    accuracyGrade: viewModel.dataRecorder.accuracyGrade,
+                  ),
                 ),
-                SizedBox(height: 16),
+
+                const SizedBox(height: 24),
                 Row(
                   children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: theme.colorScheme.error.withOpacity(0.5),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Text(
                       'Samlar in data...',
-                      style: textTheme.headlineLarge?.copyWith(
+                      style: textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: theme.colorScheme.primary),
-                    borderRadius: BorderRadius.circular(8.0),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Padding(
-                      padding: EdgeInsets.all(12.0),
-                      child: Text(viewModel.selectedSki!.name),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withOpacity(0.3),
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: SvgPicture.asset(
+                          'assets/icons/ski_icon.svg',
+                          colorFilter: ColorFilter.mode(
+                            theme.colorScheme.onPrimary,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Vald skida",
+                            style: textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontSize: 10,
+                            ),
+                          ),
+                          Text(
+                            viewModel.selectedSki!.name,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                Column(
+
+                const SizedBox(height: 24),
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FlatStatsCard(
-                            label: 'Nuvarande hastighet',
-                            value: viewModel.dataRecorder.currentSpeedKmh
-                                .toStringAsFixed(2),
-                            unit: 'km/h',
-                            borderColor: theme.colorScheme.primary,
-                            size: FlatStatsCardSize.large,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: FlatStatsCard(
-                            label: 'Duration',
-                            value: viewModel.dataRecorder.elapsedSeconds
-                                .toString(),
-                            unit: 'seconds',
-                            borderColor: theme.colorScheme.secondary,
-                            size: FlatStatsCardSize.large,
-                          ),
-                        ),
-                      ],
+                    Expanded(
+                      child: FlatStatsCard(
+                        label: 'Hastighet',
+                        value: viewModel.dataRecorder.currentSpeedKmh
+                            .toStringAsFixed(1),
+                        unit: 'km/h',
+                        icon: Icons.speed,
+                        accentColor: theme.colorScheme.primary,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        '${viewModel.dataRecorder.dataPoints} GPS punkter sparade',
-                        style: textTheme.bodySmall,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FlatStatsCard(
+                        label: 'Tid',
+                        value: viewModel.dataRecorder.elapsedSeconds.toString(),
+                        unit: 's',
+                        icon: Icons.timer_outlined,
+                        // Ikon!
+                        accentColor: theme
+                            .colorScheme
+                            .secondary,
                       ),
                     ),
                   ],
                 ),
-                const Spacer(),
-                Container(
-                  child: countdown > 0
-                      ? Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(
-                            "Stopp upptäckt...",
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        )
-                      : null,
+
+                const SizedBox(height: 16),
+
+                Center(
+                  child: Text(
+                    '${viewModel.dataRecorder.dataPoints} mätpunkter sparade',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                        0.5,
+                      ),
+                    ),
+                  ),
                 ),
+
+                const Spacer(),
+
+                if (countdown > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.timer,
+                              size: 16,
+                              color: theme.colorScheme.onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Stopp upptäckt. Avslutar automatiskt...",
+                              style: textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 StopAndSaveButton(
                   countdownSeconds: countdown,
                   onStopAndSave: onStopAndSave,
                 ),
-                const SizedBox(height: 42),
+
+                const SizedBox(height: 16),
+
                 Center(
                   child: TextButton(
                     onPressed: onAbort,
                     child: Text(
-                      'Avbryt',
+                      'Avbryt och kasta',
                       style: TextStyle(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
               ],
             );
           },
