@@ -125,8 +125,7 @@ class AveragePerSkiCalculator {
               runs.length;
 
           final averagedRun = EnrichedTestRun(
-            -template.skiId,
-            // Negative ID to indicate virtual run
+            -template.skiId, // Negative ID to indicate virtual run
             template.startedAt,
             template.skiId,
             template.glideTestId,

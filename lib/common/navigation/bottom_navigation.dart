@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:skidpark/features/glide_testing/explore/screen/glide_testing_home_screen.dart';
 import 'package:skidpark/features/ski_management/exlore/screen/ski_management_screen.dart';
 
@@ -34,19 +35,30 @@ class _BottomNavigatorState extends State<BottomNavigator> {
         },
         destinations: [
           NavigationDestination(
-            selectedIcon: Icon(Icons.ac_unit),
-            icon: Icon(Icons.ac_unit_outlined),
+            selectedIcon: SvgPicture.asset(
+              'assets/icons/ski_icon.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                theme.colorScheme.primary,
+                BlendMode.srcIn,
+              ),
+            ),
+            icon: SvgPicture.asset(
+              'assets/icons/ski_icon.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                theme.colorScheme.onSurfaceVariant,
+                BlendMode.srcIn,
+              ),
+            ),
             label: 'Min skidpark',
           ),
           NavigationDestination(
             selectedIcon: Icon(Icons.science),
             icon: Icon(Icons.science_outlined),
             label: 'GlidLabbet',
-          ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.compare_arrows),
-            icon: Icon(Icons.compare_arrows_outlined),
-            label: 'Temp datainsamling',
           ),
         ],
       ),
