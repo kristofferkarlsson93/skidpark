@@ -17,6 +17,8 @@ class MyGlideTestsList extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           separatorBuilder: (ctx, index) => const SizedBox(height: 8),
           itemCount: glideTests.length,
           itemBuilder: (context, index) {

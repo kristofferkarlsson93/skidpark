@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class GlideTestingIntroCard extends StatelessWidget {
   final ThemeData? theme;
-  const GlideTestingIntroCard({Key? key, this.theme}) : super(key: key);
+  const GlideTestingIntroCard({super.key, this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +10,7 @@ class GlideTestingIntroCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Card(
-        color: themeData.colorScheme.surfaceContainerHighest,
+        color: themeData.colorScheme.surfaceContainer,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -24,7 +24,7 @@ class GlideTestingIntroCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: themeData.colorScheme.primary,
+                      color: themeData.colorScheme.primary.withAlpha((0.85 * 255).toInt()),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -64,9 +64,9 @@ class GlideTestingIntroCard extends StatelessWidget {
                   icon: const Icon(Icons.info_outline, size: 18),
                   label: const Text("Guide: Så utför du ett glidtest"),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: themeData.colorScheme.primary,
+                    foregroundColor: themeData.colorScheme.primary.withAlpha((0.85 * 255).toInt()),
                     side: BorderSide(
-                      color: themeData.colorScheme.outline.withAlpha((0.3 * 255).toInt()),
+                      color: Colors.transparent,
                     ),
                   ),
                 ),

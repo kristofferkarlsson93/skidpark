@@ -18,7 +18,7 @@ class CompareList extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      padding: const EdgeInsets.fromLTRB(4, 16, 4, 80),
       itemCount: runs.length,
       itemBuilder: (context, index) {
         final run = runs[index];

@@ -39,7 +39,13 @@ class OverviewContainer extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(flex: 2, child: CompareList(runs: selectedRuns, isAverageView: viewModel.useAverageView,)),
+        Expanded(
+          flex: 2,
+          child: CompareList(
+            runs: selectedRuns,
+            isAverageView: viewModel.useAverageView,
+          ),
+        ),
       ],
     );
   }

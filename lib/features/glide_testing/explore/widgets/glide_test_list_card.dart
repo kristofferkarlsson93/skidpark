@@ -36,12 +36,12 @@ class GlideTestListCard extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
+            color: theme.colorScheme.onSurfaceVariant,
             shape: BoxShape.circle,
           ),
           child: Icon(
             Icons.science_outlined,
-            color: theme.colorScheme.onPrimary,
+            color: theme.colorScheme.primaryContainer,
             size: 24,
           ),
         ),

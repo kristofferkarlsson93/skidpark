@@ -1,36 +1,36 @@
-// lib/app_theme.dart
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Din 8px border-radius
   static const double _borderRadius = 8.0;
 
   static final ColorScheme _darkColorScheme = ColorScheme.dark(
-    // Accent Colors
-    primary: const Color(0xFFBB86FC),
-    // 'primary'
-    onPrimary: const Color(0xFF000000),
-    // 'primary-foreground'
-    secondary: const Color(0xFF03DAC6),
-    // 'accent'
-    onSecondary: const Color(0xFF000000),
+    primary: Color(0xFF8B7CF6),
+    onPrimary: Color(0xFF0E0A2B),
 
-    primaryContainer: const Color(0xFF3700B3),
-    onPrimaryContainer: const Color(0xFFEADDFF),
+    primaryContainer: Color(0xFF2A245E),
+    onPrimaryContainer: Color(0xFFE6E1FF),
 
-    // Status Colors
-    error: const Color(0xFFCF6679),
-    onError: const Color(0xFF000000),
-    surface: const Color(0xFF121212),
-    // 'card'
-    onSurface: const Color(0xFFFFFFFF),
-    // Borders & Inputs
-    outline: const Color(0xFF2C2C2C),
-    surfaceContainer: const Color(0xFF1E1E1E),
-    surfaceContainerLow: const Color(0xFF1A1A1A),
-    surfaceContainerHighest: const Color(0xFF2C2C2C),
+    secondary: Color(0xFF6FD6C2),
+    onSecondary: Color(0xFF06201A),
 
-    onSurfaceVariant: const Color(0xFFB3B3B3),
+    secondaryContainer: Color(0xFF1F3A36),
+    onSecondaryContainer: Color(0xFFB8EFE6),
+
+    error: Color(0xFFFF6B6B),
+    onError: Color(0xFF2B0B0B),
+
+    surface: Color(0xFF101014),
+    onSurface: Color(0xFFE6E6EB),
+
+    surfaceContainerLowest: Color(0xFF0C0C10),
+    surfaceContainerLow: Color(0xFF18181F),
+    surfaceContainer: Color(0xFF1F1F2A),
+    surfaceContainerHigh: Color(0xFF262635),
+    surfaceContainerHighest: Color(0xFF2E2E42),
+
+    outline: Color(0xFF343447),
+    outlineVariant: Color(0xFF45455E),
+    onSurfaceVariant: Color(0xFFB0B0C3),
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -51,11 +51,17 @@ class AppTheme {
         ),
 
     cardTheme: CardThemeData(
-      elevation: 2,
+      elevation: 0,
+      color: _darkColorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_borderRadius),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: _darkColorScheme.outlineVariant.withAlpha((0.3 * 255).toInt()),
+          width: 1,
+        ),
       ),
-      color: _darkColorScheme.surfaceContainer,
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(

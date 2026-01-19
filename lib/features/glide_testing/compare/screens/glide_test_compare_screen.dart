@@ -139,7 +139,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                     backgroundColor: WidgetStateProperty.all(
                       _indicateNewRunMarked
                           ? theme.colorScheme.primary
-                          : theme.colorScheme.onPrimary,
+                          : theme.colorScheme.surfaceContainerLowest,
                     ),
                   ),
                   onPressed: () {
@@ -167,7 +167,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
               ],
             ),
             endDrawer: Drawer(
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              backgroundColor: theme.colorScheme.surfaceContainerHigh,
               child: CompareControls(),
             ),
             body: Consumer<CompareRunsViewModel>(
@@ -192,7 +192,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       child: Column(
                         children: [
                           CircleAvatar(
-                            backgroundColor: Colors.black,
+                            backgroundColor: theme.colorScheme.surfaceContainerLowest,
                             child: IconButton(
                               icon: const Icon(Icons.tune),
                               color: Colors.white,
@@ -209,16 +209,14 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                                   MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Material(
-                              color: Colors.black,
+                              color: theme.colorScheme.surfaceContainerLowest,
                               borderRadius: BorderRadius.circular(20),
                               child: ToggleButtons(
                                 direction: Axis.vertical,
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
                                 renderBorder: false,
-                                fillColor: theme.colorScheme.primary.withAlpha(
-                                  155,
-                                ),
+                                fillColor: theme.colorScheme.primaryContainer,
                                 selectedColor: Colors.white,
                                 constraints: const BoxConstraints(
                                   minHeight: 48,

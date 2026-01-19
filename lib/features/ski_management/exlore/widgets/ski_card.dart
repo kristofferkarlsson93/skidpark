@@ -43,13 +43,13 @@ class SkiCard extends StatelessWidget {
                 height: 44,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
+                  color: theme.colorScheme.onSurfaceVariant,
                   shape: BoxShape.circle,
                 ),
                 child: SvgPicture.asset(
                   'assets/icons/ski_icon.svg',
                   colorFilter: ColorFilter.mode(
-                    theme.colorScheme.onPrimary,
+                    theme.colorScheme.primaryContainer,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -82,14 +82,14 @@ class SkiCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainer,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   alignment: Alignment.topLeft,
                   child: Text(
                     ski.technicalData != null && ski.technicalData!.isNotEmpty
                         ? ski.technicalData!
-                        : 'Ingen teknisk data tillagd ännu',
+                        : ' ',
                     style: textTheme.bodyMedium?.copyWith(
                       fontSize: 12,
                       color: theme.colorScheme.onSurfaceVariant,

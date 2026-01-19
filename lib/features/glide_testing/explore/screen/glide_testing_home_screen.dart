@@ -22,31 +22,31 @@ class GlideTestingHomeScreen extends StatelessWidget {
         label: const Text('Skapa nytt test'),
         onPressed: () async {
           final newTestCandiate =
-          await showModalBottomSheet<GlideTestCandidate>(
-            context: context,
-            isScrollControlled: true,
-            builder: (ctx) => const GlideTestForm(),
-          );
+              await showModalBottomSheet<GlideTestCandidate>(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => const GlideTestForm(),
+              );
 
           if (newTestCandiate != null) {
             await glideTestRepository.create(newTestCandiate);
           }
         },
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          GlideTestingIntroCard(theme: theme),
-          Expanded(
-            child: StreamBuilder(
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            GlideTestingIntroCard(theme: theme),
+            StreamBuilder(
               stream: glideTestRepository.watchTests(),
               builder: (context, snapshot) {
                 return MyGlideTestsList(glideTests: snapshot.data ?? []);
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
