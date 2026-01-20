@@ -49,8 +49,6 @@ class CompareGraph extends StatelessWidget {
       lines.add(
         LineChartBarData(
           spots: spots,
-          // isCurved: true,
-          // preventCurveOverShooting: true,
           color: run.runColor,
           barWidth: 3,
           dotData: FlDotData(show: false),
@@ -97,12 +95,42 @@ class CompareGraph extends StatelessWidget {
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: true, reservedSize: 30),
-          axisNameWidget: Text("Distans (m)"),
+          sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (value, meta) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                value == meta.max ? "${value.toInt()} m" : value.toInt().toString(),
+                style: theme.textTheme.labelSmall
+              ),
+            );
+          }),
         ),
         leftTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: true, reservedSize: 40),
-          axisNameWidget: Text("Hastighet (km/h)", style: theme.textTheme.labelSmall),
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 30,
+            getTitlesWidget: (value, meta) {
+              // Remove last Y number (which is added "manually" to create vertical space),
+              // so that we get more space for the back button.
+              if (value == meta.max) {
+                return const SizedBox.shrink();
+              }
+              // only add km/h to the top most value (visually).
+              if (value == meta.max - meta.appliedInterval) {
+                return Text(
+                  "${value.toInt()} km/h",
+                  style: theme.textTheme.labelSmall,
+                  textAlign: TextAlign.center,
+                );
+              } else {
+                return Text(
+                  value.toInt().toString(),
+                  style: theme.textTheme.labelSmall,
+                  textAlign: TextAlign.center,
+                );
+              }
+            },
+          ),
           drawBelowEverything: true,
         ),
       ),
