@@ -138,7 +138,6 @@ class CompareGraph extends StatelessWidget {
     );
   }
 
-  // What happens when a line is touched.
   LineTouchData getLineTouchData(ThemeData theme) {
     return LineTouchData(
       touchTooltipData: LineTouchTooltipData(
@@ -163,9 +162,7 @@ class CompareGraph extends StatelessWidget {
       scaleEnabled: true,
       minScale: 1.0,
       maxScale: 10.0,
-
-      // Set which axis can be scaled
-      scaleAxis: FlScaleAxis.horizontal, // Or .vertical, or .all
+      scaleAxis: FlScaleAxis.horizontal,
     );
   }
 

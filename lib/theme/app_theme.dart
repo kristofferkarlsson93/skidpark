@@ -39,15 +39,14 @@ class AppTheme {
     colorScheme: _darkColorScheme,
     textTheme: ThemeData.dark().textTheme
         .apply(
-          bodyColor: _darkColorScheme.onSurface, // #FFFFFF
-          displayColor: _darkColorScheme.onSurface, // #FFFFFF
+          bodyColor: _darkColorScheme.onSurface,
+          displayColor: _darkColorScheme.onSurface,
         )
         .copyWith(
           labelSmall: TextStyle(color: _darkColorScheme.onSurfaceVariant),
-          // #B3B3B3
           bodySmall: TextStyle(
             color: _darkColorScheme.onSurfaceVariant,
-          ), // #B3B3B3
+          ),
         ),
 
     cardTheme: CardThemeData(
@@ -118,7 +117,7 @@ class AppTheme {
     ),
 
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: _darkColorScheme.surfaceContainer, // #1E1E1E
+      backgroundColor: _darkColorScheme.surfaceContainer,
       // 2. remove background circle from active element
       indicatorColor: Colors.transparent,
 
@@ -128,7 +127,7 @@ class AppTheme {
       ) {
         if (states.contains(WidgetState.selected)) {
           // active icon get primary
-          return IconThemeData(color: _darkColorScheme.primary); // #BB86FC
+          return IconThemeData(color: _darkColorScheme.primary);
         }
         // inactive icon fall back to standard
         return null;
