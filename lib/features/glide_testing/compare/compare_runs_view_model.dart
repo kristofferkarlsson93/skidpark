@@ -160,6 +160,14 @@ class CompareRunsViewModel extends ChangeNotifier {
     _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
 
+  String calculateRunLabel(EnrichedTestRun run) {
+    if (_useAverageView) {
+      return "${run.skiName} (${run.runNumber} åk)";
+    } else {
+      return "Åk ${run.runNumber} - ${run.skiName}";
+    }
+  }
+
   void _listenToGlideTest(int glideTestId) {
     _glideTestSubscription = _glideTestRepository
         .watchTestById(glideTestId)

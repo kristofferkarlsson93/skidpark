@@ -21,7 +21,12 @@ class OverviewContainer extends StatelessWidget {
           flex: 3,
           child: CompareGraph(
             lines: selectedRuns
-                .map((r) => GraphLine.fromEnrichedTestRun(r))
+                .map(
+                  (r) => GraphLine.fromEnrichedTestRun(
+                    r,
+                    viewModel.calculateRunLabel(r),
+                  ),
+                )
                 .toList(),
             maxY: selectedRuns.map((r) => r.maxSpeedKmh).fold(0, math.max),
             emptyGraphContent: Column(

@@ -23,7 +23,12 @@ class ReleasePointContainer extends StatelessWidget {
         ? viewModel.currentDisplayRuns
         : viewModel.currentSelectedReleasePointTestRuns;
 
-    final lines = runsToShow.map(GraphLine.fromEnrichedTestRun).toList();
+    final lines = runsToShow
+        .map(
+          (r) =>
+              GraphLine.fromEnrichedTestRun(r, viewModel.calculateRunLabel(r)),
+        )
+        .toList();
 
     final maxY = lines.isNotEmpty
         ? runsToShow.map((r) => r.maxSpeedKmh).fold(0.0, math.max)

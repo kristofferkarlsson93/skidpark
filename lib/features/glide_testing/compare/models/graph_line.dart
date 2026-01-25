@@ -7,10 +7,11 @@ class GraphLine {
   final int id;
   final List<CalculatedPosition> positionData;
   final Color runColor;
+  final String label;
 
-  GraphLine(this.id, this.positionData, this.runColor);
+  GraphLine(this.id, this.positionData, this.runColor, this.label);
 
-  factory GraphLine.fromEnrichedTestRun(EnrichedTestRun run) {
-    return GraphLine(run.runNumber, run.positionData, run.runColor);
+  factory GraphLine.fromEnrichedTestRun(EnrichedTestRun run, String runLabel) {
+    return GraphLine(run.runNumber, run.positionData, run.runColor, runLabel);
   }
 }

@@ -2,13 +2,16 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:skidpark/features/glide_testing/compare/models/graph_line.dart';
+import 'package:skidpark/features/glide_testing/compare/widgets/side_scrolled_run_legend.dart';
 
 class CompareGraph extends StatelessWidget {
   final List<GraphLine> lines;
   final double maxY;
   final Widget emptyGraphContent;
   final double? maybeVerticalLineXCoordinate;
+  final bool isFullscreen;
 
   const CompareGraph({
     super.key,
@@ -16,23 +19,99 @@ class CompareGraph extends StatelessWidget {
     required this.maxY,
     required this.emptyGraphContent,
     this.maybeVerticalLineXCoordinate,
+    this.isFullscreen = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    Widget graphContent = lines.isEmpty
+        ? emptyGraphContent
+        : LineChart(
+            transformationConfig: _enableZoom(),
+            _buildChartData(lines, theme),
+          );
+
     return Card(
-      elevation: 12,
+      elevation: isFullscreen ? 0 : 12,
+      margin: isFullscreen ? EdgeInsets.zero : null,
+      color: isFullscreen ? theme.scaffoldBackgroundColor : null,
       child: SizedBox(
         width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: lines.isEmpty
-              ? emptyGraphContent
-              : LineChart(
-                  transformationConfig: _enableZoom(),
-                  _buildChartData(lines, theme),
+        child: Stack(
+          children: [
+            Padding(
+              padding: isFullscreen
+                  ? const EdgeInsets.all(8.0)
+                  : const EdgeInsets.all(16.0),
+              child: graphContent,
+            ),
+            if (!isFullscreen && lines.isNotEmpty)
+              Positioned(
+                right: 8,
+                // Try to calculate where it would fit in the left hand toolbar.. Dirty.
+                // Basically - the toolbar, space, first icon, second icon, space
+                top: kToolbarHeight + 8 + (20 * 2) + (48 * 2) + 8,
+                child: CircleAvatar(
+                  backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.fullscreen_outlined,
+                      color: Colors.white,
+                    ),
+                    tooltip: "Helskärm",
+                    onPressed: () => _openFullScreen(context),
+                  ),
                 ),
+              ),
+            if (isFullscreen)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withAlpha((0.5 * 255).toInt()),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_fullscreen,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    tooltip: "Stäng helskärm",
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+            if (isFullscreen && lines.isNotEmpty)
+              Positioned(
+                top: 8,
+                right: 60,
+                left: 40,
+                child: SideScrolledRunLegend(lines: lines),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openFullScreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _LandscapeGraphPage(
+          child: CompareGraph(
+            lines: lines,
+            maxY: maxY,
+            emptyGraphContent: emptyGraphContent,
+            maybeVerticalLineXCoordinate: maybeVerticalLineXCoordinate,
+            isFullscreen: true,
+          ),
         ),
       ),
     );
@@ -95,15 +174,21 @@ class CompareGraph extends StatelessWidget {
         topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (value, meta) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                value == meta.max ? "${value.toInt()} m" : value.toInt().toString(),
-                style: theme.textTheme.labelSmall
-              ),
-            );
-          }),
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 50,
+            getTitlesWidget: (value, meta) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  value == meta.max
+                      ? "${value.toInt()} m"
+                      : value.toInt().toString(),
+                  style: theme.textTheme.labelSmall,
+                ),
+              );
+            },
+          ),
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
@@ -166,7 +251,6 @@ class CompareGraph extends StatelessWidget {
     );
   }
 
-  // Trying to figure out the intervals fl_chart uses, and add an extra.
   double _calculateExtendedMaxY(double highestValue) {
     if (highestValue <= 0) return 1;
     final rawStep = highestValue / 5;
@@ -191,5 +275,36 @@ class CompareGraph extends StatelessWidget {
     }
 
     return niceFraction * pow(10, exponent);
+  }
+}
+
+class _LandscapeGraphPage extends StatefulWidget {
+  final Widget child;
+
+  const _LandscapeGraphPage({required this.child});
+
+  @override
+  State<_LandscapeGraphPage> createState() => _LandscapeGraphPageState();
+}
+
+class _LandscapeGraphPageState extends State<_LandscapeGraphPage> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: SafeArea(child: widget.child));
   }
 }
