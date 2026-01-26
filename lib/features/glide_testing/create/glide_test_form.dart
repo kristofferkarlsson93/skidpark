@@ -15,12 +15,20 @@ class _GlideTestFormState extends State<GlideTestForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _notesController;
+  late final String _defaultTitle;
 
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.testToEdit?.title ?? '');
     _notesController = TextEditingController(text: widget.testToEdit?.notes ?? '');
+    _defaultTitle = _generateDefaultTitle();
+  }
+
+  String _generateDefaultTitle() {
+    final now = DateTime.now();
+    final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    return "Glidtest ${now.day}/${now.month} $timeStr";
   }
 
   @override
@@ -32,8 +40,19 @@ class _GlideTestFormState extends State<GlideTestForm> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final isEditing = widget.testToEdit != null;
+      String titleToUse;
+
+      if (isEditing) {
+        titleToUse = _titleController.text.trim();
+      } else {
+        titleToUse = _titleController.text.trim().isEmpty
+            ? _defaultTitle
+            : _titleController.text.trim();
+      }
+
       final glideTestCandidate = GlideTestCandidate(
-        title: _titleController.text,
+        title: titleToUse,
         notes: _notesController.text,
       );
 
@@ -61,14 +80,22 @@ class _GlideTestFormState extends State<GlideTestForm> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: "Namnge testet",
-                  helperText: "T.ex. Inför Vasan 25",
-                ),
                 textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: isEditing ? "Namnge testet" : "Namnge testet (Valfritt)",
+                  hintText: isEditing ? "Ange ett namn" : _defaultTitle,
+                  helperText: isEditing
+                      ? null
+                      : "Förslag: '${_defaultTitle}' - Du kan ändra namn senare",
+                  floatingLabelBehavior: isEditing
+                      ? FloatingLabelBehavior.auto
+                      : FloatingLabelBehavior.always,
+                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ge testet ett namn så du känner igen det senare';
+                  if (isEditing) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Testet måste ha ett namn';
+                    }
                   }
                   return null;
                 },
@@ -87,6 +114,9 @@ class _GlideTestFormState extends State<GlideTestForm> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                ),
                 onPressed: _submitForm,
                 child: Text(isEditing ? 'Spara ändringar' : 'Skapa'),
               ),

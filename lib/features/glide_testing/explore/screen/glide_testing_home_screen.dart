@@ -21,15 +21,15 @@ class GlideTestingHomeScreen extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text('Skapa nytt test'),
         onPressed: () async {
-          final newTestCandiate =
+          final newTestCandidate =
               await showModalBottomSheet<GlideTestCandidate>(
                 context: context,
                 isScrollControlled: true,
                 builder: (ctx) => const GlideTestForm(),
               );
 
-          if (newTestCandiate != null) {
-            await glideTestRepository.create(newTestCandiate);
+          if (newTestCandidate != null) {
+            await glideTestRepository.create(newTestCandidate);
           }
         },
       ),
