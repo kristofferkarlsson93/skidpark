@@ -8,6 +8,7 @@ import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
 import 'package:skidpark/features/glide_testing/compare/services/average_per_ski_calculator.dart';
+import 'package:skidpark/features/glide_testing/compare/services/glide_test_export_service.dart';
 import 'package:skidpark/features/glide_testing/compare/services/release_point_analysis.dart';
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
@@ -158,6 +159,11 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void updateGlideTestInfo(GlideTestCandidate updatedTest) {
     _glideTestRepository.update(_glideTest!.id, updatedTest);
+  }
+
+  void exportAllGlideTestData() async {
+    final data = await _glideTestRepository.exportRelatedData(_glideTest!.id);
+    GlideTestExportService.exportAndShare(data);
   }
 
   String calculateRunLabel(EnrichedTestRun run) {

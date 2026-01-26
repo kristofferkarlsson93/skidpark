@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
-enum GlideTestMoreMenuOptions { editGlideTest, archiveGlideTest } // todo
+enum GlideTestMoreMenuOptions {
+  editGlideTest,
+  exportGlideText,
+  archiveGlideTest,
+} // todo
 
 class GlideTestMoreMenu extends StatelessWidget {
   final VoidCallback onSelectEdit;
+  final VoidCallback onSelectExport;
 
   final VoidCallback onSelectArchive;
 
   const GlideTestMoreMenu({
     super.key,
     required this.onSelectEdit,
+    required this.onSelectExport,
     required this.onSelectArchive,
   });
 
@@ -26,6 +32,8 @@ class GlideTestMoreMenu extends StatelessWidget {
       onSelected: (GlideTestMoreMenuOptions item) {
         if (item == GlideTestMoreMenuOptions.editGlideTest) {
           return onSelectEdit();
+        } else if (item == GlideTestMoreMenuOptions.exportGlideText) {
+          return onSelectExport();
         }
       },
       itemBuilder: (BuildContext context) =>
@@ -33,6 +41,10 @@ class GlideTestMoreMenu extends StatelessWidget {
             const PopupMenuItem<GlideTestMoreMenuOptions>(
               value: GlideTestMoreMenuOptions.editGlideTest,
               child: Text('Redigera testinfo'),
+            ),
+            const PopupMenuItem<GlideTestMoreMenuOptions>(
+              value: GlideTestMoreMenuOptions.exportGlideText,
+              child: Text('Exportera all data'),
             ),
             // Not impplemented yet. Hiding.
             // const PopupMenuItem<GlideTestMoreMenuOptions>(

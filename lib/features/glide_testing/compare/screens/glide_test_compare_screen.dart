@@ -160,6 +160,9 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       onSelectEdit: () {
                         _editTestInfo(context, viewModel);
                       },
+                      onSelectExport: () {
+                        viewModel.exportAllGlideTestData();
+                      },
                       onSelectArchive: () {},
                     );
                   },
@@ -192,7 +195,8 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       child: Column(
                         children: [
                           CircleAvatar(
-                            backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerLowest,
                             child: IconButton(
                               icon: const Icon(Icons.tune),
                               color: Colors.white,
