@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import 'models/raw_accelerometer_event.dart';
@@ -175,7 +176,6 @@ class DataRecorder extends ChangeNotifier {
     }
 
     permission = await Geolocator.checkPermission();
-
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
 
@@ -199,6 +199,16 @@ class DataRecorder extends ChangeNotifier {
       );
       return false;
     }
+
+    if (Platform.isAndroid) {
+      // To show required notification if screen is locked
+      final notificationStatus = await Permission.notification.status;
+
+      if (notificationStatus.isDenied) {
+        await Permission.notification.request();
+      }
+    }
+
     return true;
   }
 }
