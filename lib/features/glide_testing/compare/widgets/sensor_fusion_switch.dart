@@ -39,39 +39,71 @@ class SensorFusionToggle extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Under ett teståk spelar appen in data från olika sensorer. Vissa sensorer är väldigt känsliga för rörelser. När du aktiverar Sensorfusion slås datan från alla sensorer ihop. Detta ger de mest tillförlitliga siffrorna och kurvorna',
+                'Sensorfusion slår ihop data från GPS och accelerometer för att ge mjukare och mer exakta kurvor. För att detta ska fungera måste sensorerna förstå vad som är framåt och vad som är rörelse.',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
+
               Text(
-                'Krav för korrekt data',
+                'Hur du bär telefonen',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'För att kunna lita på datan från alla känsliga sensorer måste telefonen ligga stilla i förhållande till skidan. Om du tex håller telefonen i handen kommer datan att ljuga.',
+                'Det finns två sätt att göra detta på:',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 8),
+
               _buildIconRow(
                 theme,
-                Icons.layers,
-                'Telefonen ska sitta stadigt (t.ex. kardborre på pjäxa/skida eller mot låret i fartställning).',
+                Icons.verified,
+                'Bäst precision: Montera telefonen stadigt, t.ex. med kardborre på pjäxan eller skidan',
               ),
-              _buildIconRow(
-                  theme, Icons.screen_lock_portrait, 'Skärmen ska peka uppåt.'),
+
               _buildIconRow(
                 theme,
-                Icons.arrow_upward,
-                'Överkanten (selfiekameran) ska peka framåt i åkriktningen.',
+                Icons.handshake_outlined,
+                'Hålla i handen: Det fungerar tack vare avancerade filter, men kräver att du håller stilla. Undvik yviga rörelser, att ändra vinkel eller justera greppet under glidmomentet.',
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Kan du inte montera telefonen enligt ovan så är det bättre att slå av sensorfusionen. Då förlitar sig appen på GPS, vilket är mer tillförlitligt om datan är brusig.',
-                style: theme.textTheme.bodyMedium,
+
+              const SizedBox(height: 16),
+
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.5),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Viktigt! Oavsett hur du gör:',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildIconRow(
+                      theme,
+                      Icons.screen_lock_portrait,
+                      'Skärmen ska peka uppåt.',
+                    ),
+                    _buildIconRow(
+                      theme,
+                      Icons.arrow_upward,
+                      'Överkanten (selfiekameran) MÅSTE peka framåt i åkriktningen.',
+                    ),
+                  ],
+                ),
               ),
+
               const SizedBox(height: 16),
               Text(
                 'Ingen data går förlorad',
@@ -81,7 +113,7 @@ class SensorFusionToggle extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Appen spelar alltid in all rådata oavsett hur denna knapp står. Detta är endast ett analysfilter som styr vilken data används.',
+                'Appen spelar alltid in all rådata. Detta är endast ett filter. Om du märker att grafen ser konstig ut i efterhand (t.ex. om du råkade vifta med handen) kan du slå av sensorfusionen då.',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -106,9 +138,7 @@ class SensorFusionToggle extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(text, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );

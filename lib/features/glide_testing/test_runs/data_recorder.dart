@@ -121,6 +121,12 @@ class DataRecorder extends ChangeNotifier {
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 0,
         intervalDuration: const Duration(milliseconds: 200),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: "Min Skidpark - GlidLabbet körs",
+          notificationText: "Spelar in glidtest",
+          enableWakeLock: true, // keep cpu awake
+          setOngoing: true, // Can remove notification.
+        ),
       );
     } else if (Platform.isIOS) {
       return AppleSettings(
