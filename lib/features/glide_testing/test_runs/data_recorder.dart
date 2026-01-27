@@ -123,8 +123,8 @@ class DataRecorder extends ChangeNotifier {
         distanceFilter: 0,
         intervalDuration: const Duration(milliseconds: 200),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: "Min Skidpark - GlidLabbet körs",
-          notificationText: "Spelar in glidtest",
+          notificationTitle: "Min Skidpark - Glidlabbet körs",
+          notificationText: "Använder GPS",
           enableWakeLock: true, // keep cpu awake
           setOngoing: true, // Can remove notification.
         ),

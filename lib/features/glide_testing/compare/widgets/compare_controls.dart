@@ -53,6 +53,7 @@ class CompareControls extends StatelessWidget {
               style: theme.textTheme.labelLarge,
             ),
           ),
+
           ...allRunsInTest.asMap().entries.map((entry) {
             final index = entry.key;
             final run = entry.value;
