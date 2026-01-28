@@ -47,10 +47,27 @@ class CompareControls extends StatelessWidget {
           ),
           const Divider(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text(
-              'Välj åk att visa i vyn',
-              style: theme.textTheme.labelLarge,
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Välj åk att visa i vyn',
+                  style: theme.textTheme.labelLarge,
+                ),
+                TextButton(
+                  onPressed: () {
+                    viewModel.toggleSelectAllRuns();
+                  },
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  child: Text(viewModel.areAllRunsSelected ? 'Avmarkera alla' : 'Markera alla'),
+                ),
+              ],
             ),
           ),
 

@@ -92,6 +92,11 @@ class CompareRunsViewModel extends ChangeNotifier {
     }
   }
 
+  bool get areAllRunsSelected {
+    if (_testRuns.isEmpty) return false;
+    return _testRuns.every((run) => !_deselectedRunIds.contains(run.id));
+  }
+
   CompareRunsViewModel({
     required testRunRepository,
     required GlideTestRepository glideTestRepository,
@@ -108,6 +113,22 @@ class CompareRunsViewModel extends ChangeNotifier {
       _deselectedRunIds.remove(testRun.id);
     } else {
       _deselectedRunIds.add(testRun.id);
+    }
+
+    if (_useAverageView) {
+      _recalculateAverages();
+    }
+    _recalculateReleasePointAnalysisIfActive();
+    notifyListeners();
+  }
+
+  void toggleSelectAllRuns() {
+    if (areAllRunsSelected) {
+      final allIds = _testRuns.map((r) => r.id).toList();
+      _deselectedRunIds.clear();
+      _deselectedRunIds.addAll(allIds);
+    } else {
+      _deselectedRunIds.clear();
     }
 
     if (_useAverageView) {
@@ -160,6 +181,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   void updateGlideTestInfo(GlideTestCandidate updatedTest) {
     _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
+
 
   void exportAllGlideTestData() async {
     final data = await _glideTestRepository.exportRelatedData(_glideTest!.id);

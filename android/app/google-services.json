@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "734034632246",
+    "project_id": "min-skidpark",
+    "storage_bucket": "min-skidpark.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734034632246:android:dee387458fabafdf564297",
+        "android_client_info": {
+          "package_name": "com.krikar.skidpark.skidpark"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdYMbbmpO7BvBhN0pVJ08wjUS3mbKCBeY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

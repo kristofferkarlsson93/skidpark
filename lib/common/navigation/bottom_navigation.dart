@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:skidpark/features/glide_testing/explore/screen/glide_testing_home_screen.dart';
+import 'package:skidpark/features/more_page/screens/more_page.dart';
 import 'package:skidpark/features/ski_management/exlore/screen/ski_management_screen.dart';
 
 import '../../features/glide_testing/ski_testing_screen_temp_data_collection.dart';
@@ -18,7 +19,7 @@ class _BottomNavigatorState extends State<BottomNavigator> {
   final List<Widget> _screens = [
     const SkiManagementScreen(),
     const GlideTestingHomeScreen(),
-    const TempDataCollectionScreen(),
+    const MorePage(),
   ];
 
   @override
@@ -60,6 +61,12 @@ class _BottomNavigatorState extends State<BottomNavigator> {
             icon: Icon(Icons.science_outlined),
             label: 'GlidLabbet',
           ),
+          NavigationDestination(
+            selectedIcon: Icon(Icons.more_horiz),
+            icon: Icon(Icons.more_horiz_outlined),
+            label: 'Mer',
+          ),
+
         ],
       ),
       body:  IndexedStack(
