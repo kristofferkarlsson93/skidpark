@@ -122,12 +122,14 @@ class DataRecorder extends ChangeNotifier {
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 0,
         intervalDuration: const Duration(milliseconds: 200),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: "Min Skidpark - Glidlabbet körs",
-          notificationText: "Använder GPS",
-          enableWakeLock: true, // keep cpu awake
-          setOngoing: true, // Can remove notification.
-        ),
+        // Disabled for now: Causing strange flicker in the GPS recording.
+        // When using foregroundService android behaves differently when giving location.
+        // foregroundNotificationConfig: const ForegroundNotificationConfig(
+        //   notificationTitle: "Min Skidpark - Glidlabbet körs",
+        //   notificationText: "Använder GPS",
+        //   enableWakeLock: true, // keep cpu awake
+        //   setOngoing: true, // Can remove notification.
+        // ),
       );
     } else if (Platform.isIOS) {
       return AppleSettings(

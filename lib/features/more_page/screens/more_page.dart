@@ -83,13 +83,13 @@ class MorePage extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    flex: 3,
+                    flex: 4,
                     child: FilledButton.icon(
                       onPressed: () => _sendEmail(context),
                       icon: const Icon(Icons.send_rounded, size: 18),
                       label: const Text("Maila minskidpark@gmail.com"),
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
@@ -97,7 +97,7 @@ class MorePage extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 1,
-                    child: OutlinedButton(
+                    child: TextButton(
                       onPressed: () => _copyToClipboard(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
