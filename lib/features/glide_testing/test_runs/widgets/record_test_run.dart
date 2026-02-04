@@ -140,10 +140,7 @@ class RecordTestRun extends StatelessWidget {
                         value: viewModel.dataRecorder.elapsedSeconds.toString(),
                         unit: 's',
                         icon: Icons.timer_outlined,
-                        // Ikon!
-                        accentColor: theme
-                            .colorScheme
-                            .secondary,
+                        accentColor: theme.colorScheme.secondary,
                       ),
                     ),
                   ],
@@ -161,8 +158,10 @@ class RecordTestRun extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const Spacer(),
+                const Divider(),
+                Center(child: _buildVolumeKeyGuide(theme)),
+                const SizedBox(height: 16),
 
                 if (countdown > 0)
                   Padding(
@@ -223,6 +222,51 @@ class RecordTestRun extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildVolumeKeyGuide(ThemeData theme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+            ),
+          ),
+          child: Icon(
+            Icons.save_alt,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "VOLYM NER",
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              "Spara åket",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
