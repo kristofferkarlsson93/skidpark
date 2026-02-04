@@ -15,7 +15,7 @@ class TestRunRepository {
 
   Future<int> storeTestRun(TestRunCandidate testRunCandidate) {
     drift.Uint8List compressedGpsData = _encodeGpsPositions(testRunCandidate);
-    drift.Uint8List compressedAccelData = _encodeAccelEvents(
+    drift.Uint8List compressedAccelData = encodeAccelEvents(
       testRunCandidate.accelerometerEvents,
     );
 
@@ -123,7 +123,7 @@ class TestRunRepository {
   }
 
   // Save space in storage
-  drift.Uint8List _encodeAccelEvents(List<RawAccelerometerEvent> accelEvents) {
+  static drift.Uint8List encodeAccelEvents(List<RawAccelerometerEvent> accelEvents) {
     final List<Map<String, dynamic>> accelListAsMap = accelEvents
         .map((event) => event.toJson())
         .toList();
