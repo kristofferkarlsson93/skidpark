@@ -149,9 +149,9 @@ class DataRecorder extends ChangeNotifier {
     // log(accuracy.toStringAsFixed(2));
     if (accuracy > 15) {
       return GpsAccuracy.bad;
-    } else if (accuracy > 10) {
+    } else if (accuracy > 8) {
       return GpsAccuracy.decent;
-    } else if (accuracy > 7) {
+    } else if (accuracy >= 6) {
       return GpsAccuracy.good;
     } else {
       // Below 7 meters.
