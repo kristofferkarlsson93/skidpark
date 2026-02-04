@@ -53,12 +53,12 @@ class TestRunRepository {
         final runData = row.readTable(_db.testRun);
         final skiData = row.readTable(_db.storedSki);
 
-        return _decodeRun(runData, skiData);
+        return decodeRun(runData, skiData);
       }).toList();
     });
   }
 
-  DecodedTestRun _decodeRun(TestRunData rawRun, StoredSkiData skiData) {
+  static DecodedTestRun decodeRun(TestRunData rawRun, StoredSkiData skiData) {
     final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
 
     final List<RawAccelerometerEvent> accelerometerEvents =
@@ -76,7 +76,7 @@ class TestRunRepository {
     );
   }
 
-  List<Position> _decodeGpsPositions(drift.Uint8List compressedData) {
+  static List<Position> _decodeGpsPositions(drift.Uint8List compressedData) {
     final gzipDecoder = GZipDecoder();
     final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
 
@@ -89,7 +89,7 @@ class TestRunRepository {
         .toList();
   }
 
-  List<RawAccelerometerEvent> _decodeAccelEvents(drift.Uint8List? compressedData) {
+  static List<RawAccelerometerEvent> _decodeAccelEvents(drift.Uint8List? compressedData) {
     if (compressedData == null || compressedData.isEmpty) {
       return [];
     }

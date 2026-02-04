@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:skidpark/common/database/database.dart';
+import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 
 class ExportedGlideTest {
   final StoredGlideTestData test;
   final List<StoredSkiData> skis;
-  final List<TestRunData> runs;
+  final List<DecodedTestRun> runs;
 
   ExportedGlideTest({
     required this.test,
@@ -42,8 +43,8 @@ class ExportedGlideTest {
           'skiName': ski.name,
           'startedAt': r.startedAt.toIso8601String(),
           'elapsedSeconds': r.elapsedSeconds,
-          'gpsData': base64Encode(r.gpsData),
-          'accelerometerData': base64Encode(r.accelerometerData),
+          'gpsData': r.gpsData.map((data) => data.toJson()).toList(),
+          'accelerometerData': r.accelerometerEvents.map((data) => data.toJson()).toList(),
         };
       }).toList(),
     };

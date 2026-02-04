@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' as drift;
+import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 
 import '../database.dart';
@@ -66,6 +67,13 @@ class GlideTestRepository {
       _db.storedSki,
     )..where((s) => s.id.isIn(skiIds))).get();
 
-    return ExportedGlideTest(test: test, runs: runs, skis: skis);
+    final decodedRuns = runs.map(
+      (r) => TestRunRepository.decodeRun(
+        r,
+        skis.firstWhere((s) => s.id == r.skiId),
+      ),
+    ).toList();
+
+    return ExportedGlideTest(test: test, runs: decodedRuns, skis: skis);
   }
 }
