@@ -63,10 +63,11 @@ class _GlideTestFormState extends State<GlideTestForm> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets;
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
     final isEditing = widget.testToEdit != null;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + viewInsets.bottom + safeAreaBottom),
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -84,9 +85,10 @@ class _GlideTestFormState extends State<GlideTestForm> {
                 decoration: InputDecoration(
                   labelText: isEditing ? "Namnge testet" : "Namnge testet (Valfritt)",
                   hintText: isEditing ? "Ange ett namn" : _defaultTitle,
+                  helperMaxLines: 3,
                   helperText: isEditing
                       ? null
-                      : "Förslag: '${_defaultTitle}' - Du kan ändra namn senare",
+                      : "'${_defaultTitle}' om inget anges. Du kan ändra namn senare",
                   floatingLabelBehavior: isEditing
                       ? FloatingLabelBehavior.auto
                       : FloatingLabelBehavior.always,
@@ -105,9 +107,10 @@ class _GlideTestFormState extends State<GlideTestForm> {
                 textCapitalization: TextCapitalization.sentences,
                 controller: _notesController,
                 decoration: const InputDecoration(
+                  helperMaxLines: 3,
                   alignLabelWithHint: true,
                   labelText: 'Anteckningar (valfritt)',
-                  helperText: 'T.ex snötyp, plats osv.',
+                  helperText: 'T.ex snötyp, plats osv. Du kan ändra detta senare',
                 ),
                 keyboardType: TextInputType.multiline,
                 maxLines: 5,

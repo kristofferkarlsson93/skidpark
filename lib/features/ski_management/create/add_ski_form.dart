@@ -56,16 +56,15 @@ class _AddSkiFormState extends State<AddSkiForm> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets;
-    const double horizontalPadding = 16.0;
-
+    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
     final isEditing = widget.skiToEdit != null;
     final title = isEditing ? 'Redigera skida' : 'Lägg till ny skida';
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        horizontalPadding,
         16,
-        horizontalPadding,
-        16 + viewInsets.bottom,
+        16,
+        16,
+        16 + viewInsets.bottom + safeAreaBottom,
       ),
       child: SingleChildScrollView(
         child: Form(
