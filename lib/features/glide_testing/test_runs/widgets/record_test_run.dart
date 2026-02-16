@@ -5,6 +5,7 @@ import 'package:skidpark/features/glide_testing/test_runs/widgets/stop_and_save_
 
 import '../../../../common/shared_widgets/flat_stats_card.dart';
 import '../viewModel/run_recorder_view_model.dart';
+import 'instructions_guide.dart';
 
 class RecordTestRun extends StatelessWidget {
   final RunRecorderViewModel viewModel;
@@ -159,64 +160,95 @@ class RecordTestRun extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Divider(),
-                Center(child: _buildVolumeKeyGuide(theme)),
-                const SizedBox(height: 16),
 
-                if (countdown > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    border: Border(
+                      top: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withOpacity(
+                          0.2,
                         ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+
+                  child: Column(
+                    children: [
+                      const InstructionGuide(
+                        firstInstruction: InstructionItem(
+                          icon: Icons.save_alt,
+                          primaryText: "Volym -",
+                          secondaryText: "Spara åket nu",
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.timer,
-                              size: 16,
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Stopp upptäckt. Avslutar automatiskt...",
-                              style: textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
+                        secondInstruction: InstructionItem(
+                          icon: Icons.stop_circle,
+                          primaryText: "Vid stopp",
+                          secondaryText: "Sparas åket\nautomatiskt",
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      if (countdown > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timer,
+                                    size: 16,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Stopp upptäckt. Avslutar automatiskt...",
+                                    style: textTheme.labelMedium?.copyWith(
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
+                          ),
+                        ),
+
+                      StopAndSaveButton(
+                        countdownSeconds: countdown,
+                        onStopAndSave: onStopAndSave,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Center(
+                        child: TextButton(
+                          onPressed: onAbort,
+                          child: Text(
+                            'Avbryt och kasta',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-
-                StopAndSaveButton(
-                  countdownSeconds: countdown,
-                  onStopAndSave: onStopAndSave,
-                ),
-
-                const SizedBox(height: 16),
-
-                Center(
-                  child: TextButton(
-                    onPressed: onAbort,
-                    child: Text(
-                      'Avbryt och kasta',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
               ],
             );
           },

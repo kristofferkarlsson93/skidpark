@@ -4,6 +4,7 @@ import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_b
 
 import '../../../../common/shared_widgets/simple_ski_list_item.dart';
 import '../viewModel/run_recorder_view_model.dart';
+import 'instructions_guide.dart';
 
 class StartTestRunWidget extends StatefulWidget {
   final RunRecorderViewModel viewModel;
@@ -130,7 +131,18 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildVolumeKeyGuide(theme),
+                const InstructionGuide(
+                  firstInstruction: InstructionItem(
+                    icon: Icons.unfold_more,
+                    primaryText: "Volym + / -",
+                    secondaryText: "Välj skida",
+                  ),
+                  secondInstruction: InstructionItem(
+                    icon: Icons.arrow_drop_down,
+                    primaryText: "Håll in volym -",
+                    secondaryText: "Starta test",
+                  ),
+                ),
                 const SizedBox(height: 16),
 
                 BigButton(
@@ -167,62 +179,6 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildVolumeKeyGuide(ThemeData theme) {
-    Widget instructionItem(IconData icon, String action, String input) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
-            ),
-            child: Icon(icon, size: 20, color: theme.colorScheme.primary),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                input.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-              Text(
-                action,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        instructionItem(Icons.unfold_more, "Välj skida", "Volym + / -"),
-        Container(
-          width: 1,
-          height: 30,
-          color: theme.colorScheme.outlineVariant,
-        ),
-        instructionItem(Icons.touch_app, "Starta test", "Håll in"),
-      ],
     );
   }
 }

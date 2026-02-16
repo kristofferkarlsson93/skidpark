@@ -111,7 +111,7 @@ class GlideTestingIntroCard extends StatelessWidget {
               _buildStepTile(theme, "1", "Skapa ett nytt test via + knappen."),
               _buildStepTile(theme, "2", "Dra ett startstreck i snön vid en lämplig backe."),
               _buildStepTile(theme, "3", "Välj 'Nytt åk' och vilken skida du testar."),
-              _buildStepTile(theme, "4", "Glid från stillastående vid strecket ner till stopp. Viktigt: Håll mobilen stilla."),
+              _buildStepTile(theme, "4", "Glid från stillastående vid strecket ner till stopp. Viktigt: Håll mobilen stilla, och med främre kortsida i åkriktningen."),
               _buildStepTile(theme, "5", "Upprepa för alla skidor du vill jämföra."),
             ],
           ),
