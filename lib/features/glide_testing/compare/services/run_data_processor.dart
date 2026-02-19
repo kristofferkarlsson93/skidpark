@@ -166,7 +166,10 @@ class RunDataProcessor {
       // If we haven't reached the trigger speed yet, we assume the user is still
       // handling the phone or standing still. We trust ONLY the GPS here to avoid
       // massive acceleration spikes from moving the phone into position.
-      if (currentGpsPoint.speed < _triggerSpeedMs) {
+      // Once we have started moving, we should not ignore the accelerometer,
+      // hence the kalmanFilter = null check. For example if the GPS drops to 0 mid run,
+      // we can still use the accel data to show a better line.
+      if (kalmanFilter == null && currentGpsPoint.speed < _triggerSpeedMs) {
         // Add the raw GPS point without filtering
         fusedGpsPoints.add(currentGpsPoint);
 
@@ -231,7 +234,7 @@ class RunDataProcessor {
 
       // 4. UPDATE: Now that we have caught up to the current time,
       // correct the prediction using the actual GPS speed.
-      kalmanFilter.update(currentGpsPoint.speed);
+      kalmanFilter.update(currentGpsPoint.speed, currentGpsPoint.speedAccuracy);
 
       // 5. Store the result
       // We create a new Position object that is identical to the GPS point,

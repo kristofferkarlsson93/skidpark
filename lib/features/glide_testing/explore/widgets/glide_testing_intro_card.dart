@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class GlideTestingIntroCard extends StatelessWidget {
   final ThemeData? theme;
-  const GlideTestingIntroCard({super.key, this.theme});
+  final VoidCallback? onLongPressGuide;
+
+  const GlideTestingIntroCard({super.key, this.theme, this.onLongPressGuide});
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +64,14 @@ class GlideTestingIntroCard extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => _showInfoDialog(context, themeData),
+                  onLongPress: onLongPressGuide,
                   icon: const Icon(Icons.info_outline, size: 18),
                   label: const Text("Guide: Så utför du ett glidtest"),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: themeData.colorScheme.primary.withAlpha((0.85 * 255).toInt()),
-                    side: BorderSide(
-                      color: Colors.transparent,
+                    foregroundColor: themeData.colorScheme.primary.withAlpha(
+                      (0.85 * 255).toInt(),
                     ),
+                    side: BorderSide(color: Colors.transparent),
                   ),
                 ),
               ),

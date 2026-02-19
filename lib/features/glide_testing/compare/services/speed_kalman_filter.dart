@@ -18,11 +18,6 @@ class SpeedKalmanFilter {
   // A higher number means we think the speed changes randomly or the accel is noisy.
   final double _predictionUncertaintyPerSecond = 0.5;
 
-  // How much "noise" we expect from the GPS.
-  // A lower number (e.g., 0.3) means we trust the GPS highly for absolute speed.
-  // A higher number would mean we rely more on the accelerometer curve.
-  final double _gpsMeasurementUncertainty = 0.3;
-
   // Controls how fast the filter adapts to changes in the slope/bias.
   // Used as a multiplier for the learning rate of the bias.
   // 0.1 is conservative/stable.
@@ -60,17 +55,34 @@ class SpeedKalmanFilter {
   /// Uses the actual GPS reading to correct both our speed estimate AND our understanding of the slope (bias).
   ///
   /// [measuredGpsSpeed]: The speed reported by the GPS in m/s.
-  void update(double measuredGpsSpeed) {
+  /// [speedAccuracy]: The estimated speed accuracy reported by the GPS in m/s.
+  void update(double measuredGpsSpeed, double speedAccuracy) {
+    // Glitch protection. It happens that we get 0 on both of these mid run. Trust accel if that happens.
+    if (measuredGpsSpeed == 0.0 && speedAccuracy == 0.0) {
+      speedAccuracy = 99.0;
+    }
+
+    bool isLegitStop = measuredGpsSpeed < 0.1 && speedAccuracy != 99.0;
+
     // 3. Calculate the difference between Map (GPS) and Reality (Our Guess).
     double error = measuredGpsSpeed - _currentSpeedEstimate;
+
+    // Ensure we don't get a 0.0 or negative uncertainty which would break the math.
+    // A minimum of 0.05 m/s handles exceptionally "perfect" but potentially misleading GPS readings.
+    double measurementUncertainty = speedAccuracy > 0.05 ? speedAccuracy : 0.05;
 
     // 4. Calculate "Kalman Gain" (Trust Factor).
     // This calculates a value between 0.0 and 1.0.
     // Near 1.0 = Trust GPS entirely.
     // Near 0.0 = Trust our calculated prediction entirely.
-    double trustFactor =
-        _estimationUncertainty /
-        (_estimationUncertainty + _gpsMeasurementUncertainty);
+    double trustFactor;
+    if (isLegitStop) {
+      trustFactor = 1.0;
+    } else {
+      trustFactor =
+          _estimationUncertainty /
+              (_estimationUncertainty + measurementUncertainty);
+    }
 
     // 5. Correct the speed.
     // We take the difference between GPS and our guess, scale it by the Trust Factor,
@@ -85,8 +97,9 @@ class SpeedKalmanFilter {
     // 7. Decrease uncertainty.
     // Since we just got a real measurement, we are now more confident in our value.
     _estimationUncertainty = (1.0 - trustFactor) * _estimationUncertainty;
-  }
 
+    if (_currentSpeedEstimate < 0) _currentSpeedEstimate = 0.0;
+  }
   double get speed => _currentSpeedEstimate;
 
   double get slopeBias => _accelerationBias;

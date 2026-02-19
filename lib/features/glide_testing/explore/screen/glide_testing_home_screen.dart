@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../create/glide_test_form.dart';
+import '../widgets/dev_import_dialog.dart';
 import '../widgets/my_glide_tests_list.dart';
 import '../widgets/glide_testing_intro_card.dart';
 
@@ -38,7 +40,17 @@ class GlideTestingHomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            GlideTestingIntroCard(theme: theme),
+            GlideTestingIntroCard(
+              theme: theme,
+              onLongPressGuide: kDebugMode
+                  ? () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const DevImportDialog(),
+                      );
+                    }
+                  : null,
+            ),
             StreamBuilder(
               stream: glideTestRepository.watchTests(),
               builder: (context, snapshot) {
