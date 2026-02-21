@@ -26,8 +26,8 @@ class ReleasePointContainer extends StatelessWidget {
     final lines = runsToShow
         .map(
           (r) =>
-              GraphLine.fromEnrichedTestRun(r, viewModel.calculateRunLabel(r)),
-        )
+          GraphLine.fromEnrichedTestRun(r, viewModel.calculateRunLabel(r)),
+    )
         .toList();
 
     final maxY = lines.isNotEmpty
@@ -74,7 +74,7 @@ class ReleasePointContainer extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Flexible(
                               child: Text(
                                 isEditMode
@@ -124,8 +124,8 @@ class ReleasePointContainer extends StatelessWidget {
           title: const Text("Simulera släpp vid punkt"),
           content: const Text(
             "Det tillförlitligaste sättet att testa skidor är genom att hålla en kompis i handen och glida nerför en backe. På given signal släpper man händerna och ser hur skidorna spelar ut mot varandra.\n\n"
-            "Denna funktion gör samma sak digitalt. Vi räknar om kurvorna så att alla skidor har exakt samma fart vid linjen (släpp-punkten).\n\n"
-            "Grafen visar därefter hur skidorna borde ha presterat mot varandra.",
+                "Denna funktion gör samma sak digitalt. Vi räknar om kurvorna så att alla skidor har exakt samma fart vid linjen (släpp-punkten).\n\n"
+                "Grafen visar därefter hur skidorna borde ha presterat mot varandra.",
           ),
           actions: [
             TextButton(
@@ -142,7 +142,7 @@ class ReleasePointContainer extends StatelessWidget {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: ReleasePointControls(isEditMode: true),
+        child: const ReleasePointControls(isEditMode: true),
       ),
     );
   }
@@ -153,6 +153,13 @@ class ReleasePointContainer extends StatelessWidget {
     }
     final theme = Theme.of(context);
 
+    final worstDistance = runs.isNotEmpty
+        ? (runs as Iterable).fold<double>(
+      100000.0,
+          (minDist, r) => math.min(minDist, r.traveledDistance as double),
+    )
+        : 0.0;
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       itemCount: runs.length,
@@ -161,13 +168,29 @@ class ReleasePointContainer extends StatelessWidget {
         var title = useAverageView
             ? "${run.skiName} (${run.runNumber} åk)"
             : "Åk ${run.runNumber} - ${run.skiName}";
+
+        double speedLossPer10m = 0.0;
+        if (run.positionData.isNotEmpty && run.traveledDistance > 0) {
+          final startKmh = run.positionData.first.speed * 3.6;
+          final endKmh = run.positionData.last.speed * 3.6;
+          speedLossPer10m = ((startKmh - endKmh) / run.traveledDistance) * 10.0;
+        }
+
+        final diff = run.traveledDistance - worstDistance;
+        final isReference = diff <= 0.05;
+
+        final diffText = isReference ? "Referens" : "+${diff.toStringAsFixed(1)} m";
+        final diffColor = isReference ? theme.colorScheme.onSurfaceVariant : Colors.green;
+        final diffWeight = isReference ? FontWeight.normal : FontWeight.bold;
+
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 decoration: BoxDecoration(
                   color: run.runColor,
                   shape: BoxShape.circle,
@@ -175,17 +198,30 @@ class ReleasePointContainer extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: isReference ? FontWeight.normal : FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      "Tappar ${speedLossPer10m.toStringAsFixed(2)} km/h per 10m",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Text(
-                "${run.traveledDistance.toStringAsFixed(1)} m",
+                diffText,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: diffWeight,
+                  color: diffColor,
                   fontFamily: 'monospace',
                 ),
               ),
