@@ -13,6 +13,7 @@ import '../../../ski_management/models/ski.dart';
 import '../../models/glide_test_candidate.dart';
 import '../../models/test_run_candidate.dart';
 import '../../test_runs/models/raw_accelerometer_event.dart';
+import '../../test_runs/models/raw_barometer_event.dart';
 
 class DevImportDialog extends StatefulWidget {
   const DevImportDialog({super.key});
@@ -71,7 +72,9 @@ class _DevImportDialogState extends State<DevImportDialog> {
         notes: testData['notes'],
       );
 
-      final newTestId = await testRepo.create(testCandidate); // Använder GlideTestRepository.create
+      final newTestId = await testRepo.create(
+        testCandidate,
+      ); // Använder GlideTestRepository.create
 
       if (testData['useSensorFusion'] == true) {
         await testRepo.setUseSensorFusion(newTestId, true);
@@ -92,7 +95,25 @@ class _DevImportDialogState extends State<DevImportDialog> {
           final List<dynamic> accelJsonList = jsonDecode(accelJsonString);
 
           accelEvents = accelJsonList
-              .map((e) => RawAccelerometerEvent.fromJson(e as Map<String, dynamic>))
+              .map(
+                (e) =>
+                    RawAccelerometerEvent.fromJson(e as Map<String, dynamic>),
+              )
+              .toList();
+        }
+
+        List<RawBarometerEvent> barometerEvents = [];
+        final String? barometerBase64 = runData['barometerData'];
+        if (barometerBase64 != null && barometerBase64.isNotEmpty) {
+          final compressedBytes = base64Decode(barometerBase64);
+          final decompressedBytes = gzip.decode(compressedBytes);
+          final barometerJsonString = utf8.decode(decompressedBytes);
+          final List<dynamic> barometerJsonList = jsonDecode(
+            barometerJsonString,
+          );
+
+          barometerEvents = barometerJsonList
+              .map((e) => RawBarometerEvent.fromJson(e as Map<String, dynamic>))
               .toList();
         }
 
@@ -108,7 +129,7 @@ class _DevImportDialogState extends State<DevImportDialog> {
           elapsedSeconds: runData['elapsedSeconds'] as int,
           gpsData: gpsPositions,
           accelerometerEvents: accelEvents,
-          barometerEvents: List.empty() // todo
+          barometerEvents: barometerEvents,
         );
 
         await runRepo.storeTestRun(runCandidate);
@@ -122,9 +143,9 @@ class _DevImportDialogState extends State<DevImportDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fel vid import: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fel vid import: $e')));
       }
     } finally {
       if (mounted) {
@@ -155,10 +176,13 @@ class _DevImportDialogState extends State<DevImportDialog> {
           onPressed: _isLoading ? null : _pickAndImportFile,
           icon: _isLoading
               ? const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-          )
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
               : const Icon(Icons.file_upload),
           label: const Text("Select JSON"),
         ),

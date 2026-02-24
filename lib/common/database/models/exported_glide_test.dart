@@ -15,7 +15,7 @@ class ExportedGlideTest {
     required this.test,
     required this.skis,
     required this.runs,
-    required this.deviceInfo
+    required this.deviceInfo,
   });
 
   Map<String, dynamic> toJson() {
@@ -53,6 +53,11 @@ class ExportedGlideTest {
           'accelerometerData': base64.encode(
             TestRunRepository.encodeAccelEvents(r.accelerometerEvents),
           ),
+          'barometerData': r.barometerEvents == null
+              ? null
+              : base64.encode(
+                  TestRunRepository.encodeBarometerEvents(r.barometerEvents!),
+                ),
         };
       }).toList(),
     };
