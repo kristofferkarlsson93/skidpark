@@ -7,6 +7,7 @@ import 'package:skidpark/common/database/repository/ski_repository.dart';
 import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
 import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
 import 'package:skidpark/features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_barometer_event.dart';
 import '../../../../common/database/database.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
 import '../../../../common/services/volume_press_handler.dart';
@@ -89,11 +90,15 @@ class RunRecorderViewModel extends ChangeNotifier {
       dataRecorder.recordedAccelerometerEvents,
     );
 
+    final barometerEvents = List<RawBarometerEvent>.from(
+      dataRecorder.recordedBarometerEvents,
+    );
+
     dataRecorder.resetForNewRun();
     _currentMarkedSkiIndex = -1;
 
     log(
-      "Stop and save: ${accelerometerEvents.length} accel events and ${positions.length} GPS positions",
+      "Stop and save: ${accelerometerEvents.length} accel events, ${barometerEvents.length} barometer events and ${positions.length} GPS positions",
     );
 
     final candidate = TestRunCandidate(
@@ -103,6 +108,7 @@ class RunRecorderViewModel extends ChangeNotifier {
       elapsedSeconds: elapsedSeconds,
       gpsData: positions,
       accelerometerEvents: accelerometerEvents,
+      barometerEvents: barometerEvents
     );
     await _testRunRepository.storeTestRun(candidate);
     _onStopAndSaveCallback();

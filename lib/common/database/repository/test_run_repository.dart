@@ -3,6 +3,7 @@ import 'package:archive/archive.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_barometer_event.dart';
 
 import '../../../features/glide_testing/models/decoded_test_run.dart';
 import '../../../features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
@@ -18,6 +19,9 @@ class TestRunRepository {
     drift.Uint8List compressedAccelData = encodeAccelEvents(
       testRunCandidate.accelerometerEvents,
     );
+    drift.Uint8List compressedBarometerData = encodeBarometerEvents(
+      testRunCandidate.barometerEvents,
+    );
 
     final companion = TestRunCompanion(
       startedAt: drift.Value(testRunCandidate.startedAt),
@@ -26,6 +30,7 @@ class TestRunRepository {
       elapsedSeconds: drift.Value(testRunCandidate.elapsedSeconds),
       gpsData: drift.Value(compressedGpsData),
       accelerometerData: drift.Value(compressedAccelData),
+      barometerData: drift.Value(compressedBarometerData),
     );
 
     return _db.into(_db.testRun).insert(companion);
@@ -61,8 +66,11 @@ class TestRunRepository {
   static DecodedTestRun decodeRun(TestRunData rawRun, StoredSkiData skiData) {
     final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
 
-    final List<RawAccelerometerEvent> accelerometerEvents =
-    _decodeAccelEvents(rawRun.accelerometerData);
+    final List<RawAccelerometerEvent> accelerometerEvents = _decodeAccelEvents(
+      rawRun.accelerometerData,
+    );
+
+    List<RawBarometerEvent>? barometerEvents = _decodeBarometerEvents(rawRun.barometerData);
 
     return DecodedTestRun(
       rawRun.id,
@@ -73,6 +81,7 @@ class TestRunRepository {
       skiData.name,
       positions,
       accelerometerEvents,
+      barometerEvents
     );
   }
 
@@ -89,7 +98,9 @@ class TestRunRepository {
         .toList();
   }
 
-  static List<RawAccelerometerEvent> _decodeAccelEvents(drift.Uint8List? compressedData) {
+  static List<RawAccelerometerEvent> _decodeAccelEvents(
+    drift.Uint8List? compressedData,
+  ) {
     if (compressedData == null || compressedData.isEmpty) {
       return [];
     }
@@ -102,9 +113,35 @@ class TestRunRepository {
     final List<dynamic> jsonList = jsonDecode(jsonString);
 
     return jsonList
-        .map((jsonMap) => RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>))
+        .map(
+          (jsonMap) =>
+              RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>),
+        )
         .toList();
   }
+
+  static List<RawBarometerEvent>? _decodeBarometerEvents(
+      drift.Uint8List? compressedData,
+      ) {
+    if (compressedData == null || compressedData.isEmpty) {
+      return null;
+    }
+
+    final gzipDecoder = GZipDecoder();
+    final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
+
+    final jsonString = utf8.decode(decompressedBytes);
+
+    final List<dynamic> jsonList = jsonDecode(jsonString);
+
+    return jsonList
+        .map(
+          (jsonMap) =>
+          RawBarometerEvent.fromJson(jsonMap as Map<String, dynamic>),
+    )
+        .toList();
+  }
+
 
   // Save space in storage
   drift.Uint8List _encodeGpsPositions(TestRunCandidate testRunCandidate) {
@@ -123,7 +160,9 @@ class TestRunRepository {
   }
 
   // Save space in storage
-  static drift.Uint8List encodeAccelEvents(List<RawAccelerometerEvent> accelEvents) {
+  static drift.Uint8List encodeAccelEvents(
+    List<RawAccelerometerEvent> accelEvents,
+  ) {
     final List<Map<String, dynamic>> accelListAsMap = accelEvents
         .map((event) => event.toJson())
         .toList();
@@ -135,5 +174,21 @@ class TestRunRepository {
       accelDataBytes,
     );
     return compressedAccelData;
+  }
+
+  static drift.Uint8List encodeBarometerEvents(
+    List<RawBarometerEvent> barometerEvents,
+  ) {
+    final List<Map<String, dynamic>> barometerListAsMap = barometerEvents
+        .map((event) => event.toJson())
+        .toList();
+    final String barometerDataJsonString = jsonEncode(barometerListAsMap);
+    final barometerDataBytes = utf8.encode(barometerDataJsonString);
+
+    final gzipEncoder = GZipEncoder();
+    final drift.Uint8List compressedBarometerData = gzipEncoder.encodeBytes(
+      barometerDataBytes,
+    );
+    return compressedBarometerData;
   }
 }

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import 'models/raw_accelerometer_event.dart';
+import 'models/raw_barometer_event.dart';
 
 enum GpsMode { record, passive }
 
@@ -15,10 +16,12 @@ enum GpsAccuracy { unknown, bad, decent, good, excellent }
 class DataRecorder extends ChangeNotifier {
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<UserAccelerometerEvent>? _accelerometerStreamSubscription;
+  StreamSubscription<BarometerEvent>? _barometerStreamSubscription;
 
   Timer? _stopwatchTimer;
   final List<Position> _positions = [];
   final List<RawAccelerometerEvent> _accelEvents = [];
+  final List<RawBarometerEvent> _barometerEvents = [];
 
   GpsAccuracy _accuracyGrade = GpsAccuracy.unknown;
   double _currentSpeedKmh = 0.0;
@@ -34,6 +37,8 @@ class DataRecorder extends ChangeNotifier {
   List<Position> get recordedPositions => _positions;
 
   List<RawAccelerometerEvent> get recordedAccelerometerEvents => _accelEvents;
+
+  List<RawBarometerEvent> get recordedBarometerEvents => _barometerEvents;
 
   int get dataPoints => _positions.length;
 
@@ -75,12 +80,28 @@ class DataRecorder extends ChangeNotifier {
         );
   }
 
+  void _startBarometerSubscription() {
+    log("Starting barometer subscription");
+    _barometerStreamSubscription =
+        barometerEventStream(
+          samplingPeriod: SensorInterval.normalInterval,
+        ).listen(
+          (BarometerEvent event) {
+            _barometerEvents.add(RawBarometerEvent.fromSensorPlusEvent(event));
+          },
+          onError: (error) {
+            log("Barometer-error: $error");
+          },
+        );
+  }
+
   void startRecording() {
     log("Starting recording");
     _positions.clear();
     _accelEvents.clear();
     _gpsMode = GpsMode.record;
     _startAccelerometerSubscription();
+    _startBarometerSubscription();
 
     _stopwatchTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _elapsedSeconds++;
@@ -93,6 +114,7 @@ class DataRecorder extends ChangeNotifier {
     _stopwatchTimer?.cancel();
     _stopwatchTimer = null;
     _accelerometerStreamSubscription?.cancel();
+    _barometerStreamSubscription?.cancel();
   }
 
   void resetForNewRun() {
@@ -102,6 +124,7 @@ class DataRecorder extends ChangeNotifier {
     _positions.clear();
     _elapsedSeconds = 0;
     _accelEvents.clear();
+    _barometerEvents.clear();
   }
 
   @override
@@ -113,6 +136,8 @@ class DataRecorder extends ChangeNotifier {
     _stopwatchTimer = null;
     _accelerometerStreamSubscription?.cancel();
     _accelerometerStreamSubscription = null;
+    _barometerStreamSubscription?.cancel();
+    _barometerStreamSubscription = null;
     super.dispose();
   }
 

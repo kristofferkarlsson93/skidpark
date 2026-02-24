@@ -45,6 +45,7 @@ class OverviewContainer extends StatelessWidget {
                 ],
               ),
             ),
+            heightProfile: viewModel.heightProfile,
           ),
         ),
         Expanded(

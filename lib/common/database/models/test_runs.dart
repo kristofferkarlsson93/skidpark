@@ -14,4 +14,6 @@ class TestRun extends Table {
 
   BlobColumn get gpsData => blob()();
   BlobColumn get accelerometerData => blob()();
+
+  BlobColumn get barometerData => blob().nullable()();
 }

@@ -7,6 +7,7 @@ import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
 import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
+import 'package:skidpark/features/glide_testing/compare/services/altitude_profile_calculator.dart';
 import 'package:skidpark/features/glide_testing/compare/services/average_per_ski_calculator.dart';
 import 'package:skidpark/features/glide_testing/compare/services/glide_test_export_service.dart';
 import 'package:skidpark/features/glide_testing/compare/services/release_point_analysis.dart';
@@ -14,6 +15,8 @@ import 'package:skidpark/features/glide_testing/compare/services/run_data_proces
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
+
+import 'models/calculated_position.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
@@ -27,6 +30,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _testRuns = [];
   List<EnrichedTestRun> _releasePointTestRuns = [];
   List<EnrichedTestRun> _averageRunPerSki = [];
+  List<AltitudePoint> _heightProfile = [];
 
   bool _useAverageView = false;
 
@@ -96,6 +100,8 @@ class CompareRunsViewModel extends ChangeNotifier {
     if (_testRuns.isEmpty) return false;
     return _testRuns.every((run) => !_deselectedRunIds.contains(run.id));
   }
+
+  List<AltitudePoint> get heightProfile => _heightProfile;
 
   CompareRunsViewModel({
     required testRunRepository,
@@ -182,7 +188,6 @@ class CompareRunsViewModel extends ChangeNotifier {
     _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
 
-
   void exportAllGlideTestData() async {
     final data = await _glideTestRepository.exportRelatedData(_glideTest!.id);
     GlideTestExportService.exportAndShare(data);
@@ -233,6 +238,7 @@ class CompareRunsViewModel extends ChangeNotifier {
     _testRuns = _rawRuns.indexed.map(((int, DecodedTestRun) entry) {
       return _calculateTestRunData(entry.$2, entry.$1 + 1);
     }).toList();
+    _calculateHeightProfile();
     notifyListeners();
   }
 
@@ -253,6 +259,38 @@ class CompareRunsViewModel extends ChangeNotifier {
         testRuns: runs,
         releasePoint: releasePoint,
       );
+    }
+  }
+
+  void _calculateHeightProfile() {
+    if (_rawRuns.isEmpty || _testRuns.isEmpty) {
+      _heightProfile = [];
+      return;
+    }
+
+    DecodedTestRun? rawLongestRun;
+    List<CalculatedPosition> longestPositions = [];
+    double maxDistance = -1.0;
+
+    for (var testRun in _testRuns) {
+      final raw = _rawRuns.firstWhere((r) => r.id == testRun.id);
+
+      if (raw.barometerEvents != null && raw.barometerEvents!.isNotEmpty) {
+        if (testRun.traveledDistance > maxDistance) {
+          maxDistance = testRun.traveledDistance;
+          rawLongestRun = raw;
+          longestPositions = testRun.positionData;
+        }
+      }
+    }
+
+    if (rawLongestRun != null) {
+      _heightProfile = AltitudeProfileCalculator.generateProfile(
+        processedPositions: longestPositions,
+        barometerEvents: rawLongestRun.barometerEvents,
+      );
+    } else {
+      _heightProfile = [];
     }
   }
 

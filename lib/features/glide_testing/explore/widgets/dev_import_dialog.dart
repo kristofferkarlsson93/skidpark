@@ -83,7 +83,6 @@ class _DevImportDialogState extends State<DevImportDialog> {
         final oldSkiId = runData['skiId'] as int;
         final targetSkiId = skiIdMap[oldSkiId] ?? skiIdMap.values.first;
 
-        // Packa upp Accelerometer-data (Base64 -> Gzip-bytes -> String -> JSON -> Modeller)
         List<RawAccelerometerEvent> accelEvents = [];
         final String? accelBase64 = runData['accelerometerData'];
         if (accelBase64 != null && accelBase64.isNotEmpty) {
@@ -97,13 +96,11 @@ class _DevImportDialogState extends State<DevImportDialog> {
               .toList();
         }
 
-        // Packa upp GPS-data (Din export gör .toJson() på Position-objekt, så vi använder fromMap här)
         final List<dynamic> gpsJsonList = runData['gpsData'] ?? [];
         List<Position> gpsPositions = gpsJsonList
             .map((e) => Position.fromMap(e as Map<String, dynamic>))
             .toList();
 
-        // Skapa kandidaten exakt enligt din klass
         final runCandidate = TestRunCandidate(
           startedAt: DateTime.parse(runData['startedAt']),
           skiId: targetSkiId,
@@ -111,13 +108,14 @@ class _DevImportDialogState extends State<DevImportDialog> {
           elapsedSeconds: runData['elapsedSeconds'] as int,
           gpsData: gpsPositions,
           accelerometerEvents: accelEvents,
+          barometerEvents: List.empty() // todo
         );
 
-        await runRepo.storeTestRun(runCandidate); // Använder TestRunRepository.storeTestRun
+        await runRepo.storeTestRun(runCandidate);
       }
 
       if (mounted) {
-        Navigator.pop(context); // Stäng dialogen
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Testdata importerad! 🎉')),
         );

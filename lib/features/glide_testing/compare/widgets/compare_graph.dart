@@ -6,12 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:skidpark/features/glide_testing/compare/models/graph_line.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/side_scrolled_run_legend.dart';
 
+import '../services/altitude_profile_calculator.dart';
+
 class CompareGraph extends StatelessWidget {
   final List<GraphLine> lines;
   final double maxY;
   final Widget emptyGraphContent;
   final double? maybeVerticalLineXCoordinate;
   final bool isFullscreen;
+  final List<AltitudePoint>? heightProfile;
 
   const CompareGraph({
     super.key,
@@ -20,6 +23,7 @@ class CompareGraph extends StatelessWidget {
     required this.emptyGraphContent,
     this.maybeVerticalLineXCoordinate,
     this.isFullscreen = false,
+    this.heightProfile
   });
 
   @override
@@ -118,7 +122,12 @@ class CompareGraph extends StatelessWidget {
   }
 
   LineChartData _buildChartData(List<GraphLine> runs, ThemeData theme) {
+
     final List<LineChartBarData> lines = [];
+    final altitudeBar = _buildAltitudeProfileBar(theme);
+    if (altitudeBar != null) {
+      lines.add(altitudeBar);
+    }
     for (int i = 0; i < runs.length; i++) {
       final run = runs[i];
       final spots = run.positionData
@@ -220,6 +229,39 @@ class CompareGraph extends StatelessWidget {
         ),
       ),
       borderData: FlBorderData(show: true),
+    );
+  }
+
+  LineChartBarData? _buildAltitudeProfileBar(ThemeData theme) {
+    if (heightProfile == null || heightProfile!.isEmpty || maxY <= 0) {
+      return null;
+    }
+
+    double minAlt = heightProfile!.map((p) => p.relativeAltitude).reduce(min);
+    double maxAlt = heightProfile!.map((p) => p.relativeAltitude).reduce(max);
+    double altRange = maxAlt - minAlt;
+
+    if (altRange == 0) altRange = 1.0;
+
+    final double maxProfileHeight = maxY * 0.5;
+
+    List<FlSpot> altSpots = heightProfile!.map((p) {
+      double scaledY = ((p.relativeAltitude - minAlt) / altRange) * maxProfileHeight;
+      return FlSpot(p.distanceTraveled, scaledY);
+    }).toList();
+
+    return LineChartBarData(
+      spots: altSpots,
+      isCurved: true,
+      color: Colors.transparent,
+      barWidth: 0,
+      dotData: const FlDotData(show: false),
+      belowBarData: BarAreaData(
+        show: true,
+        color: theme.colorScheme.onSurface.withOpacity(0.08),
+        applyCutOffY: true,
+        cutOffY: 0,
+      ),
     );
   }
 
