@@ -182,7 +182,6 @@ class CompareRunsViewModel extends ChangeNotifier {
     _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
 
-
   void exportAllGlideTestData() async {
     final data = await _glideTestRepository.exportRelatedData(_glideTest!.id);
     GlideTestExportService.exportAndShare(data);
@@ -196,10 +195,17 @@ class CompareRunsViewModel extends ChangeNotifier {
     }
   }
 
+  void deleteCurrentGlideTest() {
+    _glideTestRepository.deleteGlideTest(glideTest!.id);
+  }
+
   void _listenToGlideTest(int glideTestId) {
     _glideTestSubscription = _glideTestRepository
         .watchTestById(glideTestId)
         .listen((test) {
+
+          if (test == null) return;
+
           final sensorFusionChanged =
               _glideTest?.useSensorFusion != test.useSensorFusion;
           _glideTest = test;

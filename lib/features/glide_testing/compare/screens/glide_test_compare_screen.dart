@@ -96,6 +96,44 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
     }
   }
 
+  void _deleteGlideTest(
+    BuildContext context,
+    CompareRunsViewModel viewModel,
+  ) async {
+    bool didConfirm =
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Radera "${viewModel.testTitle}"?'),
+            content: Text(
+              'Är du säker på att du vill radera "${viewModel.testTitle}"? All testdata i detta test kommer gå förlorad.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Avbryt'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Radera'),
+              ),
+            ],
+          ),
+        ) ??
+        false; // in case of discard (click outside) return false.
+
+    if (didConfirm && context.mounted) {
+      viewModel.deleteCurrentGlideTest();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Testet raderat')));
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final glideTestRepository = context.read<GlideTestRepository>();
@@ -163,7 +201,9 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                       onSelectExport: () {
                         viewModel.exportAllGlideTestData();
                       },
-                      onSelectArchive: () {},
+                      onSelectDelete: () {
+                        _deleteGlideTest(context, viewModel);
+                      },
                     );
                   },
                 ),
@@ -183,11 +223,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
                     PageView(
                       controller: _pageController,
                       physics: NeverScrollableScrollPhysics(),
-                      children: [
-                        // todo rename to overview container.
-                        OverviewContainer(),
-                        ReleasePointContainer(),
-                      ],
+                      children: [OverviewContainer(), ReleasePointContainer()],
                     ),
                     Positioned(
                       top: kToolbarHeight,

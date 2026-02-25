@@ -3,20 +3,20 @@ import 'package:flutter/material.dart';
 enum GlideTestMoreMenuOptions {
   editGlideTest,
   exportGlideText,
-  archiveGlideTest,
-} // todo
+  deleteGlideTest,
+}
 
 class GlideTestMoreMenu extends StatelessWidget {
   final VoidCallback onSelectEdit;
   final VoidCallback onSelectExport;
 
-  final VoidCallback onSelectArchive;
+  final VoidCallback onSelectDelete;
 
   const GlideTestMoreMenu({
     super.key,
     required this.onSelectEdit,
     required this.onSelectExport,
-    required this.onSelectArchive,
+    required this.onSelectDelete,
   });
 
   @override
@@ -31,9 +31,11 @@ class GlideTestMoreMenu extends StatelessWidget {
       ),
       onSelected: (GlideTestMoreMenuOptions item) {
         if (item == GlideTestMoreMenuOptions.editGlideTest) {
-          return onSelectEdit();
+          onSelectEdit();
         } else if (item == GlideTestMoreMenuOptions.exportGlideText) {
-          return onSelectExport();
+          onSelectExport();
+        } else if (item == GlideTestMoreMenuOptions.deleteGlideTest) {
+          onSelectDelete();
         }
       },
       itemBuilder: (BuildContext context) =>
@@ -46,11 +48,10 @@ class GlideTestMoreMenu extends StatelessWidget {
               value: GlideTestMoreMenuOptions.exportGlideText,
               child: Text('Exportera all data'),
             ),
-            // Not impplemented yet. Hiding.
-            // const PopupMenuItem<GlideTestMoreMenuOptions>(
-            //   value: GlideTestMoreMenuOptions.archiveGlideTest,
-            //   child: Text('Arkivera glidtestet'),
-            // ),
+            const PopupMenuItem<GlideTestMoreMenuOptions>(
+              value: GlideTestMoreMenuOptions.deleteGlideTest,
+              child: Text('Radera glidtestet'),
+            ),
           ],
     );
   }

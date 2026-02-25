@@ -15,7 +15,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -35,6 +35,16 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.addColumn(storedGlideTest, storedGlideTest.useSensorFusion);
       }
+      // Room for barometer migration
+
+
+      if (from < 4) {
+        await m.alterTable(TableMigration(testRun));
+      }
+    },
+    beforeOpen: (details) async {
+      // Enable foreign keys.
+      await customStatement('PRAGMA foreign_keys = ON');
     },
 
     /*
