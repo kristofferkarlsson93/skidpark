@@ -33,6 +33,9 @@ class CompareRunsViewModel extends ChangeNotifier {
   bool _useAverageView = false;
 
   bool get useAverageView => _useAverageView;
+  int? _highlightedRunId;
+
+  int? get highlightedRunId => _highlightedRunId;
 
   final List<int> _deselectedRunIds = [];
 
@@ -111,6 +114,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void toggleSelectedTestRun(EnrichedTestRun testRun) {
+    if (_highlightedRunId == testRun.id) _highlightedRunId = null;
     if (_deselectedRunIds.contains(testRun.id)) {
       _deselectedRunIds.remove(testRun.id);
     } else {
@@ -168,6 +172,15 @@ class CompareRunsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  toggleHighlightedRun(int runId) {
+    if (_highlightedRunId == runId) {
+      _highlightedRunId = null;
+    } else {
+      _highlightedRunId = runId;
+    }
+    notifyListeners();
+  }
+
   void triggerReleasePointAnalysis() {
     _releasePointAnalysisMode = ReleasePointAnalysisMode.view;
     _recalculateReleasePointAnalysisIfActive();
@@ -206,6 +219,7 @@ class CompareRunsViewModel extends ChangeNotifier {
     // No time to wait for the DB to refresh the stream
     _rawRuns.removeWhere((run) => run.id == testRunId);
     _testRuns.removeWhere((run) => run.id == testRunId);
+    if (_highlightedRunId == testRunId) _highlightedRunId = null;
     _deselectedRunIds.remove(testRunId);
     notifyListeners();
 

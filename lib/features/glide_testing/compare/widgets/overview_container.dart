@@ -52,6 +52,8 @@ class OverviewContainer extends StatelessWidget {
           child: CompareList(
             runs: selectedRuns,
             isAverageView: viewModel.useAverageView,
+            highlightedRunId: viewModel.highlightedRunId,
+            onRunTapped: (runId) => viewModel.toggleHighlightedRun(runId),
           ),
         ),
       ],
