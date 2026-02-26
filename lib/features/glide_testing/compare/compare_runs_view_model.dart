@@ -129,6 +129,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void toggleSelectAllRuns() {
+    _highlightedRunId = null;
     if (areAllRunsSelected) {
       final allIds = _testRuns.map((r) => r.id).toList();
       _deselectedRunIds.clear();
@@ -165,6 +166,7 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void toggleAverageView(bool shouldUse) {
     _useAverageView = shouldUse;
+    _highlightedRunId = null;
     if (shouldUse) {
       _recalculateAverages();
     }

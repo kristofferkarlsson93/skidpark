@@ -53,7 +53,6 @@ class CompareList extends StatelessWidget {
                   : theme.colorScheme.outlineVariant.withAlpha(
                       (0.3 * 255).toInt(),
                     ),
-              width: isHighlighted ? 2 : 1,
             ),
           ),
           child: InkWell(
