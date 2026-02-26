@@ -138,7 +138,7 @@ class AveragePerSkiCalculator {
             runs.length,
           );
 
-          averagedRun.setColor(getSafeColor(template.skiId));
+          averagedRun.setColor(getSafeAverageColor(template.skiId));
           return averagedRun;
         })
         .whereType<EnrichedTestRun>()

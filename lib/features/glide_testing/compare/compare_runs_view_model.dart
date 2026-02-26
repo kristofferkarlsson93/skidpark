@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:skidpark/common/database/database.dart';
@@ -27,6 +28,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _testRuns = [];
   List<EnrichedTestRun> _releasePointTestRuns = [];
   List<EnrichedTestRun> _averageRunPerSki = [];
+  int? _baselineRunId;
 
   bool _useAverageView = false;
 
@@ -199,11 +201,21 @@ class CompareRunsViewModel extends ChangeNotifier {
     _glideTestRepository.deleteGlideTest(glideTest!.id);
   }
 
+  void deleteTestRun(int testRunId) {
+    // The Dismissible widget that performs the delete required immediate delete, else it throws an error.
+    // No time to wait for the DB to refresh the stream
+    _rawRuns.removeWhere((run) => run.id == testRunId);
+    _testRuns.removeWhere((run) => run.id == testRunId);
+    _deselectedRunIds.remove(testRunId);
+    notifyListeners();
+
+    _testRunRepository.deleteById(testRunId);
+  }
+
   void _listenToGlideTest(int glideTestId) {
     _glideTestSubscription = _glideTestRepository
         .watchTestById(glideTestId)
         .listen((test) {
-
           if (test == null) return;
 
           final sensorFusionChanged =
@@ -236,9 +248,20 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void _recalculate() {
     log("Recalculating runs. SensorFusion: $useSensorFusion");
-    _testRuns = _rawRuns.indexed.map(((int, DecodedTestRun) entry) {
-      return _calculateTestRunData(entry.$2, entry.$1 + 1);
+
+    if (_rawRuns.isEmpty) {
+      _testRuns = [];
+      notifyListeners();
+      return;
+    }
+
+    _baselineRunId ??= _rawRuns.map((r) => r.id).reduce(math.min);
+
+    _testRuns = _rawRuns.map((run) {
+      final int runNumber = (run.id - _baselineRunId!) + 1;
+      return _calculateTestRunData(run, runNumber);
     }).toList();
+
     notifyListeners();
   }
 
