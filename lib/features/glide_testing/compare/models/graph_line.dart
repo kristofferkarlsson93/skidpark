@@ -12,6 +12,6 @@ class GraphLine {
   GraphLine(this.id, this.positionData, this.runColor, this.label);
 
   factory GraphLine.fromEnrichedTestRun(EnrichedTestRun run, String runLabel) {
-    return GraphLine(run.runNumber, run.positionData, run.runColor, runLabel);
+    return GraphLine(run.id, run.positionData, run.runColor, runLabel);
   }
 }

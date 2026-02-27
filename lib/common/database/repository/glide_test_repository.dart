@@ -18,10 +18,10 @@ class GlideTestRepository {
         .watch();
   }
 
-  Stream<StoredGlideTestData> watchTestById(int glideTestId) {
+  Stream<StoredGlideTestData?> watchTestById(int glideTestId) {
     return (_db.select(
       _db.storedGlideTest,
-    )..where((t) => t.id.equals(glideTestId))).watchSingle();
+    )..where((t) => t.id.equals(glideTestId))).watchSingleOrNull();
   }
 
   Future<int> create(GlideTestCandidate candidate) {
@@ -52,6 +52,12 @@ class GlideTestRepository {
     return (_db.update(
       _db.storedGlideTest,
     )..where((t) => t.id.equals(glideTestId))).write(companion);
+  }
+
+  void deleteGlideTest(int id) async {
+    await (_db.delete(_db.storedGlideTest)
+      ..where((tbl) => tbl.id.equals(id))
+    ).go();
   }
 
   Future<ExportedGlideTest> exportRelatedData(int glideTestId) async {

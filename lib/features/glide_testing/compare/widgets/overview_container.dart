@@ -29,6 +29,7 @@ class OverviewContainer extends StatelessWidget {
                 )
                 .toList(),
             maxY: selectedRuns.map((r) => r.maxSpeedKmh).fold(0, math.max),
+            highlightedLineId: viewModel.highlightedRunId,
             emptyGraphContent: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -53,6 +54,8 @@ class OverviewContainer extends StatelessWidget {
           child: CompareList(
             runs: selectedRuns,
             isAverageView: viewModel.useAverageView,
+            highlightedRunId: viewModel.highlightedRunId,
+            onRunTapped: (runId) => viewModel.toggleHighlightedRun(runId),
           ),
         ),
       ],

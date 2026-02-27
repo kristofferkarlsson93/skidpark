@@ -63,6 +63,12 @@ class TestRunRepository {
     });
   }
 
+  void deleteById(int testRunId) async {
+    await (_db.delete(_db.testRun)
+      ..where((tbl) => tbl.id.equals(testRunId))
+    ).go();
+  }
+
   static DecodedTestRun decodeRun(TestRunData rawRun, StoredSkiData skiData) {
     final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
 

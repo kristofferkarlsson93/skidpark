@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:skidpark/common/database/database.dart';
@@ -31,10 +32,14 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _releasePointTestRuns = [];
   List<EnrichedTestRun> _averageRunPerSki = [];
   List<AltitudePoint> _heightProfile = [];
+  int? _baselineRunId;
 
   bool _useAverageView = false;
 
   bool get useAverageView => _useAverageView;
+  int? _highlightedRunId;
+
+  int? get highlightedRunId => _highlightedRunId;
 
   final List<int> _deselectedRunIds = [];
 
@@ -115,6 +120,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void toggleSelectedTestRun(EnrichedTestRun testRun) {
+    if (_highlightedRunId == testRun.id) _highlightedRunId = null;
     if (_deselectedRunIds.contains(testRun.id)) {
       _deselectedRunIds.remove(testRun.id);
     } else {
@@ -129,6 +135,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void toggleSelectAllRuns() {
+    _highlightedRunId = null;
     if (areAllRunsSelected) {
       final allIds = _testRuns.map((r) => r.id).toList();
       _deselectedRunIds.clear();
@@ -165,10 +172,20 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void toggleAverageView(bool shouldUse) {
     _useAverageView = shouldUse;
+    _highlightedRunId = null;
     if (shouldUse) {
       _recalculateAverages();
     }
     _recalculateReleasePointAnalysisIfActive();
+    notifyListeners();
+  }
+
+  toggleHighlightedRun(int runId) {
+    if (_highlightedRunId == runId) {
+      _highlightedRunId = null;
+    } else {
+      _highlightedRunId = runId;
+    }
     notifyListeners();
   }
 
@@ -201,10 +218,28 @@ class CompareRunsViewModel extends ChangeNotifier {
     }
   }
 
+  void deleteCurrentGlideTest() {
+    _glideTestRepository.deleteGlideTest(glideTest!.id);
+  }
+
+  void deleteTestRun(int testRunId) {
+    // The Dismissible widget that performs the delete required immediate delete, else it throws an error.
+    // No time to wait for the DB to refresh the stream
+    _rawRuns.removeWhere((run) => run.id == testRunId);
+    _testRuns.removeWhere((run) => run.id == testRunId);
+    if (_highlightedRunId == testRunId) _highlightedRunId = null;
+    _deselectedRunIds.remove(testRunId);
+    notifyListeners();
+
+    _testRunRepository.deleteById(testRunId);
+  }
+
   void _listenToGlideTest(int glideTestId) {
     _glideTestSubscription = _glideTestRepository
         .watchTestById(glideTestId)
         .listen((test) {
+          if (test == null) return;
+
           final sensorFusionChanged =
               _glideTest?.useSensorFusion != test.useSensorFusion;
           _glideTest = test;
@@ -235,9 +270,20 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void _recalculate() {
     log("Recalculating runs. SensorFusion: $useSensorFusion");
-    _testRuns = _rawRuns.indexed.map(((int, DecodedTestRun) entry) {
-      return _calculateTestRunData(entry.$2, entry.$1 + 1);
+
+    if (_rawRuns.isEmpty) {
+      _testRuns = [];
+      notifyListeners();
+      return;
+    }
+
+    _baselineRunId ??= _rawRuns.map((r) => r.id).reduce(math.min);
+
+    _testRuns = _rawRuns.map((run) {
+      final int runNumber = (run.id - _baselineRunId!) + 1;
+      return _calculateTestRunData(run, runNumber);
     }).toList();
+
     _calculateHeightProfile();
     notifyListeners();
   }

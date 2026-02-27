@@ -65,23 +65,70 @@ class CompareControls extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: Text(viewModel.areAllRunsSelected ? 'Avmarkera alla' : 'Markera alla'),
+                  child: Text(
+                    viewModel.areAllRunsSelected
+                        ? 'Avmarkera alla'
+                        : 'Markera alla',
+                  ),
                 ),
               ],
             ),
           ),
 
           ...allRunsInTest.asMap().entries.map((entry) {
-            final index = entry.key;
             final run = entry.value;
+            final runLabel = viewModel.calculateRunLabel(run);
             final isSelected = viewModel.isRunSelected(run.id);
-            return SelectRunCard(
-              isSelected: isSelected,
-              testRun: run,
-              runNumber: index + 1,
-              onTap: () {
-                viewModel.toggleSelectedTestRun(run);
+
+            return Dismissible(
+              key: ValueKey(run.id),
+              direction: DismissDirection.endToStart,
+              // Righ to left
+              background: Container(
+                color: theme.colorScheme.error,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: theme.colorScheme.onError,
+                ),
+              ),
+              confirmDismiss: (direction) async {
+                return await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Radera teståk?'),
+                        content: Text(
+                          'Är du säker på att du vill radera "$runLabel"? All GPS- och sensordata för detta åk försvinner permanent.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Avbryt'),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: theme.colorScheme.error,
+                            ),
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Radera'),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false; // Fallback in case of press outside box.
               },
+              onDismissed: (direction) {
+                viewModel.deleteTestRun(run.id);
+              },
+              child: SelectRunCard(
+                isSelected: isSelected,
+                testRun: run,
+                runNumber: run.runNumber,
+                onTap: () {
+                  viewModel.toggleSelectedTestRun(run);
+                },
+              ),
             );
           }),
         ],

@@ -14,6 +14,7 @@ class CompareGraph extends StatelessWidget {
   final Widget emptyGraphContent;
   final double? maybeVerticalLineXCoordinate;
   final bool isFullscreen;
+  final int? highlightedLineId;
   final List<AltitudePoint>? heightProfile;
 
   const CompareGraph({
@@ -22,6 +23,7 @@ class CompareGraph extends StatelessWidget {
     required this.maxY,
     required this.emptyGraphContent,
     this.maybeVerticalLineXCoordinate,
+    this.highlightedLineId,
     this.isFullscreen = false,
     this.heightProfile
   });
@@ -34,6 +36,7 @@ class CompareGraph extends StatelessWidget {
         ? emptyGraphContent
         : LineChart(
             transformationConfig: _enableZoom(),
+            duration: const Duration(milliseconds: 0),
             _buildChartData(lines, theme),
           );
 
@@ -114,6 +117,7 @@ class CompareGraph extends StatelessWidget {
             maxY: maxY,
             emptyGraphContent: emptyGraphContent,
             maybeVerticalLineXCoordinate: maybeVerticalLineXCoordinate,
+            highlightedLineId: highlightedLineId,
             isFullscreen: true,
           ),
         ),
@@ -121,7 +125,18 @@ class CompareGraph extends StatelessWidget {
     );
   }
 
-  LineChartData _buildChartData(List<GraphLine> runs, ThemeData theme) {
+  LineChartData _buildChartData(List<GraphLine> originalRuns, ThemeData theme) {
+    if (originalRuns.isEmpty) return LineChartData();
+
+    // Sort the highlighed line last, to draw it on top of all lines.
+    final runs = List<GraphLine>.from(originalRuns);
+    if (highlightedLineId != null) {
+      runs.sort((a, b) {
+        if (a.id == highlightedLineId) return 1;
+        if (b.id == highlightedLineId) return -1;
+        return 0;
+      });
+    }
 
     final List<LineChartBarData> lines = [];
     final altitudeBar = _buildAltitudeProfileBar(theme);
@@ -134,12 +149,16 @@ class CompareGraph extends StatelessWidget {
           .map((pos) => FlSpot(pos.distanceTraveled, pos.speed * 3.6))
           .toList();
 
+      final bool isHighlighted = highlightedLineId == run.id;
+      final bool isFaded = highlightedLineId != null && !isHighlighted;
+
       lines.add(
         LineChartBarData(
           spots: spots,
-          color: run.runColor,
-          barWidth: 3,
-          dotData: FlDotData(show: false),
+          color: isFaded ? run.runColor.withAlpha(70) : run.runColor,
+          barWidth: isHighlighted ? 4 : (isFaded ? 2 : 3),
+          isStepLineChart: false,
+          dotData: const FlDotData(show: false),
         ),
       );
     }
@@ -243,6 +262,7 @@ class CompareGraph extends StatelessWidget {
 
     if (altRange == 0) altRange = 1.0;
 
+    // 50% of max Y.
     final double maxProfileHeight = maxY * 0.5;
 
     List<FlSpot> altSpots = heightProfile!.map((p) {

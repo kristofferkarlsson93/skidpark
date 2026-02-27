@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:skidpark/features/glide_testing/compare/models/calculated_position.dart';
+import 'package:skidpark/theme/distinct_colors.dart';
 
 class EnrichedTestRun {
   final int id;
@@ -39,18 +42,20 @@ class EnrichedTestRun {
   }
 
   Color _createColor() {
-    final hue =
-        (runNumber * 137) % 360; // 137 is a prime for better distribution
-    const saturation = 0.7; // 0.0 - 1.0
-    const lightness = 0.6; // 0.0 - 1.0, >0.5 for brighter colors
 
-    final hslColor = HSLColor.fromAHSL(
-      1.0,
-      hue.toDouble(),
-      saturation,
-      lightness,
-    );
-    return hslColor.toColor();
+    return runColors[(math.max(0, runNumber - 1)) % runColors.length];
+    // final hue =
+    //     (runNumber * 137) % 360; // 137 is a prime for better distribution
+    // const saturation = 0.7; // 0.0 - 1.0
+    // const lightness = 0.6; // 0.0 - 1.0, >0.5 for brighter colors
+    //
+    // final hslColor = HSLColor.fromAHSL(
+    //   1.0,
+    //   hue.toDouble(),
+    //   saturation,
+    //   lightness,
+    // );
+    // return hslColor.toColor();
   }
 
   EnrichedTestRun simpleCopy(
