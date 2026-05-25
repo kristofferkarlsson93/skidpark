@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'models/stored_glide_test.dart';
 import 'models/stored_ski.dart';
 import 'models/test_runs.dart';
+import 'package:collection/collection.dart';
 
 part 'database.g.dart';
 
@@ -15,7 +16,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -41,6 +42,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await m.addColumn(testRun, testRun.barometerData);
       }
+      if (from < 6) {
+        await m.addColumn(testRun, testRun.runNumber);
+        await _backfillRunNumbers();
+      }
     },
     beforeOpen: (details) async {
       // Enable foreign keys.
@@ -64,4 +69,29 @@ class AppDatabase extends _$AppDatabase {
     },
       */
   );
+
+  Future<void> _backfillRunNumbers() async {
+    final allRuns = await select(testRun).get();
+
+    final runsToUpdate = allRuns
+        .groupListsBy((run) => run.glideTestId)
+        .values
+        .expand(
+          (runsInGroup) => runsInGroup
+          .sortedBy<num>((run) => run.id)
+          .indexed
+          .map((indexedRun) {
+        final (index, run) = indexedRun;
+        return run.copyWith(runNumber: index + 1);
+      }),
+    ).toList();
+
+    await batch((batch) {
+      for (final run in runsToUpdate) {
+        batch.replace(testRun, run);
+      }
+    });
+
+    log("Migration to v6: Backfilled run numbers for ${allRuns.length} runs.");
+  }
 }

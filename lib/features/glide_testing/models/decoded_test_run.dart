@@ -5,6 +5,7 @@ import '../test_runs/models/raw_barometer_event.dart';
 
 class DecodedTestRun {
   final int id;
+  final int runNumber;
   final DateTime startedAt;
   final int skiId;
   final int glideTestId;
@@ -16,6 +17,7 @@ class DecodedTestRun {
 
   DecodedTestRun(
     this.id,
+    this.runNumber,
     this.startedAt,
     this.skiId,
     this.glideTestId,

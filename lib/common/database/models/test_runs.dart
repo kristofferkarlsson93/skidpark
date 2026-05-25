@@ -20,4 +20,6 @@ class TestRun extends Table {
   BlobColumn get accelerometerData => blob()();
 
   BlobColumn get barometerData => blob().nullable()();
+
+  IntColumn get runNumber => integer().withDefault(const Constant(1))();
 }

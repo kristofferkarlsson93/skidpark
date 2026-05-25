@@ -32,7 +32,6 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _releasePointTestRuns = [];
   List<EnrichedTestRun> _averageRunPerSki = [];
   List<AltitudePoint> _heightProfile = [];
-  int? _baselineRunId;
 
   bool _useAverageView = false;
 
@@ -277,11 +276,8 @@ class CompareRunsViewModel extends ChangeNotifier {
       return;
     }
 
-    _baselineRunId ??= _rawRuns.map((r) => r.id).reduce(math.min);
-
     _testRuns = _rawRuns.map((run) {
-      final int runNumber = (run.id - _baselineRunId!) + 1;
-      return _calculateTestRunData(run, runNumber);
+      return _calculateTestRunData(run);
     }).toList();
 
     _calculateHeightProfile();
@@ -342,7 +338,6 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   EnrichedTestRun _calculateTestRunData(
     DecodedTestRun storedRun,
-    int runNumber,
   ) {
     // calculate max speed on raw data, to not lose speed by interpolation.
     final maxSpeed = RunDataProcessor.calculateMaxSpeed(storedRun.gpsData);
@@ -369,7 +364,7 @@ class CompareRunsViewModel extends ChangeNotifier {
       _msToKmh(maxSpeed),
       storedRun.skiName,
       normalizedPositions,
-      runNumber,
+      storedRun.runNumber,
     );
   }
 

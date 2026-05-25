@@ -14,7 +14,19 @@ class TestRunRepository {
 
   TestRunRepository(this._db);
 
-  Future<int> storeTestRun(TestRunCandidate testRunCandidate) {
+  Future<int> storeTestRun(TestRunCandidate testRunCandidate) async {
+
+    final currentMaxRunNumber = await (_db.select(_db.testRun)
+      ..where((tbl) => tbl.glideTestId.equals(testRunCandidate.glideTestId))
+      ..orderBy([
+            (tbl) => drift.OrderingTerm(
+            expression: tbl.runNumber, mode: drift.OrderingMode.desc)
+      ])
+      ..limit(1))
+        .getSingleOrNull();
+
+    final nextRunNumber = (currentMaxRunNumber?.runNumber ?? 0) + 1;
+
     drift.Uint8List compressedGpsData = _encodeGpsPositions(testRunCandidate);
     drift.Uint8List compressedAccelData = encodeAccelEvents(
       testRunCandidate.accelerometerEvents,
@@ -31,6 +43,7 @@ class TestRunRepository {
       gpsData: drift.Value(compressedGpsData),
       accelerometerData: drift.Value(compressedAccelData),
       barometerData: drift.Value(compressedBarometerData),
+      runNumber: drift.Value(nextRunNumber),
     );
 
     return _db.into(_db.testRun).insert(companion);
@@ -80,6 +93,7 @@ class TestRunRepository {
 
     return DecodedTestRun(
       rawRun.id,
+      rawRun.runNumber,
       rawRun.startedAt,
       rawRun.skiId,
       rawRun.glideTestId,
