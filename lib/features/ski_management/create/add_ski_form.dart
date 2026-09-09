@@ -5,10 +5,9 @@ import '../../../common/utils/text_utils.dart';
 import '../models/ski.dart';
 
 class AddSkiForm extends StatefulWidget {
+   const AddSkiForm({super.key, this.skiToEdit});
 
   final StoredSkiData? skiToEdit;
-
-  const AddSkiForm({super.key, this.skiToEdit});
 
   @override
   State<AddSkiForm> createState() => _AddSkiFormState();
@@ -16,20 +15,22 @@ class AddSkiForm extends StatefulWidget {
 
 class _AddSkiFormState extends State<AddSkiForm> {
   final _formKey = GlobalKey<FormState>();
-
   final _nameController = TextEditingController();
   final _brandAndModelController = TextEditingController();
   final _technicalDataController = TextEditingController();
   final _notesController = TextEditingController();
 
+  bool get _isEditing => widget.skiToEdit != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.skiToEdit != null) {
-      _nameController.text = widget.skiToEdit!.name;
-      _brandAndModelController.text = widget.skiToEdit!.brandAndModel ?? '';
-      _technicalDataController.text = widget.skiToEdit!.technicalData ?? '';
-      _notesController.text = widget.skiToEdit!.notes ?? '';
+    final ski = widget.skiToEdit;
+    if (ski != null) {
+      _nameController.text = ski.name;
+      _brandAndModelController.text = ski.brandAndModel ?? '';
+      _technicalDataController.text = ski.technicalData ?? '';
+      _notesController.text = ski.notes ?? '';
     }
   }
 
@@ -42,92 +43,114 @@ class _AddSkiFormState extends State<AddSkiForm> {
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final skiCandidate = SkiCandidate(
-        name: _nameController.text,
-        brandAndModel: emptyAsNull(_brandAndModelController.text),
-        technicalData: emptyAsNull(_technicalDataController.text),
-        notes: emptyAsNull(_notesController.text),
-      );
-      Navigator.pop(context, skiCandidate);
-    }
-  }
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.of(context).viewInsets;
-    final safeAreaBottom = MediaQuery.of(context).padding.bottom;
-    final isEditing = widget.skiToEdit != null;
-    final title = isEditing ? 'Redigera skida' : 'Lägg till ny skida';
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        16 + viewInsets.bottom + safeAreaBottom,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Redigera skida' : 'Lägg till skida'),
       ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Skidans namn',
+                hintText: 'Till exempel SP1 eller Atomic Röd',
+                helperText: 'Använd ett namn du själv känner igen i spåret.',
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Skidans namn'),
-                textCapitalization: TextCapitalization.words,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Fyll i ett namn på skidan';
-                  }
-                  return null;
-                },
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Fyll i ett namn på skidan';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _brandAndModelController,
+              decoration: const InputDecoration(
+                labelText: 'Märke och modell (valfritt)',
+                hintText: 'Till exempel Fischer Speedmax 3D',
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _brandAndModelController,
-                decoration: const InputDecoration(labelText: 'Märke och modell (valfritt)'),
-                textCapitalization: TextCapitalization.words,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: 20),
+            Card(
+              child: ExpansionTile(
+                initiallyExpanded: _hasOptionalInformation,
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                shape: const Border(),
+                collapsedShape: const Border(),
+                title: const Text('Fler uppgifter'),
+                subtitle: const Text('Valfritt'),
+                children: [
+                  TextFormField(
+                    controller: _technicalDataController,
+                    decoration: const InputDecoration(
+                      alignLabelWithHint: true,
+                      labelText: 'Teknisk data',
+                      hintText:
+                          'Spannvärden, tryckzoner eller annan stabil '
+                          'information',
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    minLines: 3,
+                    maxLines: 5,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _notesController,
+                    decoration: const InputDecoration(
+                      alignLabelWithHint: true,
+                      labelText: 'Anteckningar',
+                      hintText: 'Sådant du vill minnas om skidparet',
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    keyboardType: TextInputType.multiline,
+                    minLines: 3,
+                    maxLines: 5,
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                textCapitalization: TextCapitalization.sentences,
-                controller: _technicalDataController,
-                decoration: const InputDecoration(
-                  alignLabelWithHint: true,
-                  labelText: 'Teknisk data (valfritt)',
-                  helperText: 'T.ex. höjder (hbw, fbw), tryckzonernas längd, etc.',
-                ),
-                keyboardType: TextInputType.multiline,
-                maxLines: 5,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  alignLabelWithHint: true,
-                  labelText: 'Övrig info (valfritt)',
-                  helperText: 'T.ex. anteckningar om slipning, valla, känsla...',
-                ),
-                keyboardType: TextInputType.multiline,
-                maxLines: 3,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Spara'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: FilledButton(
+          onPressed: _submitForm,
+          child: Text(_isEditing ? 'Spara ändringar' : 'Spara skida'),
+        ),
+      ),
+    );
+  }
+
+  bool get _hasOptionalInformation {
+    return _technicalDataController.text.isNotEmpty ||
+        _notesController.text.isNotEmpty;
+  }
+
+  void _submitForm() {
+    if (!_formKey.currentState!.validate()) return;
+
+    Navigator.pop(
+      context,
+      SkiCandidate(
+        name: _nameController.text.trim(),
+        brandAndModel: emptyAsNull(_brandAndModelController.text.trim()),
+        technicalData: emptyAsNull(_technicalDataController.text.trim()),
+        notes: emptyAsNull(_notesController.text.trim()),
       ),
     );
   }

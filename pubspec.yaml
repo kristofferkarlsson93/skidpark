@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+7
 
 environment:
-  sdk: ^3.9.2
+  sdk: ^3.13.1
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -33,38 +33,38 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  geolocator: ^14.0.2
-  path_provider: ^2.1.5
-  share_plus: ^12.0.0
-  sensors_plus: ^7.0.0
-  archive: ^4.0.7
-  drift: ^2.29.0
-  drift_flutter: ^0.2.7
+  cupertino_icons: ^1.0.9
+  geolocator: ^14.0.3
+  path_provider: ^2.1.6
+  share_plus: ^13.3.0
+  sensors_plus: ^7.1.0
+  archive: ^4.2.0
+  drift: ^2.34.3
+  drift_flutter: ^0.3.1
   provider: ^6.1.5+1
-  intl: ^0.20.2
-  flutter_svg: ^2.2.1
-  fl_chart: ^1.1.1
-  permission_handler: ^12.0.1
+  intl: ^0.20.3
+  flutter_svg: ^2.3.0
+  fl_chart: ^1.2.0
+  permission_handler: ^13.0.1
   url_launcher: ^6.3.2
-  device_info_plus: ^12.3.0
-  file_picker: ^10.3.10
+  device_info_plus: ^13.2.0
+  file_picker: ^12.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.7
+  flutter_native_splash: ^2.4.8
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
-  drift_dev: ^2.29.0
-  build_runner: ^2.10.1
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.34.5
+  build_runner: ^2.16.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:skidpark/features/ski_management/models/ski.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../common/database/database.dart';
 import '../../../../common/database/repository/ski_repository.dart';
 import '../../create/add_ski_form.dart';
+import '../../models/ski.dart';
 
 class SkiDetailScreen extends StatelessWidget {
-  final int skiId;
-
   const SkiDetailScreen({super.key, required this.skiId});
+
+  final int skiId;
 
   @override
   Widget build(BuildContext context) {
-    final skiRepository = context.read<SkiRepository>();
+    final repository = context.read<SkiRepository>();
 
     return StreamBuilder<StoredSkiData>(
-      stream: skiRepository.watchSkiById(skiId),
+      stream: repository.watchSkiById(skiId),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text('Kunde inte läsa skidan.')),
+          );
+        }
         if (!snapshot.hasData) {
           return Scaffold(
             appBar: AppBar(),
@@ -29,44 +35,48 @@ class SkiDetailScreen extends StatelessWidget {
         final ski = snapshot.data!;
         return Scaffold(
           appBar: AppBar(
-            title: Text(ski.name),
+            title: Text(ski.name, overflow: TextOverflow.ellipsis),
             actions: [
               IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmArchive(context, skiRepository, ski),
-              ),
-              IconButton(
+                tooltip: 'Redigera skida',
                 icon: const Icon(Icons.edit_outlined),
-                onPressed: () => _editSki(context, skiRepository, ski),
+                onPressed: () => _editSki(context, repository, ski),
+              ),
+              PopupMenuButton<_SkiAction>(
+                tooltip: 'Fler val',
+                onSelected: (action) {
+                  if (action == _SkiAction.archive) {
+                    _confirmArchive(context, repository, ski);
+                  }
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _SkiAction.archive,
+                    child: Row(
+                      children: [
+                        Icon(Icons.archive_outlined),
+                        SizedBox(width: 12),
+                        Text('Arkivera skida'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
           body: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             children: [
-              _buildInfoTile(
-                context,
-                icon: Icons.label_outline,
-                label: 'Märke & Modell',
-                value: ski.brandAndModel,
-              ),
-              _buildInfoTile(
-                context,
-                icon: Icons.description_outlined,
-                label: 'Teknisk data',
-                value: ski.technicalData,
-              ),
-              _buildInfoTile(
-                context,
-                icon: Icons.notes_outlined,
-                label: 'Anteckningar',
-                value: ski.notes,
-              ),
-              _buildInfoTile(
-                context,
-                icon: Icons.calendar_today_outlined,
-                label: 'Tillagd',
-                value: DateFormat('yyyy-MM-dd, HH:mm').format(ski.createdAt),
+              _InfoCard(
+                rows: [
+                  _InfoRow(label: 'Märke och modell', value: ski.brandAndModel),
+                  _InfoRow(label: 'Teknisk data', value: ski.technicalData),
+                  _InfoRow(label: 'Anteckningar', value: ski.notes),
+                  _InfoRow(
+                    label: 'Tillagd',
+                    value: DateFormat('d/M yyyy, HH:mm').format(ski.createdAt),
+                  ),
+                ],
               ),
             ],
           ),
@@ -75,66 +85,33 @@ class SkiDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoTile(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String? value,
-  }) {
-    if (value == null || value.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final theme = Theme.of(context);
-
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: theme.colorScheme.primary, // Använd din lila accentfärg
-      ),
-      title: Text(
-        label,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant, // Muted-färg
-        ),
-      ),
-      subtitle: Text(
-        value,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
-      ),
-    );
-  }
-
-  void _editSki(
+  Future<void> _editSki(
     BuildContext context,
-    SkiRepository skiRepository,
+    SkiRepository repository,
     StoredSkiData ski,
   ) async {
-    final updatedCandidate = await showModalBottomSheet<SkiCandidate>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => AddSkiForm(skiToEdit: ski),
+    final candidate = await Navigator.push<SkiCandidate>(
+      context,
+      MaterialPageRoute(builder: (context) => AddSkiForm(skiToEdit: ski)),
     );
 
-    if (updatedCandidate != null) {
-      await skiRepository.updateSki(ski, updatedCandidate);
+    if (candidate != null) {
+      await repository.updateSki(ski, candidate);
     }
   }
 
-  void _confirmArchive(
+  Future<void> _confirmArchive(
     BuildContext context,
-    SkiRepository skiRepository,
+    SkiRepository repository,
     StoredSkiData ski,
   ) async {
-    final bool? didConfirm = await showDialog(
+    final didConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Arkivera skida?'),
         content: Text(
-          'Är du säker på att du vill arkivera "${ski.name}"? '
-          'Du kommer fortfarande se din i dina nuvarande glidtester, men den kommer inte vara tillgänglig i nya test',
+          '”${ski.name}” finns kvar i tidigare glidtest men går inte att välja '
+          'i nya test.',
         ),
         actions: [
           TextButton(
@@ -152,11 +129,55 @@ class SkiDetailScreen extends StatelessWidget {
       ),
     );
 
-    if (didConfirm == true) {
-      await skiRepository.archiveSki(ski);
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
-    }
+    if (didConfirm != true) return;
+
+    await repository.archiveSki(ski);
+    if (context.mounted) Navigator.pop(context);
   }
+}
+
+enum _SkiAction { archive }
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.rows});
+
+  final List<_InfoRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleRows = rows.where((row) => row.hasValue).toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var index = 0; index < visibleRows.length; index++) ...[
+              if (index > 0)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Divider(),
+                ),
+              Text(
+                visibleRows[index].label,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 4),
+              Text(visibleRows[index].value!),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String? value;
+
+  bool get hasValue => value != null && value!.trim().isNotEmpty;
 }

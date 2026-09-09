@@ -1,0 +1,1285 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SkidPark – startflöde och skidpark</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --canvas: #0b0c11;
+      --phone: #101116;
+      --surface: #191a22;
+      --surface-raised: #20212c;
+      --surface-soft: #262735;
+      --stroke: #343642;
+      --stroke-strong: #4a4c5c;
+      --text: #f7f5ff;
+      --muted: #b2b0c0;
+      --quiet: #858393;
+      --primary: #9281ff;
+      --primary-soft: #302958;
+      --primary-ink: #151123;
+      --mint: #70ddc5;
+      --mint-soft: #173a34;
+      --yellow: #f5c86b;
+      --danger: #ff909c;
+      --radius-small: 12px;
+      --radius-card: 16px;
+      --radius-large: 22px;
+      --shadow: 0 28px 90px #000a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 12%, #282342 0, transparent 28rem),
+        radial-gradient(circle at 78% 88%, #142c2b 0, transparent 24rem),
+        var(--canvas);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+
+    .prototype-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 390px minmax(360px, 560px);
+      align-items: start;
+      justify-content: center;
+      gap: 38px;
+      padding: 36px 24px;
+    }
+
+    .phone-shell { width: 390px; }
+
+    .phone {
+      position: relative;
+      width: 390px;
+      height: 844px;
+      overflow: hidden;
+      border: 1px solid #4d4f5d;
+      border-radius: 36px;
+      background: var(--phone);
+      box-shadow: var(--shadow);
+    }
+
+    .status-bar {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 21px 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    #app { height: calc(100% - 28px); }
+
+    .screen {
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-bar {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      flex: 0 0 auto;
+      z-index: 5;
+    }
+
+    .app-bar h1 {
+      flex: 1;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      font-size: 22px;
+      line-height: 1.15;
+      font-weight: 780;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 1;
+      font-size: 22px;
+      font-weight: 820;
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark,
+    .object-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .brand-mark {
+      width: 31px;
+      height: 31px;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    .brand-mark svg,
+    .object-icon svg {
+      width: 56%;
+      height: 56%;
+      overflow: visible;
+    }
+
+    .object-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .content {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 4px 16px 98px;
+      scrollbar-width: none;
+    }
+
+    .content.no-nav { padding-bottom: 100px; }
+    .content::-webkit-scrollbar { display: none; }
+
+    h2, h3, p { margin-top: 0; }
+    p { line-height: 1.45; }
+    .grow { flex: 1; min-width: 0; }
+    .muted { color: var(--muted); }
+    .quiet { color: var(--quiet); }
+    .small { font-size: 13px; }
+
+    .eyebrow {
+      color: var(--mint);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 2px 10px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.3;
+      font-weight: 780;
+    }
+
+    .row { display: flex; align-items: center; gap: 10px; }
+    .row.wrap { flex-wrap: wrap; }
+    .row.between { justify-content: space-between; }
+
+    .hero {
+      margin-top: 4px;
+      padding: 22px 18px 18px;
+      border: 1px solid #45405f;
+      border-radius: var(--radius-large);
+      background:
+        radial-gradient(circle at 95% 0, #3a3267 0, transparent 13rem),
+        linear-gradient(145deg, #242037, #191a22 72%);
+    }
+
+    .hero h2 {
+      max-width: 310px;
+      margin: 7px 0 9px;
+      font-size: 27px;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+    }
+
+    .hero p { margin-bottom: 18px; color: #d4d1df; font-size: 14px; }
+
+    .card {
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-card);
+      background: var(--surface);
+    }
+
+    .pressable {
+      width: 100%;
+      padding: 0;
+      text-align: left;
+    }
+
+    .pressable:hover,
+    .pressable:focus-visible { border-color: var(--primary); outline: none; }
+
+    .test-card { padding: 15px; }
+    .test-card + .test-card { margin-top: 10px; }
+    .test-card h3 { margin: 1px 0 5px; font-size: 16px; }
+
+    .example-card {
+      border-color: #494260;
+      background: linear-gradient(135deg, #201e2d, #181920);
+    }
+
+    .example-strip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 13px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge,
+    .pill,
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .badge {
+      min-height: 23px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .pill {
+      min-height: 27px;
+      gap: 5px;
+      padding: 4px 9px;
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #15161d;
+      font-size: 12px;
+    }
+
+    .count-badge {
+      min-width: 25px;
+      height: 25px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .meta-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+
+    .chevron { color: var(--quiet); font-size: 25px; line-height: 1; }
+
+    .primary-button,
+    .secondary-button,
+    .quiet-button,
+    .danger-button {
+      min-height: 50px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      font-weight: 780;
+    }
+
+    .primary-button {
+      padding: 0 18px;
+      color: var(--primary-ink);
+      background: var(--primary);
+    }
+
+    .primary-button.full,
+    .secondary-button.full { width: 100%; }
+
+    .secondary-button {
+      padding: 0 16px;
+      border-color: var(--stroke-strong);
+      background: var(--surface);
+    }
+
+    .quiet-button {
+      min-height: 42px;
+      padding: 0 12px;
+      border-color: var(--stroke);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .quiet-button.active {
+      border-color: #675baf;
+      color: var(--text);
+      background: var(--primary-soft);
+    }
+
+    .danger-button { color: var(--danger); background: transparent; }
+    button:disabled { cursor: not-allowed; opacity: .38; }
+
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      font-size: 21px;
+    }
+
+    .icon-button:hover,
+    .icon-button:focus-visible { background: var(--surface-raised); outline: none; }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 82px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid #292a33;
+      background: #16171fef;
+      backdrop-filter: blur(16px);
+      z-index: 8;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 720;
+    }
+
+    .nav-item .nav-icon { font-size: 21px; line-height: 1; }
+    .nav-item.active { color: var(--primary); }
+
+    .nav-item.active .nav-icon-wrap {
+      min-width: 54px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      text-align: center;
+    }
+
+    .compact-create {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 13px;
+      border: 0;
+      border-radius: 13px;
+      color: var(--primary-ink);
+      background: var(--primary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 500px;
+      padding: 42px 20px 80px;
+      text-align: center;
+    }
+
+    .empty-state .object-icon { width: 62px; height: 62px; border-radius: 20px; font-size: 27px; }
+    .empty-state h2 { margin: 18px 0 8px; font-size: 22px; }
+    .empty-state p { max-width: 300px; margin-bottom: 22px; color: var(--muted); font-size: 14px; }
+
+    .search {
+      position: relative;
+      margin-bottom: 13px;
+    }
+
+    .search span {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      color: var(--quiet);
+      font-size: 17px;
+    }
+
+    .search input { padding-left: 42px; }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--stroke);
+      border-radius: 13px;
+      outline: none;
+      color: var(--text);
+      background: var(--surface-raised);
+    }
+
+    input { height: 48px; padding: 0 13px; }
+    textarea { min-height: 90px; padding: 12px 13px; resize: vertical; }
+    input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px #9281ff2b; }
+
+    .field { margin-bottom: 18px; }
+    .field label { display: block; margin: 0 0 7px 2px; font-size: 13px; font-weight: 730; }
+    .helper { margin: 6px 2px 0; color: var(--quiet); font-size: 12px; line-height: 1.35; }
+
+    .ski-list { display: flex; flex-direction: column; gap: 9px; }
+
+    .ski-row {
+      width: 100%;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-card);
+      color: inherit;
+      background: var(--surface);
+      text-align: left;
+    }
+
+    .ski-row:hover,
+    .ski-row:focus-visible { border-color: var(--primary); outline: none; }
+
+    .ski-row.selected {
+      border-color: #6f62bd;
+      background: linear-gradient(90deg, #282344, var(--surface) 78%);
+    }
+
+    .ski-row .object-icon { width: 42px; height: 42px; border-radius: 13px; font-size: 17px; }
+    .ski-name { margin-bottom: 3px; font-size: 15px; font-weight: 800; }
+    .ski-model { color: var(--muted); font-size: 12px; }
+
+    .check {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 24px;
+      border: 1.5px solid var(--stroke-strong);
+      border-radius: 8px;
+      color: transparent;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .selected .check { border-color: var(--primary); color: var(--primary-ink); background: var(--primary); }
+
+    .sticky-action {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      min-height: 84px;
+      padding: 12px 16px 18px;
+      border-top: 1px solid #292a33;
+      background: #121319f2;
+      backdrop-filter: blur(16px);
+      z-index: 8;
+    }
+
+    .selection-tools {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .selection-tools::-webkit-scrollbar { display: none; }
+
+    .inline-add {
+      margin: 12px 0;
+      padding: 13px;
+      border: 1px dashed #535566;
+      border-radius: var(--radius-card);
+      background: #15161d;
+    }
+
+    .inline-add-trigger {
+      width: 100%;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 3px;
+      border: 0;
+      color: var(--primary);
+      background: transparent;
+      font-weight: 780;
+      text-align: left;
+    }
+
+    .inline-fields { display: flex; flex-direction: column; gap: 9px; }
+    .inline-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+    details.optional {
+      margin: 20px 0;
+      border-top: 1px solid var(--stroke);
+      border-bottom: 1px solid var(--stroke);
+    }
+
+    details.optional summary {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 730;
+      list-style: none;
+    }
+
+    details.optional summary::-webkit-details-marker { display: none; }
+    details.optional[open] { padding-bottom: 14px; }
+
+    .notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 3px 0 14px;
+      padding: 11px 12px;
+      border: 1px solid #4c4564;
+      border-radius: 13px;
+      color: #d9d5e8;
+      background: #211e2f;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .graph-card {
+      position: relative;
+      height: 310px;
+      overflow: hidden;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-card);
+      background:
+        linear-gradient(#2d2e3938 1px, transparent 1px),
+        linear-gradient(90deg, #2d2e3938 1px, transparent 1px),
+        #14151b;
+      background-size: 100% 52px, 54px 100%, auto;
+    }
+
+    .graph-card svg { position: absolute; inset: 26px 7px 20px 30px; width: calc(100% - 42px); height: calc(100% - 46px); overflow: visible; }
+    .graph-card .graph-label { position: absolute; left: 12px; top: 11px; color: var(--muted); font-size: 11px; }
+
+    .filter-fab {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      background: #111219e8;
+      font-size: 19px;
+    }
+
+    .run-row {
+      width: 100%;
+      min-height: 60px;
+      display: grid;
+      grid-template-columns: 8px 1fr auto;
+      align-items: center;
+      gap: 11px;
+      padding: 8px 12px;
+      border: 1px solid transparent;
+      border-bottom-color: var(--stroke);
+      color: inherit;
+      background: transparent;
+      text-align: left;
+    }
+
+    .run-row.active { border-color: #6459a8; border-radius: 13px; background: var(--primary-soft); }
+    .line-key { width: 8px; height: 34px; border-radius: 99px; }
+    .quality { color: var(--mint); font-size: 12px; }
+    .quality.warn { color: var(--yellow); }
+
+    .analysis-empty {
+      height: 310px;
+      display: grid;
+      place-items: center;
+      padding: 36px;
+      border: 1px dashed #444653;
+      border-radius: var(--radius-card);
+      background: #14151b;
+      text-align: center;
+    }
+
+    .analysis-empty h2 { margin: 10px 0 5px; font-size: 19px; }
+    .analysis-empty p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .panel {
+      position: sticky;
+      top: 36px;
+      overflow: hidden;
+      border: 1px solid #383a46;
+      border-radius: 24px;
+      background: #15161df2;
+      box-shadow: 0 18px 70px #0006;
+      backdrop-filter: blur(18px);
+    }
+
+    .panel-header { padding: 24px 24px 18px; border-bottom: 1px solid var(--stroke); }
+    .panel-header h1 { margin: 7px 0 8px; font-size: 25px; line-height: 1.15; letter-spacing: -.02em; }
+    .panel-header p { margin: 0; color: var(--muted); font-size: 14px; }
+    .panel-body { max-height: calc(100vh - 220px); overflow-y: auto; padding: 20px 24px 24px; }
+    .panel h2 { margin: 0 0 10px; font-size: 15px; }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 22px;
+      padding: 5px;
+      border-radius: 15px;
+      background: #0f1016;
+    }
+
+    .mode-switch button {
+      min-height: 43px;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .mode-switch button.active { color: var(--text); background: var(--surface-soft); }
+
+    .route-card {
+      margin-bottom: 21px;
+      padding: 13px;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      background: #111218;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .route-card strong { display: block; margin-top: 4px; color: var(--text); font-size: 14px; }
+
+    .decision-list { margin: 0; padding: 0; list-style: none; }
+    .decision-list li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 8px 0; color: #d5d2de; font-size: 13px; line-height: 1.4; }
+    .decision-list li::before { content: "✓"; color: var(--mint); font-weight: 900; }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 98px;
+      z-index: 20;
+      max-width: 330px;
+      padding: 10px 14px;
+      border: 1px solid var(--stroke-strong);
+      border-radius: 12px;
+      color: var(--text);
+      background: #272933;
+      box-shadow: 0 12px 36px #0009;
+      font-size: 13px;
+      transform: translateX(-50%);
+      animation: toast-in .18s ease-out;
+    }
+
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+    @media (max-width: 880px) {
+      .prototype-layout { display: block; padding: 0; }
+      .phone-shell, .phone { width: 100%; }
+      .phone { height: 100dvh; min-height: 680px; border: 0; border-radius: 0; box-shadow: none; }
+      .panel { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="prototype-layout">
+    <section class="phone-shell" aria-label="Klickbar mobilprototyp">
+      <div class="phone">
+        <div class="status-bar"><span>09:41</span><span>● ◒ ▰</span></div>
+        <div id="app"></div>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="Prototypguide">
+      <div class="panel-header">
+        <div class="eyebrow">Klickbar designriktning</div>
+        <h1>Startflöde, testskapande och skidpark</h1>
+        <p>Växla användarläge och prova samma flöde både vid första start och med en etablerad skidpark.</p>
+      </div>
+      <div class="panel-body">
+        <h2>Datatillstånd</h2>
+        <div class="mode-switch">
+          <button data-mode="new">Första start</button>
+          <button data-mode="returning">Med egen data</button>
+        </div>
+
+        <div class="route-card">Aktuell skärm<strong id="route-label">Tester · första start</strong></div>
+
+        <h2>Fastslagna designbeslut</h2>
+        <ul class="decision-list">
+          <li>Tester är första fliken och den primära aktiviteten.</li>
+          <li>Exempeltestet består av vanliga poster och använder produktens riktiga analysflöde.</li>
+          <li>Exempelskidor visas inte i den egna skidparken eller i nya test.</li>
+          <li>Nytt test är en helskärm och kräver minst en vald skida.</li>
+          <li>Alla egna skidor är valda från start; användaren väljer bort undantag.</li>
+          <li>Eget skidnamn är primär identitet. Modell är sekundär. Teknisk data hålls borta från listkortet.</li>
+          <li>Kort används för tappbara objekt, inte som generell dekoration.</li>
+          <li>Primärknappar är fyllda; sekundärval har kontur; minsta tryckyta är 44–50 px.</li>
+          <li>Det finns ingen status som ”Förberett” och inget krav på att avsluta ett test.</li>
+        </ul>
+
+        <div class="route-card" style="margin:18px 0 0">Analysytans layout är medvetet utanför den här mockupen. Dess fastslagna interaktionskrav finns i produktbeslutsfilen.</div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const returningSkis = [
+      { id: 1, name: 'Atomic Röd', model: 'Redster S9 Gen S' },
+      { id: 2, name: 'Atomic Blå', model: 'Redster S9 Gen S' },
+      { id: 3, name: 'SP1 Kallföre', model: 'Fischer Speedmax 3D' },
+      { id: 4, name: 'SP2 Universal', model: 'Fischer Speedmax 3D' },
+      { id: 5, name: 'Madshus 41', model: 'Redline Skate F3' },
+      { id: 6, name: 'Gamla tävlingsparet', model: 'Rossignol X-IUM' }
+    ];
+
+    const appState = {
+      mode: 'new',
+      route: 'tests',
+      skis: [],
+      selectedIds: new Set(),
+      latestIds: new Set([1, 2, 3, 5]),
+      search: '',
+      inlineAddOpen: false,
+      activeRun: 2,
+      openedTestKind: 'example',
+      createdTestName: '',
+      toastTimer: null
+    };
+
+    const routeNames = {
+      tests: 'Tester',
+      create: 'Nytt test · välj skidor',
+      skis: 'Skidor',
+      addSki: 'Lägg till skida',
+      test: 'Testarbetsyta · gränsyta',
+      emptyTest: 'Nytt test · inga åk ännu',
+      more: 'Mer'
+    };
+
+    const skiGlyph = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l8 16M11 3l8 16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg>';
+
+    const icon = {
+      tests: '⌁',
+      skis: skiGlyph,
+      more: '•••',
+      back: '‹',
+      search: '⌕',
+      tune: '☷'
+    };
+
+    function esc(value = '') {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function appBar(title, options = {}) {
+      const leading = options.back
+        ? `<button class="icon-button" data-action="back" aria-label="Tillbaka">${icon.back}</button>`
+        : `<div class="brand-lockup"><span class="brand-mark">${skiGlyph}</span><span>${title}</span></div>`;
+      const heading = options.back ? `<h1>${esc(title)}</h1>` : '';
+      return `<header class="app-bar">${leading}${heading}${options.action || ''}</header>`;
+    }
+
+    function bottomNav(active) {
+      return `<nav class="bottom-nav" aria-label="Huvudnavigation">
+        ${navButton('tests', 'Tester', icon.tests, active)}
+        ${navButton('skis', 'Skidor', icon.skis, active)}
+        ${navButton('more', 'Mer', icon.more, active)}
+      </nav>`;
+    }
+
+    function navButton(route, label, glyph, active) {
+      const isActive = active === route;
+      return `<button class="nav-item ${isActive ? 'active' : ''}" data-route="${route}">
+        <span class="nav-icon-wrap"><span class="nav-icon">${glyph}</span></span><span>${label}</span>
+      </button>`;
+    }
+
+    function testCard({ title, date, skis, runs, example = false }) {
+      return `<button class="card pressable test-card ${example ? 'example-card' : ''}" data-action="${example ? 'open-example' : 'open-test'}">
+        ${example ? '<div class="example-strip"><span class="badge">Exempel</span><span>Prova med färdig mätdata</span></div>' : ''}
+        <div class="row">
+          <span class="object-icon">⌁</span>
+          <span class="grow">
+            <span class="row between"><h3>${esc(title)}</h3><span class="chevron">›</span></span>
+            <span class="small muted">${esc(date)}</span>
+          </span>
+        </div>
+        <span class="meta-row">
+          <span class="pill">${skis} skidor</span>
+          <span class="pill">${runs} åk</span>
+        </span>
+      </button>`;
+    }
+
+    function testsScreen() {
+      const isNew = appState.mode === 'new';
+      const headerAction = isNew ? '' : '<button class="compact-create" data-action="create-test">＋ Nytt test</button>';
+      const intro = isNew ? `<section class="hero">
+          <div class="eyebrow">Glidtester för längdskidåkare</div>
+          <h2>Bättre underlag för dagens skidval.</h2>
+          <p>Jämför dina skidor med upprepade glidåk. Granska kurvor och datakvalitet – du gör själv bedömningen.</p>
+          <button class="primary-button full" data-action="create-test">Skapa mitt första test</button>
+        </section>` : '';
+
+      const ownTests = isNew ? '' : `<div class="section-heading"><h2>Dina test</h2></div>
+        ${testCard({ title: 'Inför Vasaloppet', date: 'Senast öppnat idag 08:32', skis: 4, runs: 9 })}
+        ${testCard({ title: 'Orsa – kallföre', date: '6 september 2026', skis: 3, runs: 6 })}`;
+
+      return `<section class="screen">
+        ${appBar('SkidPark', { action: headerAction })}
+        <div class="content">
+          ${intro}
+          <div class="section-heading"><h2>${isNew ? 'Utforska med exempeldata' : 'Exempel'}</h2></div>
+          ${testCard({ title: 'Exempeltest: fyra glidåk', date: 'Två exempelskidor · kan tas bort', skis: 2, runs: 4, example: true })}
+          ${ownTests}
+        </div>
+        ${bottomNav('tests')}
+      </section>`;
+    }
+
+    function createTestScreen() {
+      const defaultName = appState.createdTestName || 'Glidtest 8 sep 09:41';
+      const filtered = appState.skis.filter(ski => `${ski.name} ${ski.model}`.toLowerCase().includes(appState.search.toLowerCase()));
+      const selectedCount = appState.selectedIds.size;
+      const shortcuts = appState.skis.length ? `<div class="selection-tools">
+        <button class="quiet-button ${selectedCount === appState.skis.length ? 'active' : ''}" data-action="select-all">Alla</button>
+        <button class="quiet-button ${selectedCount === 0 ? 'active' : ''}" data-action="select-none">Ingen</button>
+        <button class="quiet-button" data-action="select-latest" ${appState.mode === 'new' ? 'disabled' : ''}>Senaste testet</button>
+      </div>` : '';
+
+      const search = appState.skis.length >= 5 ? `<div class="search"><span>${icon.search}</span><input id="ski-search" value="${esc(appState.search)}" placeholder="Sök bland ${appState.skis.length} skidor" aria-label="Sök skidor"></div>` : '';
+      const list = filtered.length ? `<div class="ski-list">${filtered.map(selectableSkiRow).join('')}</div>` : appState.skis.length
+        ? '<div class="notice">Inga skidor matchar sökningen.</div>'
+        : `<div class="notice"><span>i</span><span>Exempelskidorna hör bara till exempeltestet. Lägg till dina egna skidor här; de sparas samtidigt i din skidpark.</span></div>`;
+
+      const inline = appState.inlineAddOpen ? `<div class="inline-add">
+        <div class="inline-fields">
+          <input id="quick-ski-name" placeholder="Skidans namn, t.ex. SP1" aria-label="Skidans namn">
+          <input id="quick-ski-model" placeholder="Märke och modell (valfritt)" aria-label="Märke och modell">
+          <div class="inline-actions">
+            <button class="quiet-button" data-action="close-inline-add">Avbryt</button>
+            <button class="primary-button" data-action="save-quick-ski">Lägg till</button>
+          </div>
+        </div>
+      </div>` : `<div class="inline-add"><button class="inline-add-trigger" data-action="open-inline-add"><span>＋</span><span>Lägg till ny skida</span></button></div>`;
+
+      return `<section class="screen">
+        ${appBar('Nytt glidtest', { back: true })}
+        <div class="content no-nav">
+          <div class="field">
+            <label for="test-name">Testets namn</label>
+            <input id="test-name" value="${esc(defaultName)}">
+            <div class="helper">Namnet är ifyllt men kan ändras.</div>
+          </div>
+
+          <div class="section-heading">
+            <h2>Skidor i testet</h2>
+            <span class="count-badge">${selectedCount}</span>
+          </div>
+          ${shortcuts}
+          <div style="height: 11px"></div>
+          ${search}
+          ${list}
+          ${inline}
+
+          <details class="optional">
+            <summary><span>Anteckningar <span class="quiet">(valfritt)</span></span><span>⌄</span></summary>
+            <textarea placeholder="Till exempel plats, snötyp eller sådant du vill minnas."></textarea>
+          </details>
+        </div>
+        <div class="sticky-action">
+          <button class="primary-button full" data-action="finish-create" ${selectedCount === 0 ? 'disabled' : ''}>Skapa test · ${selectedCount} ${selectedCount === 1 ? 'skida' : 'skidor'}</button>
+        </div>
+      </section>`;
+    }
+
+    function selectableSkiRow(ski) {
+      const selected = appState.selectedIds.has(ski.id);
+      return `<button class="ski-row ${selected ? 'selected' : ''}" data-ski-id="${ski.id}">
+        <span class="object-icon">${skiGlyph}</span>
+        <span class="grow"><div class="ski-name">${esc(ski.name)}</div><div class="ski-model">${esc(ski.model || 'Ingen modell angiven')}</div></span>
+        <span class="check">✓</span>
+      </button>`;
+    }
+
+    function skisScreen() {
+      if (!appState.skis.length) {
+        return `<section class="screen">
+          ${appBar('SkidPark')}
+          <div class="content">
+            <div class="empty-state">
+              <span class="object-icon">${skiGlyph}</span>
+              <h2>Din skidpark är tom</h2>
+              <p>Ge skidorna de namn du själv använder. Exempelskidorna hålls utanför din skidpark.</p>
+              <button class="primary-button" data-action="add-ski-screen">Lägg till din första skida</button>
+            </div>
+          </div>
+          ${bottomNav('skis')}
+        </section>`;
+      }
+
+      const filtered = appState.skis.filter(ski => `${ski.name} ${ski.model}`.toLowerCase().includes(appState.search.toLowerCase()));
+      return `<section class="screen">
+        ${appBar('SkidPark', { action: '<button class="compact-create" data-action="add-ski-screen">＋ Lägg till</button>' })}
+        <div class="content">
+          <div class="search"><span>${icon.search}</span><input id="park-search" value="${esc(appState.search)}" placeholder="Sök i skidparken" aria-label="Sök i skidparken"></div>
+          <div class="section-heading"><h2>Dina skidor</h2><span class="small muted">${appState.skis.length} par</span></div>
+          <div class="ski-list">${filtered.map(parkSkiRow).join('')}</div>
+        </div>
+        ${bottomNav('skis')}
+      </section>`;
+    }
+
+    function parkSkiRow(ski) {
+      return `<button class="ski-row" data-action="ski-details">
+        <span class="object-icon">${skiGlyph}</span>
+        <span class="grow"><div class="ski-name">${esc(ski.name)}</div><div class="ski-model">${esc(ski.model || 'Ingen modell angiven')}</div></span>
+        <span class="chevron">›</span>
+      </button>`;
+    }
+
+    function addSkiScreen() {
+      return `<section class="screen">
+        ${appBar('Lägg till skida', { back: true })}
+        <div class="content no-nav">
+          <div class="field">
+            <label for="new-ski-name">Skidans namn</label>
+            <input id="new-ski-name" placeholder="Till exempel SP1 eller Atomic Röd">
+            <div class="helper">Använd namnet du själv känner igen i spåret.</div>
+          </div>
+          <div class="field">
+            <label for="new-ski-model">Märke och modell <span class="quiet">(valfritt)</span></label>
+            <input id="new-ski-model" placeholder="Till exempel Fischer Speedmax 3D">
+          </div>
+          <details class="optional">
+            <summary><span>Fler uppgifter <span class="quiet">(valfritt)</span></span><span>⌄</span></summary>
+            <div class="field">
+              <label for="new-ski-tech">Teknisk data</label>
+              <textarea id="new-ski-tech" placeholder="Spannvärden, tryckzoner eller annan stabil information."></textarea>
+            </div>
+            <div class="field">
+              <label for="new-ski-notes">Anteckningar</label>
+              <textarea id="new-ski-notes" placeholder="Sådant du vill minnas om skidparet."></textarea>
+            </div>
+          </details>
+        </div>
+        <div class="sticky-action"><button class="primary-button full" data-action="save-full-ski">Spara skida</button></div>
+      </section>`;
+    }
+
+    function testWorkspaceScreen(empty = false) {
+      const isExample = !empty && appState.openedTestKind === 'example';
+      const title = empty
+        ? (appState.createdTestName || 'Glidtest 8 sep 09:41')
+        : isExample ? 'Exempeltest: fyra glidåk' : 'Inför Vasaloppet';
+      const runNames = isExample
+        ? ['Exempelskida A', 'Exempelskida B', 'Exempelskida A', 'Exempelskida B']
+        : ['Atomic Röd', 'SP1 Kallföre', 'Atomic Blå', 'Atomic Röd'];
+      const runs = [
+        { id: 1, name: runNames[0], label: 'Åk 1', color: '#70ddc5', quality: 'Bra kvalitet' },
+        { id: 2, name: runNames[1], label: 'Åk 2', color: '#9281ff', quality: 'Bra kvalitet' },
+        { id: 3, name: runNames[2], label: 'Åk 3', color: '#f5c86b', quality: 'Okej kvalitet' },
+        { id: 4, name: runNames[3], label: 'Åk 4', color: '#ef83c7', quality: 'Bra kvalitet' }
+      ];
+      const workspaceAction = isExample
+        ? '<button class="compact-create" data-action="create-test">Skapa eget test</button>'
+        : '<button class="compact-create" data-action="new-run">＋ Nytt åk</button>';
+
+      const graph = empty ? `<div class="analysis-empty"><div><span class="object-icon" style="margin:auto">⌁</span><h2>Inga åk ännu</h2><p>Testet är sparat. Starta när det passar – hemma, i bilen eller direkt i spåret.</p></div></div>` : `<div class="graph-card">
+        <span class="graph-label">Hastighet över jämförd sträcka</span>
+        <button class="filter-fab" data-action="filters" aria-label="Öppna filter">${icon.tune}</button>
+        <svg viewBox="0 0 320 230" role="img" aria-label="Exempelkurvor för fyra åk">
+          ${graphPath(1, '#70ddc5', 'M0 202 C35 190 55 68 105 56 S205 96 320 180')}
+          ${graphPath(2, '#9281ff', 'M0 205 C38 191 59 61 106 49 S202 87 320 171')}
+          ${graphPath(3, '#f5c86b', 'M0 207 C36 194 61 73 108 62 S207 103 320 188')}
+          ${graphPath(4, '#ef83c7', 'M0 204 C34 190 58 65 106 53 S204 91 320 176')}
+        </svg>
+      </div>`;
+
+      const runList = empty ? '' : `<div class="section-heading"><h2>Åk</h2><span class="small muted">Tryck för att markera i grafen</span></div>
+        ${runs.map(run => `<button class="run-row ${appState.activeRun === run.id ? 'active' : ''}" data-run-id="${run.id}">
+          <span class="line-key" style="background:${run.color}"></span>
+          <span><span class="ski-name">${run.label} · ${run.name}</span><span class="small muted">32 sek · 186 m</span></span>
+          <span class="quality ${run.id === 3 ? 'warn' : ''}">${run.quality}</span>
+        </button>`).join('')}`;
+
+      return `<section class="screen">
+        ${appBar(title, { back: true, action: workspaceAction })}
+        <div class="content no-nav">
+          <div class="notice"><span>↗</span><span>${isExample ? '<strong>Exempeldata.</strong> Analysverktygen fungerar som vanligt, men exempeltestet ändras inte.' : ''} Analysytans detaljdesign är inte en del av detta omtag; graf och sidomeny behandlas i den separata prototypen.</span></div>
+          ${graph}
+          ${runList}
+        </div>
+      </section>`;
+    }
+
+    function graphPath(id, color, d) {
+      const active = appState.activeRun === id;
+      return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${active ? 4.5 : 2.2}" opacity="${active ? 1 : .35}" stroke-linecap="round"/>`;
+    }
+
+    function moreScreen() {
+      return `<section class="screen">
+        ${appBar('SkidPark')}
+        <div class="content">
+          <div class="section-heading"><h2>Mer</h2></div>
+          <div class="card" style="padding:16px"><h3 style="margin-bottom:6px">Guide: så gör du ett glidtest</h3><p class="muted small" style="margin:0">Teknikhjälp finns här, men ligger inte i vägen för varje start.</p></div>
+          <div class="card" style="padding:16px; margin-top:10px"><h3 style="margin-bottom:6px">Exempeldata</h3><p class="muted small" style="margin:0 0 12px">Återställ exempeltestet om du har tagit bort det.</p><button class="secondary-button full" data-action="restore-example">Återställ exempeltest</button></div>
+        </div>
+        ${bottomNav('more')}
+      </section>`;
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      if (appState.route === 'tests') app.innerHTML = testsScreen();
+      if (appState.route === 'create') app.innerHTML = createTestScreen();
+      if (appState.route === 'skis') app.innerHTML = skisScreen();
+      if (appState.route === 'addSki') app.innerHTML = addSkiScreen();
+      if (appState.route === 'test') app.innerHTML = testWorkspaceScreen(false);
+      if (appState.route === 'emptyTest') app.innerHTML = testWorkspaceScreen(true);
+      if (appState.route === 'more') app.innerHTML = moreScreen();
+      bindInteractions();
+      updateGuide();
+    }
+
+    function navigate(route) {
+      appState.route = route;
+      appState.search = '';
+      appState.inlineAddOpen = false;
+      render();
+    }
+
+    function beginCreate() {
+      appState.route = 'create';
+      appState.search = '';
+      appState.inlineAddOpen = false;
+      appState.selectedIds = new Set(appState.skis.map(ski => ski.id));
+      render();
+    }
+
+    function setMode(mode) {
+      appState.mode = mode;
+      appState.route = 'tests';
+      appState.skis = mode === 'returning' ? returningSkis.map(ski => ({ ...ski })) : [];
+      appState.selectedIds = new Set();
+      appState.search = '';
+      appState.createdTestName = '';
+      render();
+    }
+
+    function addSki(name, model) {
+      const nextId = Math.max(0, ...appState.skis.map(ski => ski.id)) + 1;
+      appState.skis.push({ id: nextId, name, model });
+      appState.selectedIds.add(nextId);
+      return nextId;
+    }
+
+    function showToast(message) {
+      document.querySelector('.toast')?.remove();
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.querySelector('.phone').appendChild(toast);
+      clearTimeout(appState.toastTimer);
+      appState.toastTimer = setTimeout(() => toast.remove(), 2200);
+    }
+
+    function bindInteractions() {
+      document.querySelectorAll('[data-route]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.route)));
+      document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => setMode(button.dataset.mode)));
+
+      document.querySelector('[data-action="create-test"]')?.addEventListener('click', beginCreate);
+      document.querySelector('[data-action="open-example"]')?.addEventListener('click', () => {
+        appState.openedTestKind = 'example';
+        navigate('test');
+      });
+      document.querySelector('[data-action="open-test"]')?.addEventListener('click', () => {
+        appState.openedTestKind = 'own';
+        navigate('test');
+      });
+      document.querySelector('[data-action="add-ski-screen"]')?.addEventListener('click', () => navigate('addSki'));
+
+      document.querySelector('[data-action="back"]')?.addEventListener('click', () => {
+        if (appState.route === 'create' || appState.route === 'test' || appState.route === 'emptyTest') navigate('tests');
+        else navigate('skis');
+      });
+
+      document.querySelector('[data-action="select-all"]')?.addEventListener('click', () => {
+        appState.selectedIds = new Set(appState.skis.map(ski => ski.id));
+        render();
+      });
+      document.querySelector('[data-action="select-none"]')?.addEventListener('click', () => {
+        appState.selectedIds.clear();
+        render();
+      });
+      document.querySelector('[data-action="select-latest"]')?.addEventListener('click', () => {
+        appState.selectedIds = new Set(appState.skis.filter(ski => appState.latestIds.has(ski.id)).map(ski => ski.id));
+        render();
+        showToast('Fyra skidor från senaste testet valda');
+      });
+
+      document.querySelectorAll('[data-ski-id]').forEach(row => row.addEventListener('click', () => {
+        const id = Number(row.dataset.skiId);
+        if (appState.selectedIds.has(id)) appState.selectedIds.delete(id);
+        else appState.selectedIds.add(id);
+        render();
+      }));
+
+      document.querySelector('[data-action="open-inline-add"]')?.addEventListener('click', () => {
+        appState.inlineAddOpen = true;
+        render();
+        document.getElementById('quick-ski-name')?.focus();
+      });
+      document.querySelector('[data-action="close-inline-add"]')?.addEventListener('click', () => {
+        appState.inlineAddOpen = false;
+        render();
+      });
+      document.querySelector('[data-action="save-quick-ski"]')?.addEventListener('click', () => {
+        const name = document.getElementById('quick-ski-name').value.trim();
+        const model = document.getElementById('quick-ski-model').value.trim();
+        if (!name) { showToast('Ge skidan ett namn först'); return; }
+        addSki(name, model);
+        appState.inlineAddOpen = true;
+        render();
+        showToast(`${name} sparad och vald`);
+        document.getElementById('quick-ski-name')?.focus();
+      });
+
+      document.querySelector('[data-action="finish-create"]')?.addEventListener('click', () => {
+        const name = document.getElementById('test-name').value.trim();
+        appState.createdTestName = name || 'Glidtest 8 sep 09:41';
+        navigate('emptyTest');
+      });
+
+      document.querySelector('#test-name')?.addEventListener('input', event => {
+        appState.createdTestName = event.target.value;
+      });
+
+      document.querySelector('[data-action="save-full-ski"]')?.addEventListener('click', () => {
+        const name = document.getElementById('new-ski-name').value.trim();
+        const model = document.getElementById('new-ski-model').value.trim();
+        if (!name) { showToast('Ge skidan ett namn först'); return; }
+        addSki(name, model);
+        navigate('skis');
+        showToast(`${name} tillagd i skidparken`);
+      });
+
+      document.querySelector('#ski-search')?.addEventListener('input', event => {
+        appState.search = event.target.value;
+        render();
+        const input = document.getElementById('ski-search');
+        input?.focus();
+        input?.setSelectionRange(input.value.length, input.value.length);
+      });
+      document.querySelector('#park-search')?.addEventListener('input', event => {
+        appState.search = event.target.value;
+        render();
+        const input = document.getElementById('park-search');
+        input?.focus();
+        input?.setSelectionRange(input.value.length, input.value.length);
+      });
+
+      document.querySelectorAll('[data-run-id]').forEach(row => row.addEventListener('click', () => {
+        appState.activeRun = Number(row.dataset.runId);
+        render();
+      }));
+
+      document.querySelector('[data-action="filters"]')?.addEventListener('click', () => showToast('Här öppnas testets dedikerade sidomeny'));
+      document.querySelector('[data-action="new-run"]')?.addEventListener('click', () => showToast('Nästa steg: befintlig helskärm för skidval och inspelning'));
+      document.querySelector('[data-action="ski-details"]')?.addEventListener('click', () => showToast('Skiddetalj behålls enkel; historiksidan är pausad'));
+      document.querySelector('[data-action="restore-example"]')?.addEventListener('click', () => showToast('Exempeltestet återställt'));
+    }
+
+    function updateGuide() {
+      document.querySelectorAll('[data-mode]').forEach(button => button.classList.toggle('active', button.dataset.mode === appState.mode));
+      const label = document.getElementById('route-label');
+      if (label) label.textContent = `${routeNames[appState.route]} · ${appState.mode === 'new' ? 'första start' : 'med egen data'}`;
+    }
+
+    function runSelfTest() {
+      try {
+        document.querySelector('[data-mode="returning"]').click();
+        document.querySelector('[data-action="create-test"]').click();
+        if (appState.selectedIds.size !== 6) throw new Error('Alla skidor valdes inte från start');
+
+        document.querySelector('[data-action="select-none"]').click();
+        if (appState.selectedIds.size !== 0) throw new Error('Ingen tömde inte urvalet');
+        if (!document.querySelector('[data-action="finish-create"]').disabled) throw new Error('Tomt urval kunde skapas');
+
+        document.querySelector('[data-action="select-latest"]').click();
+        if (appState.selectedIds.size !== 4) throw new Error('Senaste testet gav fel urval');
+
+        document.querySelector('[data-action="open-inline-add"]').click();
+        document.getElementById('quick-ski-name').value = 'Självtestskida';
+        document.querySelector('[data-action="save-quick-ski"]').click();
+        if (appState.skis.length !== 7 || appState.selectedIds.size !== 5) throw new Error('Snabbskapad skida sparades inte och valdes');
+
+        const nameInput = document.getElementById('test-name');
+        nameInput.value = 'Självtest';
+        nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+        document.querySelector('[data-action="finish-create"]').click();
+        if (appState.route !== 'emptyTest' || !document.body.textContent.includes('Självtest')) throw new Error('Skapat test öppnades inte');
+
+        document.body.dataset.selftest = 'passed';
+      } catch (error) {
+        document.body.dataset.selftest = `failed: ${error.message}`;
+      }
+    }
+
+    const initialParams = new URLSearchParams(window.location.search);
+    setMode(initialParams.get('mode') === 'returning' ? 'returning' : 'new');
+    const initialRoute = initialParams.get('route');
+    if (initialRoute === 'create') beginCreate();
+    else if (['tests', 'skis', 'more'].includes(initialRoute)) navigate(initialRoute);
+    if (initialParams.get('selftest') === '1') runSelfTest();
+  </script>
+</body>
+</html>

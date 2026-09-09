@@ -6,6 +6,7 @@ import 'package:skidpark/features/glide_testing/compare/widgets/compare_graph.da
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 
 import '../../compare_runs_view_model.dart';
+import '../../models/enriched_test_run.dart';
 import '../../models/graph_line.dart';
 
 class ReleasePointContainer extends StatelessWidget {
@@ -147,7 +148,11 @@ class ReleasePointContainer extends StatelessWidget {
     );
   }
 
-  Widget _buildResultList(BuildContext context, var runs, bool useAverageView) {
+  Widget _buildResultList(
+    BuildContext context,
+    List<EnrichedTestRun> runs,
+    bool useAverageView,
+  ) {
     if (runs.isEmpty) {
       return const Center(child: Text("Ingen data att visa"));
     }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "SkidPark Product & UX"
+  short_description: "Produktbeslut och UX för SkidPark"
+  default_prompt: "Använd $skidpark-product-ux för att bolla och utmana den här produktidén innan vi gör wireframes eller en specifikation."

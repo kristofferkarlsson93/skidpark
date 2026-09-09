@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.krikar.skidpark.skidpark"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -18,18 +18,18 @@ void main() {
           dispose: (_, db) => db.close(),
         ),
         ProxyProvider<AppDatabase, SkiRepository>(
-          update: (_, db, __) => SkiRepository(db),
+          update: (_, db, _) => SkiRepository(db),
         ),
         ProxyProvider<AppDatabase, GlideTestRepository>(
-          update: (_, db, __) => GlideTestRepository(db),
+          update: (_, db, _) => GlideTestRepository(db),
         ),
         ProxyProvider<AppDatabase, TestRunRepository>(
-          update: (_, db, __) => TestRunRepository(db),
+          update: (_, db, _) => TestRunRepository(db),
         ),
         Provider<VolumePressHandler>(
           create: (_) => VolumePressHandler(),
           dispose: (_, handler) => handler.dispose(),
-        )
+        ),
       ],
       child: const MyApp(),
     ),
@@ -43,8 +43,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Min skidpark',
-      home: BottomNavigator(),
+      title: 'SkidPark',
+      home: const BottomNavigator(),
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../common/shared_widgets/app_brand_title.dart';
+
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
 
@@ -11,7 +13,7 @@ class MorePage extends StatelessWidget {
     final Uri emailUri = Uri(
       scheme: 'mailto',
       path: _developerEmail,
-      query: 'subject=Feedback GlidLabbet Beta',
+      query: 'subject=Feedback SkidPark Beta',
     );
 
     try {
@@ -42,13 +44,15 @@ class MorePage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Kontakt & Hjälp")),
+      appBar: AppBar(title: const AppBrandTitle()),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text('Mer', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 24),
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -57,9 +61,7 @@ class MorePage extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.onSurfaceVariant,
-                    borderRadius: BorderRadius.circular(
-                      8,
-                    ),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     "BETA-VERSION",
@@ -80,33 +82,9 @@ class MorePage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: FilledButton.icon(
-                      onPressed: () => _sendEmail(context),
-                      icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text("Maila minskidpark@gmail.com"),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 1,
-                    child: TextButton(
-                      onPressed: () => _copyToClipboard(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      child: const Text("Kopiera"),
-                    ),
-                  ),
-                ],
+              _ContactActions(
+                onSendEmail: () => _sendEmail(context),
+                onCopyEmail: () => _copyToClipboard(context),
               ),
 
               const SizedBox(height: 32),
@@ -134,11 +112,13 @@ class MorePage extends StatelessWidget {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Exportera glidtest',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Exportera glidtest',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -177,18 +157,20 @@ class MorePage extends StatelessWidget {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Om precision & mätning',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Om precision & mätning',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Denna app använder mobilens inbyggda GPS och accelerometer. Mätvärden kan påverkas av telefonmodell, väder och placering.\n\nGlidLabbet är ett verktyg för att hitta trender och skillnader, men ska ses som ett komplement till – och inte en ersättning för – traditionell känsla och testning.',
+                      'Denna app använder mobilens inbyggda GPS och accelerometer. Mätvärden kan påverkas av telefonmodell, väder och placering.\n\nSkidPark är ett verktyg för att hitta trender och skillnader, men ska ses som ett komplement till – och inte en ersättning för – traditionell känsla och testning.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -201,6 +183,57 @@ class MorePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ContactActions extends StatelessWidget {
+  const _ContactActions({required this.onSendEmail, required this.onCopyEmail});
+
+  final VoidCallback onSendEmail;
+  final VoidCallback onCopyEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+        final useStackedLayout = constraints.maxWidth < 340 || textScale > 1.2;
+        final emailButton = FilledButton.icon(
+          onPressed: onSendEmail,
+          icon: const Icon(Icons.send_rounded, size: 18),
+          label: Text(
+            useStackedLayout ? 'Maila oss' : 'Maila minskidpark@gmail.com',
+          ),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            visualDensity: VisualDensity.compact,
+          ),
+        );
+        final copyButton = TextButton(
+          onPressed: onCopyEmail,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            visualDensity: VisualDensity.compact,
+          ),
+          child: const Text('Kopiera adress'),
+        );
+
+        if (useStackedLayout) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [emailButton, const SizedBox(height: 4), copyButton],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(flex: 4, child: emailButton),
+            const SizedBox(width: 8),
+            copyButton,
+          ],
+        );
+      },
     );
   }
 }

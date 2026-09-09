@@ -1,160 +1,160 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class GlideTestingIntroCard extends StatelessWidget {
-  final ThemeData? theme;
-  final VoidCallback? onLongPressGuide;
+  const GlideTestingIntroCard({
+    super.key,
+    required this.onCreateTest,
+    this.onLongPressGuide,
+  });
 
-  const GlideTestingIntroCard({super.key, this.theme, this.onLongPressGuide});
+  final VoidCallback onCreateTest;
+  final VoidCallback? onLongPressGuide;
 
   @override
   Widget build(BuildContext context) {
-    final themeData = theme ?? Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Card(
-        color: themeData.colorScheme.surfaceContainer,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: themeData.colorScheme.primary.withAlpha((0.85 * 255).toInt()),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.science,
-                      color: themeData.colorScheme.onPrimary,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Dina glidtester",
-                          style: themeData.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Här kan du skapa och titta på glidtester. \nKlicka på + för att skapa ett nytt test",
-                          style: themeData.textTheme.bodyMedium?.copyWith(
-                            color: themeData.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFF45405F)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF242037), Color(0xFF191A22)],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'GLIDTESTER FÖR LÄNGDSKIDÅKARE',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.secondary,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showInfoDialog(context, themeData),
-                  onLongPress: onLongPressGuide,
-                  icon: const Icon(Icons.info_outline, size: 18),
-                  label: const Text("Guide: Så utför du ett glidtest"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: themeData.colorScheme.primary.withAlpha(
-                      (0.85 * 255).toInt(),
-                    ),
-                    side: BorderSide(color: Colors.transparent),
-                  ),
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Bättre underlag för dagens skidval.',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontSize: 28,
+                height: 1.12,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Jämför dina skidor med upprepade glidåk. Granska kurvor och '
+              'datakvalitet – du gör själv bedömningen.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: onCreateTest,
+                child: const Text('Skapa mitt första test'),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: () => _showGuide(context),
+                onLongPress: kDebugMode ? onLongPressGuide : null,
+                icon: const Icon(Icons.info_outline_rounded, size: 19),
+                label: const Text('Så gör du ett glidtest'),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showInfoDialog(BuildContext context, ThemeData theme) {
-    showDialog(
+  void _showGuide(BuildContext context) {
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: theme.colorScheme.surfaceContainerHigh,
-        title: Row(
-          children: [
-            Icon(Icons.help_outline, color: theme.colorScheme.primary),
-            const SizedBox(width: 12),
-            const Text("Att utföra glidtest"),
-          ],
-        ),
-        content: SingleChildScrollView(
+        title: const Text('Så gör du ett glidtest'),
+        content: const SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Appen hjälper dig att samla in sensordata under ditt åk, och pressenterar sedan data och analys",
-                style: theme.textTheme.bodyMedium,
+                'SkidPark samlar in sensordata under åket och gör det möjligt '
+                'att jämföra flera glidåk.',
               ),
-              const SizedBox(height: 16),
-              Text(
-                "Steg för steg:",
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+              SizedBox(height: 20),
+              _GuideStep(number: 1, text: 'Skapa ett test.'),
+              _GuideStep(
+                number: 2,
+                text: 'Markera en tydlig startpunkt i en lämplig backe.',
               ),
-              const SizedBox(height: 8),
-              _buildStepTile(theme, "1", "Skapa ett nytt test via + knappen."),
-              _buildStepTile(theme, "2", "Dra ett startstreck i snön vid en lämplig backe."),
-              _buildStepTile(theme, "3", "Välj 'Nytt åk' och vilken skida du testar."),
-              _buildStepTile(theme, "4", "Glid från stillastående vid strecket ner till stopp. Viktigt: Håll mobilen stilla, och med främre kortsida i åkriktningen."),
-              _buildStepTile(theme, "5", "Upprepa för alla skidor du vill jämföra."),
+              _GuideStep(number: 3, text: 'Välj Nytt åk och rätt skida.'),
+              _GuideStep(
+                number: 4,
+                text:
+                    'Glid från stillastående till stopp. Håll mobilen stilla '
+                    'med kortsidan framåt.',
+              ),
+              _GuideStep(
+                number: 5,
+                text: 'Upprepa åket med skidorna du vill jämföra.',
+              ),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: const Text('Stäng'),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildStepTile(ThemeData theme, String number, String text) {
+class _GuideStep extends StatelessWidget {
+  const _GuideStep({required this.number, required this.text});
+
+  final int number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             alignment: Alignment.center,
-            margin: const EdgeInsets.only(top: 2),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withAlpha((0.2 * 255).toInt()),
-              shape: BoxShape.circle,
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              number,
+              '$number',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
               ),
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+          Expanded(child: Text(text)),
         ],
       ),
     );

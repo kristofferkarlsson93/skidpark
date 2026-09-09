@@ -28,17 +28,17 @@ class _DevImportDialogState extends State<DevImportDialog> {
     setState(() => _isLoading = true);
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final files = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
 
-      if (result == null || result.files.single.path == null) {
+      if (files.isEmpty || files.single.path == null) {
         setState(() => _isLoading = false);
         return;
       }
 
-      final file = File(result.files.single.path!);
+      final file = File(files.single.path!);
       final jsonString = await file.readAsString();
       final Map<String, dynamic> jsonData = jsonDecode(jsonString);
 

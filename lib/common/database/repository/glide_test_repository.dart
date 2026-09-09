@@ -6,6 +6,20 @@ import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart
 import '../database.dart';
 import '../models/exported_glide_test.dart';
 
+class GlideTestSummary {
+  const GlideTestSummary({
+    required this.test,
+    required this.runCount,
+    required this.testedSkiCount,
+    required this.latestActivityAt,
+  });
+
+  final StoredGlideTestData test;
+  final int runCount;
+  final int testedSkiCount;
+  final DateTime latestActivityAt;
+}
+
 class GlideTestRepository {
   final AppDatabase _db;
 
@@ -16,6 +30,44 @@ class GlideTestRepository {
           (t) => drift.OrderingTerm.desc(t.id), // newest first
         ]))
         .watch();
+  }
+
+  Stream<List<GlideTestSummary>> watchTestSummaries() {
+    final runCount = _db.testRun.id.count();
+    final testedSkiCount = _db.testRun.skiId.count(distinct: true);
+    final latestRunAt = _db.testRun.startedAt.max();
+    final latestActivity = drift.ifNull(
+      latestRunAt,
+      _db.storedGlideTest.createdAt,
+    );
+
+    final query = _db.select(_db.storedGlideTest).join([
+      drift.leftOuterJoin(
+        _db.testRun,
+        _db.testRun.glideTestId.equalsExp(_db.storedGlideTest.id),
+        useColumns: false,
+      ),
+    ]);
+
+    query
+      ..addColumns([runCount, testedSkiCount, latestRunAt])
+      ..groupBy([_db.storedGlideTest.id])
+      ..orderBy([
+        drift.OrderingTerm.desc(latestActivity),
+        drift.OrderingTerm.desc(_db.storedGlideTest.createdAt),
+      ]);
+
+    return query.watch().map(
+      (rows) => rows.map((row) {
+        final test = row.readTable(_db.storedGlideTest);
+        return GlideTestSummary(
+          test: test,
+          runCount: row.read(runCount) ?? 0,
+          testedSkiCount: row.read(testedSkiCount) ?? 0,
+          latestActivityAt: row.read(latestRunAt) ?? test.createdAt,
+        );
+      }).toList(),
+    );
   }
 
   Stream<StoredGlideTestData?> watchTestById(int glideTestId) {
@@ -55,9 +107,9 @@ class GlideTestRepository {
   }
 
   void deleteGlideTest(int id) async {
-    await (_db.delete(_db.storedGlideTest)
-      ..where((tbl) => tbl.id.equals(id))
-    ).go();
+    await (_db.delete(
+      _db.storedGlideTest,
+    )..where((tbl) => tbl.id.equals(id))).go();
   }
 
   Future<ExportedGlideTest> exportRelatedData(int glideTestId) async {
