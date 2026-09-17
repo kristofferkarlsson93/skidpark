@@ -24,6 +24,9 @@ the best product outcome, including by challenging the initial premise.
 - Once a direction has been discussed and chosen, move from conversation to
   interaction frames or wireframes, then to an actionable specification. Only
   implement when the user asks for implementation.
+- Before presenting a redesign as a new direction, state its functional delta
+  from the current product. A visual restyling or navigation reshuffle may be
+  valuable, but it is not by itself a new product concept.
 - Propose both small refinements and major product changes when warranted.
   Clearly label their scope and trade-offs; proposing a broad change does not
   authorize implementing it.
@@ -42,6 +45,9 @@ the best product outcome, including by challenging the initial premise.
 - Make prototypes unambiguous about which boxes are distinct screens versus
   states of one screen. Label the prototype's scope and the areas it does not
   redesign.
+- When delivery is split into stages, give each stage explicit included and
+  excluded behavior plus observable acceptance criteria. Treat those boundaries
+  as part of the approved design, not as a suggestion to the implementer.
 - Keep one canonical artifact per active scope. Before retiring a superseded
   prototype, move any durable decisions it contains to the decision ledger.
 
@@ -152,7 +158,9 @@ validated user facts unless evidence exists.
 
 If the user asks for implementation, first settle the material UX decision,
 then make a focused change that respects the existing UI/view-model/data
-boundaries. If the user asks only for review or advice, do not edit the app.
+boundaries. Compare the result with the canonical prototype in a running app
+and call out intentional deviations. If the user asks only for review or
+advice, do not edit the app.
 
 ## Communicate the result
 

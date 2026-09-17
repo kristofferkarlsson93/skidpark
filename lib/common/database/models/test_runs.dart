@@ -6,12 +6,10 @@ import 'package:skidpark/common/database/models/stored_ski.dart';
 class TestRun extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  IntColumn get glideTestId => integer().references(
-      StoredGlideTest,
-      #id,
-      onDelete: KeyAction.cascade
-  )();
+  IntColumn get glideTestId =>
+      integer().references(StoredGlideTest, #id, onDelete: KeyAction.cascade)();
   IntColumn get skiId => integer().references(StoredSki, #id)();
+  IntColumn get runNumber => integer().withDefault(const Constant(1))();
 
   DateTimeColumn get startedAt => dateTime()();
   IntColumn get elapsedSeconds => integer()();

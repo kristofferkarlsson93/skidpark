@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../database/database.dart';
 
 class SimpleSkiListItem extends StatelessWidget {
   final StoredSkiData skiDetails;
   final bool isActive;
   final bool isConfirmedStart; // NY PARAMETER
-  final VoidCallback onSelected;
+  final VoidCallback? onSelected;
   final double height;
 
   const SimpleSkiListItem({

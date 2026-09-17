@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 import '../../../common/shared_widgets/app_brand_title.dart';
+import '../../glide_testing/example_data/example_data_installer.dart';
 
 class MorePage extends StatelessWidget {
   const MorePage({super.key});
@@ -36,6 +38,47 @@ class MorePage extends StatelessWidget {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  Future<void> _resetExampleData(BuildContext context) async {
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Återställ exempeltest?'),
+            content: const Text(
+              'Det nuvarande exempeltestet ersätts med originalversionen. '
+              'Dina egna test och skidor påverkas inte.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Avbryt'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Återställ'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !context.mounted) return;
+
+    try {
+      await context.read<ExampleDataInstaller>().reset();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Exempeltestet har återställts.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kunde inte återställa exempeltestet.')),
+        );
+      }
     }
   }
 
@@ -132,6 +175,14 @@ class MorePage extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 16),
+
+              OutlinedButton.icon(
+                onPressed: () => _resetExampleData(context),
+                icon: const Icon(Icons.restore_rounded),
+                label: const Text('Återställ exempeltest'),
               ),
 
               const SizedBox(height: 16),

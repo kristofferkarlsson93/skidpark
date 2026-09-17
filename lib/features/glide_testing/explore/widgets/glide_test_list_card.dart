@@ -75,8 +75,11 @@ class GlideTestListCard extends StatelessWidget {
   }
 
   List<Widget> _buildFacts() {
+    final facts = <Widget>[
+      if (summary.test.isExample) const _FactPill(label: 'Exempel'),
+    ];
     if (summary.runCount == 0) {
-      return [const _FactPill(label: 'Inga åk ännu')];
+      return [...facts, const _FactPill(label: 'Inga åk ännu')];
     }
 
     final skiLabel = summary.testedSkiCount == 1
@@ -84,10 +87,13 @@ class GlideTestListCard extends StatelessWidget {
         : '${summary.testedSkiCount} skidor';
     final runLabel = summary.runCount == 1 ? '1 åk' : '${summary.runCount} åk';
 
-    return [_FactPill(label: skiLabel), _FactPill(label: runLabel)];
+    return [...facts, _FactPill(label: skiLabel), _FactPill(label: runLabel)];
   }
 
   String _activityLabel() {
+    if (summary.test.isExample) {
+      return 'Utforska kurvor och datakvalitet';
+    }
     final activityAt = summary.latestActivityAt;
     final prefix = summary.runCount == 0 ? 'Skapad' : 'Senast';
     final now = DateTime.now();

@@ -1,0 +1,6 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- assertVisible: "Välj skida för åket"
+- back
+- assertVisible: "Nytt åk"
+

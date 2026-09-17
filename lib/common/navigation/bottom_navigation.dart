@@ -32,36 +32,45 @@ class _BottomNavigatorState extends State<BottomNavigator> {
           });
         },
         destinations: [
-          const NavigationDestination(
-            selectedIcon: Icon(Icons.show_chart_rounded),
-            icon: Icon(Icons.show_chart_outlined),
-            label: 'Tester',
-          ),
-          NavigationDestination(
-            selectedIcon: SvgPicture.asset(
-              'assets/icons/ski_icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                theme.colorScheme.primary,
-                BlendMode.srcIn,
-              ),
+          Semantics(
+            identifier: 'navigation-tests',
+            child: const NavigationDestination(
+              selectedIcon: Icon(Icons.show_chart_rounded),
+              icon: Icon(Icons.show_chart_outlined),
+              label: 'Tester',
             ),
-            icon: SvgPicture.asset(
-              'assets/icons/ski_icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                theme.colorScheme.onSurfaceVariant,
-                BlendMode.srcIn,
-              ),
-            ),
-            label: 'Skidor',
           ),
-          const NavigationDestination(
-            selectedIcon: Icon(Icons.more_horiz),
-            icon: Icon(Icons.more_horiz_outlined),
-            label: 'Mer',
+          Semantics(
+            identifier: 'navigation-skis',
+            child: NavigationDestination(
+              selectedIcon: SvgPicture.asset(
+                'assets/icons/ski_icon.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  theme.colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              icon: SvgPicture.asset(
+                'assets/icons/ski_icon.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  theme.colorScheme.onSurfaceVariant,
+                  BlendMode.srcIn,
+                ),
+              ),
+              label: 'Skidor',
+            ),
+          ),
+          Semantics(
+            identifier: 'navigation-more',
+            child: const NavigationDestination(
+              selectedIcon: Icon(Icons.more_horiz),
+              icon: Icon(Icons.more_horiz_outlined),
+              label: 'Mer',
+            ),
           ),
         ],
       ),

@@ -1,0 +1,5 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- extendedWaitUntil:
+    visible: "Skapa mitt första test"
+    timeout: 60000

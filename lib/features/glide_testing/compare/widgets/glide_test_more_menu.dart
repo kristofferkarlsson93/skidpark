@@ -7,14 +7,14 @@ enum GlideTestMoreMenuOptions {
 }
 
 class GlideTestMoreMenu extends StatelessWidget {
-  final VoidCallback onSelectEdit;
+  final VoidCallback? onSelectEdit;
   final VoidCallback onSelectExport;
 
   final VoidCallback onSelectDelete;
 
   const GlideTestMoreMenu({
     super.key,
-    required this.onSelectEdit,
+    this.onSelectEdit,
     required this.onSelectExport,
     required this.onSelectDelete,
   });
@@ -24,6 +24,7 @@ class GlideTestMoreMenu extends StatelessWidget {
     final theme = Theme.of(context);
     return PopupMenuButton<GlideTestMoreMenuOptions>(
       position: PopupMenuPosition.under,
+      tooltip: 'Fler alternativ',
       icon: CircleAvatar(
         backgroundColor: theme.colorScheme.surfaceContainerLowest,
         foregroundColor: theme.colorScheme.onSurface,
@@ -31,7 +32,7 @@ class GlideTestMoreMenu extends StatelessWidget {
       ),
       onSelected: (GlideTestMoreMenuOptions item) {
         if (item == GlideTestMoreMenuOptions.editGlideTest) {
-          onSelectEdit();
+          onSelectEdit?.call();
         } else if (item == GlideTestMoreMenuOptions.exportGlideText) {
           onSelectExport();
         } else if (item == GlideTestMoreMenuOptions.deleteGlideTest) {
@@ -40,10 +41,11 @@ class GlideTestMoreMenu extends StatelessWidget {
       },
       itemBuilder: (BuildContext context) =>
           <PopupMenuEntry<GlideTestMoreMenuOptions>>[
-            const PopupMenuItem<GlideTestMoreMenuOptions>(
-              value: GlideTestMoreMenuOptions.editGlideTest,
-              child: Text('Redigera testinfo'),
-            ),
+            if (onSelectEdit != null)
+              const PopupMenuItem<GlideTestMoreMenuOptions>(
+                value: GlideTestMoreMenuOptions.editGlideTest,
+                child: Text('Redigera testinfo'),
+              ),
             const PopupMenuItem<GlideTestMoreMenuOptions>(
               value: GlideTestMoreMenuOptions.exportGlideText,
               child: Text('Exportera all data'),

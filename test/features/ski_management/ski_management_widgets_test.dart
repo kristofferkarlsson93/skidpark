@@ -117,5 +117,6 @@ StoredSkiData _ski(int id, String name, String model) {
     technicalData: null,
     notes: null,
     archivedAt: null,
+    isExample: false,
   );
 }

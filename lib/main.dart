@@ -8,6 +8,8 @@ import 'common/database/repository/ski_repository.dart';
 import 'common/database/repository/test_run_repository.dart';
 import 'common/navigation/bottom_navigation.dart';
 import 'common/services/volume_press_handler.dart';
+import 'features/glide_testing/example_data/example_data_installer.dart';
+import 'features/glide_testing/import/glide_test_import_service.dart';
 
 void main() {
   runApp(
@@ -26,9 +28,20 @@ void main() {
         ProxyProvider<AppDatabase, TestRunRepository>(
           update: (_, db, _) => TestRunRepository(db),
         ),
-        Provider<VolumePressHandler>(
+        ProxyProvider<AppDatabase, GlideTestImportService>(
+          update: (_, db, _) => GlideTestImportService(db),
+        ),
+        ProxyProvider2<
+          AppDatabase,
+          GlideTestImportService,
+          ExampleDataInstaller
+        >(
+          update: (_, db, importService, _) =>
+              ExampleDataInstaller(db, importService),
+        ),
+        Provider<VolumeButtonInput>(
           create: (_) => VolumePressHandler(),
-          dispose: (_, handler) => handler.dispose(),
+          dispose: (_, input) => input.dispose(),
         ),
       ],
       child: const MyApp(),

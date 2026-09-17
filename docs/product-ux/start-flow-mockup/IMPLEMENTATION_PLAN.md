@@ -231,6 +231,8 @@ Etapp 1-filerna.
 
 ## Etapp 2 – testflöde, GPS och skidurval
 
+**Status:** Implementerad och senast verifierad 2026-09-16.
+
 ### Syfte
 
 Koppla ihop den visuella grunden med riktig exempeldata, ett testbundet
@@ -239,18 +241,19 @@ registrera ett åk.
 
 ### Arbetslista
 
-- [ ] Lägg till test–skida-relation, exempelmarkering och `AppSetting` i Drift.
-- [ ] Migrera befintliga test till ett bevarat skidurval.
-- [ ] Flytta platsbehörighet och GPS-start från testöppning till `Nytt åk`.
-- [ ] Extrahera importlogiken och paketera ett verkligt exempeltest som asset.
-- [ ] Installera exempeldata exakt en gång och stöd uttrycklig återställning.
-- [ ] Visa det riktiga exempelkortet på första-start-skärmen.
-- [ ] Ersätt bottom sheet med helskärmen `Nytt glidtest`.
-- [ ] Implementera massval, sökning och snabbskapande av flera skidor.
-- [ ] Låt inspelningsflödet använda testets skidurval.
-- [ ] Stöd en medveten avvikelse till en annan skida.
-- [ ] Lägg databas-, widget- och integrationstester för hela resan.
-- [ ] Kör analys och manuell provning av GPS- och inspelningsflödet.
+- [x] Lägg till test–skida-relation, exempelmarkering och `AppSetting` i Drift.
+- [x] Migrera befintliga test till ett bevarat skidurval.
+- [x] Flytta platsbehörighet och GPS-start från testöppning till `Nytt åk`.
+- [x] Extrahera importlogiken och paketera ett beständigt exempeltest som asset.
+- [x] Installera exempeldata exakt en gång och stöd uttrycklig återställning.
+- [x] Visa det riktiga exempelkortet på första-start-skärmen.
+- [x] Ersätt bottom sheet med helskärmen `Nytt glidtest`.
+- [x] Implementera massval, sökning och snabbskapande av flera skidor.
+- [x] Låt inspelningsflödet använda testets skidurval.
+- [x] Stöd en medveten avvikelse till en annan skida.
+- [x] Stöd snabbskapande av en saknad skida från skidvalet för nytt åk.
+- [x] Lägg databas-, widget- och sammanhängande flödestester för resan.
+- [x] Kör analys och manuell provning av GPS- och inspelningsflödet.
 
 ### 2.1 Datamodell för testets skidor och exempeldata
 
@@ -270,6 +273,8 @@ Datamodell:
 - Lägg till nyckel/värde-tabellen `AppSetting`. Nyckeln
   `example_data_v1_installed` gör exempelinstallationen beständig utan ett nytt
   externt beroende.
+- Lagra ett stabilt `runNumber` per åk och test. Nya nummer tilldelas atomiskt
+  vid sparande och räknas inte från globala databas-id:n.
 - Öka Drift-schemaversionen och skriv en explicit migration.
 - Vid migration: koppla varje befintligt test till alla aktiva skidor som var
   valbara före migrationen. Det bevarar det gamla inspelningsbeteendet även för
@@ -289,6 +294,8 @@ Repository-API:
 Acceptanskriterier:
 
 - Skidordning och urval finns kvar efter omstart.
+- Åknummer finns kvar efter omstart och tidigare åk kan raderas utan att
+  kvarvarande åk numreras om.
 - Ett misslyckat relationsinsert lämnar inte ett halvt skapat test.
 - Befintliga användares gamla test går fortfarande att spela in åk i.
 - Exempelposter kan läsas av sitt eget test men kommer inte in i användarens
@@ -333,7 +340,7 @@ Acceptanskriterier:
 
 Berör främst:
 
-- ny `assets/example_data/example_glide_test.json`
+- ny `assets/example_data/glide_test.json`
 - ny tjänst, exempelvis
   `lib/features/glide_testing/example_data/example_data_installer.dart`
 - `lib/features/glide_testing/explore/widgets/dev_import_dialog.dart`
@@ -343,8 +350,8 @@ Berör främst:
 
 Arbete:
 
-- Exportera ett verkligt, granskat test med två anonymt namngivna skidor och
-  fyra representativa åk. Behåll GPS- och accelerometerrådata.
+- Skapa ett granskat, syntetiskt mätunderlag med två exempelskidor och fyra
+  representativa åk i samma GPS- och accelerometerschema som inspelade test.
 - Extrahera JSON-tolkning och import från `DevImportDialog` till en
   återanvändbar tjänst. Dialogen väljer bara fil; tjänsten gör arbetet.
 - Kör `ExampleDataInstaller.ensureInstalled()` när testlistan laddas första
@@ -414,12 +421,18 @@ Arbete:
   `Välj annan skida`.
 - Visa övriga aktiva skidor i avvikelseflödet och lägg vald skida till testets
   urval så att valet är begripligt även vid nästa åk.
+- Låt användaren snabbskapa en saknad skida i ett formulär som expanderas inline
+  under skidlistan. Kräv bara namn, spara skidan i skidparken, lägg till den i
+  testet och välj den utan att starta åket automatiskt. Pausa volymstyrningen
+  medan formuläret är öppet.
 - Behåll fullskärm, volymknappsnavigering och stora kontroller för kall miljö.
 
 Acceptanskriterier:
 
 - Skidvalet visar normalt bara skidorna som valdes när testet skapades.
 - En annan skida kan väljas utan att testet behöver återskapas.
+- En ny skida kan skapas, kopplas till testet och väljas utan att lämna
+  inspelningsflödet.
 - Exempelskidor kan aldrig väljas i egna åk.
 - Volymknappsnavigering fungerar med den filtrerade listan.
 
@@ -444,8 +457,28 @@ Manuellt på Android-emulator eller telefon:
 7. starta, avbryt och spara åk samt kontrollera GPS-prenumerationens avslut;
 8. back-navigation, tangentbord, lång lista och stora systemtypsnitt.
 
-Etappen är klar när hela resan i målbilden fungerar med riktig lokal data och
-inga läs-/analysflöden aktiverar GPS.
+Etappen är klar när hela resan i målbilden fungerar med riktiga lokala
+databasposter och inga läs-/analysflöden aktiverar GPS.
+
+Verifierat 2026-09-16 med 27 passerande tester. Täckningen omfattar bland annat
+schema-3- och schema-4-migration, stabil åknumrering, atomisk import och
+rollback, engångsinstallation och återställning av exempeldata, massval och
+upprepade nya skidor samt ett sammanhängande första-gången-flöde fram till tom
+testarbetsyta. `flutter analyze` rapporterar 26 sedan tidigare befintliga
+informationsnotiser men inga fel eller varningar.
+
+Android-emulatorn användes för att klicka igenom första start, exempelanalys,
+nytt test, redigering, testbundet skidval, avvikelse till en annan skida samt
+start, avbryt och sparning av åk. Loggen bekräftade att GPS inte startade vid
+analys, startade vid `Nytt åk` och stoppades både efter avbrott och sparning.
+Inline-skapandet i skidvalet kontrollerades dessutom med tangentbord, systemets
+bakåtnavigering, inline-avbryt samt korta och långa volymtryck utan att skapa
+beständig testdata.
+
+Exempeltestet använder riktiga databasposter och produktens ordinarie
+analyskedja, men själva GPS- och accelerometerpunkterna är deterministiskt
+syntetiska. Därmed versionshanteras inga användaridentiteter, enhetsuppgifter,
+verkliga tider, koordinater eller andra mätserier från en person.
 
 ---
 

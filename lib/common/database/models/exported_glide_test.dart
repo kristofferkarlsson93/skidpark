@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
+
 import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
@@ -15,12 +14,12 @@ class ExportedGlideTest {
     required this.test,
     required this.skis,
     required this.runs,
-    required this.deviceInfo
+    required this.deviceInfo,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'version': 1,
+      'version': 2,
       'deviceInfo': deviceInfo,
       'exportedAt': DateTime.now().toIso8601String(),
       'glideTest': {
@@ -45,6 +44,7 @@ class ExportedGlideTest {
 
         return {
           'id': r.id,
+          'runNumber': r.runNumber,
           'skiId': r.skiId,
           'skiName': ski.name,
           'startedAt': r.startedAt.toIso8601String(),

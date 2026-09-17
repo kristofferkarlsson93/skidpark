@@ -1,0 +1,59 @@
+appId: com.krikar.skidpark.skidpark.e2e
+name: Spela in och analysera ett åk
+tags:
+  - e2e
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- setLocation:
+    latitude: 59.329300
+    longitude: 18.068600
+- runFlow: _helpers/wait_for_home_ready.yaml
+
+- tapOn:
+    id: "navigation-skis"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "GPS-skida"
+- runFlow:
+    file: _helpers/create_test_with_all_skis.yaml
+    env:
+      TEST_NAME: "GPS-test"
+
+- tapOn: "Nytt åk"
+- assertVisible: "Välj skida för åket"
+- tapOn: "GPS-skida"
+- tapOn: "STARTA TEST"
+- assertVisible: "Samlar in data..."
+- travel:
+    points:
+      - "59.329300, 18.068600"
+      - "59.329390, 18.068600"
+      - "59.329480, 18.068600"
+      - "59.329570, 18.068600"
+      - "59.329660, 18.068600"
+    speed: 8
+- tapOn: "SPARA"
+
+- extendedWaitUntil:
+    visible: "Åk 1 - GPS-skida[\\s\\S]*"
+    timeout: 15000
+- assertVisible: "Graf med 1 åk"
+
+- tapOn: "Filtrera"
+- assertVisible: "Välj åk att visa i vyn"
+- assertVisible: "Åk 1 - GPS-skida[\\s\\S]*"
+- tapOn: "Åk 1 - GPS-skida[\\s\\S]*"
+- back
+- assertVisible: "Tom graf"
+- assertVisible: "Välj ett eller flera åk i kontrollpanelen[\\s\\S]*"
+- assertNotVisible: "Åk 1 - GPS-skida[\\s\\S]*"
+
+- tapOn: "Filtrera"
+- tapOn: "Åk 1 - GPS-skida[\\s\\S]*"
+- back
+- assertVisible: "Graf med 1 åk"
+- assertVisible: "Åk 1 - GPS-skida[\\s\\S]*"

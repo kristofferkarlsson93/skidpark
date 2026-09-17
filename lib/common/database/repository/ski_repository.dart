@@ -8,11 +8,31 @@ class SkiRepository {
 
   SkiRepository(this._db);
 
-  Stream<List<StoredSkiData>> watchActiveSkis() {
+  Stream<List<StoredSkiData>> watchActiveSkis({bool includeExamples = false}) {
     final activeSkisQuery = _db.select(_db.storedSki)
-      ..where((t) => t.archivedAt.isNull());
+      ..where(
+        (ski) =>
+            ski.archivedAt.isNull() &
+            (includeExamples
+                ? const drift.Constant(true)
+                : ski.isExample.equals(false)),
+      )
+      ..orderBy([(ski) => drift.OrderingTerm.asc(ski.id)]);
 
     return activeSkisQuery.watch();
+  }
+
+  Future<List<StoredSkiData>> getActiveSkis({bool includeExamples = false}) {
+    final query = _db.select(_db.storedSki)
+      ..where(
+        (ski) =>
+            ski.archivedAt.isNull() &
+            (includeExamples
+                ? const drift.Constant(true)
+                : ski.isExample.equals(false)),
+      )
+      ..orderBy([(ski) => drift.OrderingTerm.asc(ski.id)]);
+    return query.get();
   }
 
   Stream<StoredSkiData> watchSkiById(int id) {

@@ -1,0 +1,20 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- assertVisible: "Samlar in data..."
+- assertVisible: "Volymskida A"
+- travel:
+    points:
+      - "59.329300, 18.068600"
+      - "59.329390, 18.068600"
+      - "59.329480, 18.068600"
+      - "59.329570, 18.068600"
+      - "59.329660, 18.068600"
+    speed: 8
+- pressKey: "volume down"
+- extendedWaitUntil:
+    visible: "Åk 1 - Volymskida A[\\s\\S]*"
+    timeout: 15000
+- assertVisible: "Graf med 1 åk"
+- pressKey: "volume up"
+- pressKey: "volume down"
+- assertVisible: "Nytt åk"

@@ -45,7 +45,6 @@ dependencies:
   intl: ^0.20.3
   flutter_svg: ^2.3.0
   fl_chart: ^1.2.0
-  permission_handler: ^13.0.1
   url_launcher: ^6.3.2
   device_info_plus: ^13.2.0
   file_picker: ^12.1.1
@@ -81,6 +80,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/example_data/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

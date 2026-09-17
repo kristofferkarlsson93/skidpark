@@ -1,0 +1,12 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- tapOn:
+    text: "Lägg till din första skida|Lägg till"
+- assertVisible: "Lägg till skida"
+- tapOn:
+    id: "ski-name-field"
+- inputText: ${SKI_NAME}
+- pressKey: back
+- assertVisible: "Lägg till skida"
+- tapOn: "Spara skida"
+- assertVisible: ${SKI_NAME}

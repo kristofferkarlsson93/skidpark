@@ -5,7 +5,7 @@ import '../../../common/utils/text_utils.dart';
 import '../models/ski.dart';
 
 class AddSkiForm extends StatefulWidget {
-   const AddSkiForm({super.key, this.skiToEdit});
+  const AddSkiForm({super.key, this.skiToEdit});
 
   final StoredSkiData? skiToEdit;
 
@@ -55,21 +55,24 @@ class _AddSkiFormState extends State<AddSkiForm> {
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Skidans namn',
-                hintText: 'Till exempel SP1 eller Atomic Röd',
-                helperText: 'Använd ett namn du själv känner igen i spåret.',
+            Semantics(
+              identifier: 'ski-name-field',
+              child: TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Skidans namn',
+                  hintText: 'Till exempel SP1 eller Atomic Röd',
+                  helperText: 'Använd ett namn du själv känner igen i spåret.',
+                ),
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Fyll i ett namn på skidan';
+                  }
+                  return null;
+                },
               ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Fyll i ett namn på skidan';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 16),
             TextFormField(

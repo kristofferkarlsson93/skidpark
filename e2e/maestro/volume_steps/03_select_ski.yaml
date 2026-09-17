@@ -1,0 +1,21 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- assertVisible: "Välj skida för åket"
+- pressKey: "volume down"
+- pressKey: "volume down"
+- pressKey: "volume up"
+
+- tapOn: "Välj annan skida"
+- assertVisible: "Volymreserv"
+- tapOn: "Lägg till ny skida"
+- assertVisible:
+    id: "ski-name-field"
+- pressKey: "volume down"
+- pressKey: "volume up"
+- assertVisible:
+    id: "ski-name-field"
+- tapOn: "Avbryt"
+
+- pressKey: "volume down"
+- tapOn: "Tillbaka till testets skidor"
+- pressKey: "volume down"

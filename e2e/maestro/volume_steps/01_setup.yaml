@@ -1,0 +1,38 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- setLocation:
+    latitude: 59.329300
+    longitude: 18.068600
+- runFlow: ../_helpers/wait_for_home_ready.yaml
+- tapOn:
+    id: "navigation-skis"
+- runFlow:
+    file: ../_helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Volymskida A"
+- runFlow:
+    file: ../_helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Volymskida B"
+- runFlow:
+    file: ../_helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Volymreserv"
+- tapOn:
+    id: "navigation-tests"
+- tapOn: "Skapa mitt första test"
+- tapOn:
+    id: "glide-test-name-field"
+- eraseText
+- inputText: "Volymtest"
+- pressKey: back
+- assertVisible: "Nytt glidtest"
+- tapOn: "Ingen"
+- tapOn: "Volymskida A"
+- tapOn: "Volymskida B"
+- tapOn: "Skapa test"
+- assertVisible: "Nytt åk"

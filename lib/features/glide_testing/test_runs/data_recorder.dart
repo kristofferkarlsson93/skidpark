@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import 'models/raw_accelerometer_event.dart';
@@ -24,6 +24,7 @@ class DataRecorder extends ChangeNotifier {
   double _currentSpeedKmh = 0.0;
   int _elapsedSeconds = 0;
   GpsMode _gpsMode = GpsMode.passive;
+  bool _isClosed = false;
 
   double get currentSpeedKmh => _currentSpeedKmh;
 
@@ -38,6 +39,7 @@ class DataRecorder extends ChangeNotifier {
   int get dataPoints => _positions.length;
 
   void startGPSSubscription(GpsMode startInMode) {
+    if (_isClosed || _positionStreamSubscription != null) return;
     log("starting GPS in $startInMode mode");
     _gpsMode = startInMode;
     final LocationSettings locationSettings = _getLocationSettings();
@@ -76,6 +78,7 @@ class DataRecorder extends ChangeNotifier {
   }
 
   void startRecording() {
+    if (_isClosed) return;
     log("Starting recording");
     _positions.clear();
     _accelEvents.clear();
@@ -104,15 +107,22 @@ class DataRecorder extends ChangeNotifier {
     _accelEvents.clear();
   }
 
-  @override
-  void dispose() {
-    // Clean up resources here
-    _positionStreamSubscription?.cancel();
-    _positionStreamSubscription = null;
+  Future<void> close() async {
+    if (_isClosed) return;
+    _isClosed = true;
     _stopwatchTimer?.cancel();
     _stopwatchTimer = null;
-    _accelerometerStreamSubscription?.cancel();
+    await _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+    await _accelerometerStreamSubscription?.cancel();
     _accelerometerStreamSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    if (!_isClosed) {
+      unawaited(close());
+    }
     super.dispose();
   }
 
@@ -168,9 +178,13 @@ class DataRecorder extends ChangeNotifier {
     if (!serviceEnabled) {
       if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+        SnackBar(
+          content: const Text(
             'Platstjänster är inaktiverade. Aktivera GPS och försök igen.',
+          ),
+          action: SnackBarAction(
+            label: 'Inställningar',
+            onPressed: Geolocator.openLocationSettings,
           ),
         ),
       );
@@ -193,22 +207,17 @@ class DataRecorder extends ChangeNotifier {
     if (permission == LocationPermission.deniedForever) {
       if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+        SnackBar(
+          content: const Text(
             'Behörighet är permanent nekad. Du måste ändra detta i app-inställningarna.',
+          ),
+          action: SnackBarAction(
+            label: 'Inställningar',
+            onPressed: Geolocator.openAppSettings,
           ),
         ),
       );
       return false;
-    }
-
-    if (Platform.isAndroid) {
-      // To show required notification if screen is locked
-      final notificationStatus = await Permission.notification.status;
-
-      if (notificationStatus.isDenied) {
-        await Permission.notification.request();
-      }
     }
 
     return true;

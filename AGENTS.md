@@ -47,6 +47,21 @@ experience.
   repeat the code.
 - Prefer composition over inheritance and avoid abstractions without a concrete
   current need.
+- Extract a shared widget when the same visual or interaction pattern is used
+  by multiple real screens. Do not let repeated private `_buildX` helpers become
+  an accidental component system.
+
+## Persistence and recording invariants
+
+- `GlideTestSki` is the source of truth for a test's ordered ski selection.
+  Export the complete selection, including skis that do not yet have a run.
+- `TestRun.runNumber` is a stable number within its glide test. Allocate it in
+  `TestRunRepository` in the same transaction as the insert; never derive it
+  from a global row id or the current list index. Preserve explicit numbers in
+  exports/imports and support older exports by assigning file order.
+- Opening or analyzing a test must not start location services. The recording
+  route owns the recorder lifecycle: start after `Nytt åk`, and stop on save,
+  cancel, back navigation, errors, and disposal.
 
 ## Measurement and data integrity
 
@@ -69,13 +84,27 @@ experience.
 ## Working in this repository
 
 - Start by locating the relevant feature and tracing data flow before editing.
+- Treat an explicitly named delivery phase as a hard scope boundary. For
+  delegated work, state what is included and excluded, then review the diff for
+  scope before accepting it. Do not pull work from a later phase forward without
+  asking.
+- When the user requests an implementation subagent without naming a model,
+  prefer a lower-cost coding model for routine bounded work. Use a stronger
+  model only when the risk or complexity justifies it, and keep the main agent
+  responsible for review and verification.
+- When implementing from a canonical prototype, compare the rendered result,
+  copy, content density, and interactions against it. Document intentional
+  deviations instead of silently substituting a merely similar design.
 - When a change reveals durable project knowledge that would help future work,
   suggest a focused update to the relevant documentation. Do not create
   documentation churn or treat older notes as authoritative without checking
   the implementation.
 - Drift-generated files such as `lib/common/database/database.g.dart` are
   ignored by Git. After a fresh checkout, dependency change, or database-schema
-  change, run `dart run build_runner build --delete-conflicting-outputs`.
+  change, run `dart run build_runner build`.
+- For Drift schema changes, trace normal recording, example installation,
+  import, export, and UI decoding. Test migration from the latest shipped schema
+  and every older cumulative migration branch affected by the new definition.
 - Run `flutter analyze` for Dart changes when the local Flutter toolchain is
   available. Run focused tests where they exist.
 - Automated coverage is still small. When changing pure calculation, filtering,
@@ -84,6 +113,10 @@ experience.
   Flutter integration (end-to-end) coverage over broad mock-heavy unit tests.
 - Do not add a large test framework or test suite as incidental work. Propose a
   scoped test plan first if that would be a material expansion.
+- For recording-flow changes, device verification should cover forward, back,
+  cancel, start, stop, and save plus short and long volume-button actions in the
+  overview and ski-selection states. Prioritize credible data-loss, GPS, and
+  navigation failures over implausible rapid multi-input edge cases.
 - Keep changes focused. Do not reformat or alter unrelated code.
 
 ## Communication

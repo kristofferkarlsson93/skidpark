@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:archive/archive.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
@@ -13,22 +14,37 @@ class TestRunRepository {
 
   TestRunRepository(this._db);
 
-  Future<int> storeTestRun(TestRunCandidate testRunCandidate) {
-    drift.Uint8List compressedGpsData = _encodeGpsPositions(testRunCandidate);
-    drift.Uint8List compressedAccelData = encodeAccelEvents(
+  Future<int> storeTestRun(TestRunCandidate testRunCandidate) async {
+    final compressedGpsData = encodeGpsPositions(testRunCandidate.gpsData);
+    final compressedAccelData = encodeAccelEvents(
       testRunCandidate.accelerometerEvents,
     );
 
-    final companion = TestRunCompanion(
-      startedAt: drift.Value(testRunCandidate.startedAt),
-      skiId: drift.Value(testRunCandidate.skiId),
-      glideTestId: drift.Value(testRunCandidate.glideTestId),
-      elapsedSeconds: drift.Value(testRunCandidate.elapsedSeconds),
-      gpsData: drift.Value(compressedGpsData),
-      accelerometerData: drift.Value(compressedAccelData),
-    );
+    return _db.transaction(() async {
+      final runNumber = await _nextRunNumber(testRunCandidate.glideTestId);
+      final companion = TestRunCompanion.insert(
+        startedAt: testRunCandidate.startedAt,
+        skiId: testRunCandidate.skiId,
+        glideTestId: testRunCandidate.glideTestId,
+        runNumber: drift.Value(runNumber),
+        elapsedSeconds: testRunCandidate.elapsedSeconds,
+        gpsData: compressedGpsData,
+        accelerometerData: compressedAccelData,
+      );
 
-    return _db.into(_db.testRun).insert(companion);
+      return _db.into(_db.testRun).insert(companion);
+    });
+  }
+
+  Future<int> _nextRunNumber(int glideTestId) async {
+    final maxRunNumber = _db.testRun.runNumber.max();
+    final query = _db.selectOnly(_db.testRun)
+      ..addColumns([maxRunNumber])
+      ..where(_db.testRun.glideTestId.equals(glideTestId));
+    final currentMax = await query
+        .map((row) => row.read(maxRunNumber))
+        .getSingle();
+    return (currentMax ?? 0) + 1;
   }
 
   Stream<List<DecodedTestRun>> streamByGlideTest(int glideTestId) {
@@ -42,7 +58,7 @@ class TestRunRepository {
               ..where(_db.testRun.glideTestId.equals(glideTestId))
               ..orderBy([
                 drift.OrderingTerm(
-                  expression: _db.testRun.id,
+                  expression: _db.testRun.runNumber,
                   mode: drift.OrderingMode.asc,
                 ),
               ]))
@@ -59,22 +75,24 @@ class TestRunRepository {
   }
 
   void deleteById(int testRunId) async {
-    await (_db.delete(_db.testRun)
-      ..where((tbl) => tbl.id.equals(testRunId))
-    ).go();
+    await (_db.delete(
+      _db.testRun,
+    )..where((tbl) => tbl.id.equals(testRunId))).go();
   }
 
   static DecodedTestRun decodeRun(TestRunData rawRun, StoredSkiData skiData) {
     final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
 
-    final List<RawAccelerometerEvent> accelerometerEvents =
-    _decodeAccelEvents(rawRun.accelerometerData);
+    final List<RawAccelerometerEvent> accelerometerEvents = _decodeAccelEvents(
+      rawRun.accelerometerData,
+    );
 
     return DecodedTestRun(
       rawRun.id,
       rawRun.startedAt,
       rawRun.skiId,
       rawRun.glideTestId,
+      rawRun.runNumber,
       rawRun.elapsedSeconds,
       skiData.name,
       positions,
@@ -95,7 +113,9 @@ class TestRunRepository {
         .toList();
   }
 
-  static List<RawAccelerometerEvent> _decodeAccelEvents(drift.Uint8List? compressedData) {
+  static List<RawAccelerometerEvent> _decodeAccelEvents(
+    drift.Uint8List? compressedData,
+  ) {
     if (compressedData == null || compressedData.isEmpty) {
       return [];
     }
@@ -108,14 +128,16 @@ class TestRunRepository {
     final List<dynamic> jsonList = jsonDecode(jsonString);
 
     return jsonList
-        .map((jsonMap) => RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>))
+        .map(
+          (jsonMap) =>
+              RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>),
+        )
         .toList();
   }
 
   // Save space in storage
-  drift.Uint8List _encodeGpsPositions(TestRunCandidate testRunCandidate) {
-    final List<Map<String, dynamic>> positionListAsMap = testRunCandidate
-        .gpsData
+  static drift.Uint8List encodeGpsPositions(List<Position> positions) {
+    final List<Map<String, dynamic>> positionListAsMap = positions
         .map((pos) => pos.toJson())
         .toList();
     final String gpsDataJsonString = jsonEncode(positionListAsMap);
@@ -129,7 +151,9 @@ class TestRunRepository {
   }
 
   // Save space in storage
-  static drift.Uint8List encodeAccelEvents(List<RawAccelerometerEvent> accelEvents) {
+  static drift.Uint8List encodeAccelEvents(
+    List<RawAccelerometerEvent> accelEvents,
+  ) {
     final List<Map<String, dynamic>> accelListAsMap = accelEvents
         .map((event) => event.toJson())
         .toList();

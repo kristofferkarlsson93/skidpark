@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val isSkidParkE2eBuild =
+    providers.gradleProperty("skidpark-e2e").orNull == "true"
+
 android {
     namespace = "com.krikar.skidpark.skidpark"
     compileSdk = 37
@@ -28,9 +31,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] =
+            if (isSkidParkE2eBuild) "SkidPark E2E" else "SkidPark"
     }
 
     buildTypes {
+        debug {
+            if (isSkidParkE2eBuild) {
+                applicationIdSuffix = ".e2e"
+                versionNameSuffix = "-e2e"
+            }
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

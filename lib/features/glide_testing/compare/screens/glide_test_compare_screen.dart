@@ -29,47 +29,59 @@ class GlideTestCompareScreen extends StatefulWidget {
 }
 
 class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
-  late final DataRecorder _dataRecorder;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final PageController _pageController = PageController();
   bool _activateVolumeKeys = true;
   bool _indicateNewRunMarked = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _dataRecorder = DataRecorder();
-    _dataRecorder.startGPSSubscription(GpsMode.passive); // warm up GPS
-  }
+  bool _isStartingRecordingFlow = false;
 
   @override
   void dispose() {
-    _dataRecorder.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
-  void goToRecordPage(BuildContext context) async {
-    if (context.mounted) {
-      // We use volume keys on the RunRecorderScreen. Need to disable them here.
-      setState(() {
-        _activateVolumeKeys = false;
-      });
-      await Navigator.push(
+  Future<void> _openRunRecorder(BuildContext context) async {
+    if (_isStartingRecordingFlow) return;
+    _isStartingRecordingFlow = true;
+
+    DataRecorder? dataRecorder;
+    try {
+      final test = await context.read<GlideTestRepository>().getTestById(
+        widget.glideTestId,
+      );
+      if (test == null || test.isExample || !context.mounted) return;
+
+      final hasPermissions = await DataRecorder.handleLocationPermissions(
+        context,
+      );
+      if (!hasPermissions || !context.mounted) return;
+
+      final activeRecorder = DataRecorder();
+      dataRecorder = activeRecorder;
+      activeRecorder.startGPSSubscription(GpsMode.passive);
+      setState(() => _activateVolumeKeys = false);
+
+      await Navigator.push<void>(
         context,
         MaterialPageRoute(
           fullscreenDialog: true,
           builder: (context) => RunRecorderScreen(
             glideTestId: widget.glideTestId,
-            dataRecorder: _dataRecorder,
+            dataRecorder: activeRecorder,
           ),
         ),
       );
-      // The await above makes it so that we run this code when we return here.
-      setState(() {
-        _indicateNewRunMarked = false;
-        _activateVolumeKeys = true;
-      });
+    } finally {
+      await dataRecorder?.close();
+      dataRecorder?.dispose();
+      _isStartingRecordingFlow = false;
+      if (mounted) {
+        setState(() {
+          _indicateNewRunMarked = false;
+          _activateVolumeKeys = true;
+        });
+      }
     }
   }
 
@@ -85,15 +97,16 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
     BuildContext context,
     CompareRunsViewModel viewModel,
   ) async {
-    final updatedTest = await showModalBottomSheet<GlideTestCandidate>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => GlideTestForm(testToEdit: viewModel.glideTest),
+    final updatedTest = await Navigator.push<GlideTestCandidate>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => GlideTestForm(testToEdit: viewModel.glideTest),
+      ),
     );
 
-    if (updatedTest != null) {
-      viewModel.updateGlideTestInfo(updatedTest);
-    }
+    if (updatedTest == null) return;
+    await viewModel.updateGlideTestInfo(updatedTest);
   }
 
   void _deleteGlideTest(
@@ -126,10 +139,10 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
         false; // in case of discard (click outside) return false.
 
     if (didConfirm && context.mounted) {
-      viewModel.deleteCurrentGlideTest();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Testet raderat')));
+      await viewModel.deleteCurrentGlideTest();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Testet raderat')));
       Navigator.pop(context);
     }
   }
@@ -148,7 +161,6 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
             glideTestId: widget.glideTestId,
           ),
         ),
-        ChangeNotifierProvider(create: (_) => _dataRecorder),
       ],
       child: SafeArea(
         bottom: false,
@@ -162,7 +174,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
               });
               await Future.delayed(const Duration(milliseconds: 250));
               if (context.mounted) {
-                goToRecordPage(context);
+                _openRunRecorder(context);
               }
             }
           },
@@ -172,32 +184,37 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               actions: [
-                FilledButton.icon(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.all(
-                      _indicateNewRunMarked
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.surfaceContainerLowest,
-                    ),
-                  ),
-                  onPressed: () {
-                    goToRecordPage(context);
+                Consumer<CompareRunsViewModel>(
+                  builder: (context, viewModel, _) {
+                    if (viewModel.glideTest?.isExample ?? false) {
+                      return const SizedBox.shrink();
+                    }
+                    return FilledButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(
+                          _indicateNewRunMarked
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surfaceContainerLowest,
+                        ),
+                      ),
+                      onPressed: () => _openRunRecorder(context),
+                      label: Text(
+                        'Nytt åk',
+                        style: TextStyle(color: theme.colorScheme.onSurface),
+                      ),
+                      icon: Icon(
+                        Icons.play_circle_outline,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    );
                   },
-                  label: Text(
-                    'Nytt åk',
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                  ),
-                  icon: Icon(
-                    Icons.play_circle_outline,
-                    color: theme.colorScheme.onSurface,
-                  ),
                 ),
                 Consumer<CompareRunsViewModel>(
                   builder: (context, viewModel, _) {
                     return GlideTestMoreMenu(
-                      onSelectEdit: () {
-                        _editTestInfo(context, viewModel);
-                      },
+                      onSelectEdit: viewModel.glideTest?.isExample ?? false
+                          ? null
+                          : () => _editTestInfo(context, viewModel),
                       onSelectExport: () {
                         viewModel.exportAllGlideTestData();
                       },

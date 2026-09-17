@@ -1,0 +1,15 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+- tapOn:
+    id: "navigation-tests"
+- tapOn:
+    text: "Skapa mitt första test|Nytt test"
+- assertVisible: "Nytt glidtest"
+- tapOn:
+    id: "glide-test-name-field"
+- eraseText
+- inputText: ${TEST_NAME}
+- pressKey: back
+- assertVisible: "Nytt glidtest"
+- tapOn: "Skapa test"
+- assertVisible: "Nytt åk"

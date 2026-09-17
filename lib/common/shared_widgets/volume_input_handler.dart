@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,14 +25,14 @@ class VolumeInputHandler extends StatefulWidget {
 }
 
 class _VolumeInputHandlerState extends State<VolumeInputHandler> {
-  late final VolumePressHandler _volumePressHandler;
+  late final VolumeButtonInput _volumeButtonInput;
   StreamSubscription<VolumeButton>? _shortPressSubscription;
   StreamSubscription<VolumeButton>? _longPressSubscription;
 
   @override
   void initState() {
     super.initState();
-    _volumePressHandler = context.read<VolumePressHandler>();
+    _volumeButtonInput = context.read<VolumeButtonInput>();
     if (widget.shouldPublishEvents) {
       _setupListeners();
     }
@@ -54,13 +55,13 @@ class _VolumeInputHandlerState extends State<VolumeInputHandler> {
 
   void _setupListeners() {
     if (widget.onShortPress != null) {
-      _shortPressSubscription = _volumePressHandler.shortPressStream.listen(
+      _shortPressSubscription = _volumeButtonInput.shortPressStream.listen(
         widget.onShortPress!,
       );
     }
 
     if (widget.onLongPress != null) {
-      _longPressSubscription = _volumePressHandler.longPressStream.listen(
+      _longPressSubscription = _volumeButtonInput.longPressStream.listen(
         widget.onLongPress!,
       );
     }

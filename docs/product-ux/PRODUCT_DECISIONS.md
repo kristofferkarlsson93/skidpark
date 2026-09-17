@@ -85,6 +85,11 @@ Statusmarkeringar:
   startar automatiskt.
 - **Beslutat:** Vid `Nytt åk` visas testets valda skidor först, men användaren kan
   medvetet avvika och välja en annan egen skida.
+- **Beslutat:** En saknad skida kan snabbskapas från skidvalet för `Nytt åk`.
+  Endast namn krävs; skidan sparas i skidparken, läggs till i testets urval och
+  väljs utan att åket startas automatiskt. Formuläret expanderas inline under
+  skidlistan. Handlingen ingår inte i volymknappsnavigeringen, som pausas medan
+  formuläret är öppet.
 
 ## Testarbetsytans interaktionskrav
 
@@ -100,6 +105,11 @@ Statusmarkeringar:
   stängas genom ett oavsiktligt tryck utanför.
 - **Beslutat:** Att öppna eller analysera ett test ska inte begära
   platsbehörighet eller starta GPS. Det sker först efter `Nytt åk`.
+- **Beslutat:** Åknummer är stabila inom testet och ändras inte när ett tidigare
+  åk raderas. Numret lagras med åket i stället för att räknas från globala
+  databas-id:n eller aktuell listposition.
+- **Beslutat:** Testets sparade skidurval är beständigt och följer med vid export,
+  även för valda skidor som ännu inte har något åk.
 - **Pausat:** En ny visuell layout för själva analysgrafen. Kraven ovan ska
   bevaras när den frågan återupptas.
 

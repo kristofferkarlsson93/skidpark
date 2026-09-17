@@ -36,69 +36,77 @@ class CompareGraph extends StatelessWidget {
             _buildChartData(lines, theme),
           );
 
-    return Card(
-      elevation: isFullscreen ? 0 : 12,
-      margin: isFullscreen ? EdgeInsets.zero : null,
-      color: isFullscreen ? theme.scaffoldBackgroundColor : null,
-      child: SizedBox(
-        width: double.infinity,
-        child: Stack(
-          children: [
-            Padding(
-              padding: isFullscreen
-                  ? const EdgeInsets.all(8.0)
-                  : const EdgeInsets.all(16.0),
-              child: graphContent,
-            ),
-            if (!isFullscreen && lines.isNotEmpty)
-              Positioned(
-                right: 8,
-                // Try to calculate where it would fit in the left hand toolbar.. Dirty.
-                // Basically - the toolbar, space, first icon, second icon, space
-                top: kToolbarHeight + 8 + (20 * 2) + (48 * 2) + 8,
-                child: CircleAvatar(
-                  backgroundColor: theme.colorScheme.surfaceContainerLowest,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.fullscreen_outlined,
-                      color: Colors.white,
+    final graphLabel = lines.isEmpty
+        ? 'Tom graf'
+        : 'Graf med ${lines.length} åk';
+
+    return Semantics(
+      container: true,
+      label: graphLabel,
+      child: Card(
+        elevation: isFullscreen ? 0 : 12,
+        margin: isFullscreen ? EdgeInsets.zero : null,
+        color: isFullscreen ? theme.scaffoldBackgroundColor : null,
+        child: SizedBox(
+          width: double.infinity,
+          child: Stack(
+            children: [
+              Padding(
+                padding: isFullscreen
+                    ? const EdgeInsets.all(8.0)
+                    : const EdgeInsets.all(16.0),
+                child: graphContent,
+              ),
+              if (!isFullscreen && lines.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  // Try to calculate where it would fit in the left hand toolbar.. Dirty.
+                  // Basically - the toolbar, space, first icon, second icon, space
+                  top: kToolbarHeight + 8 + (20 * 2) + (48 * 2) + 8,
+                  child: CircleAvatar(
+                    backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.fullscreen_outlined,
+                        color: Colors.white,
+                      ),
+                      tooltip: "Helskärm",
+                      onPressed: () => _openFullScreen(context),
                     ),
-                    tooltip: "Helskärm",
-                    onPressed: () => _openFullScreen(context),
                   ),
                 ),
-              ),
-            if (isFullscreen)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: SafeArea(
-                  child: IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withAlpha((0.5 * 255).toInt()),
-                        shape: BoxShape.circle,
+              if (isFullscreen)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: SafeArea(
+                    child: IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest
+                              .withAlpha((0.5 * 255).toInt()),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close_fullscreen,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.close_fullscreen,
-                        color: theme.colorScheme.onSurface,
-                      ),
+                      tooltip: "Stäng helskärm",
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                    tooltip: "Stäng helskärm",
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
-              ),
-            if (isFullscreen && lines.isNotEmpty)
-              Positioned(
-                top: 8,
-                right: 60,
-                left: 40,
-                child: SideScrolledRunLegend(lines: lines),
-              ),
-          ],
+              if (isFullscreen && lines.isNotEmpty)
+                Positioned(
+                  top: 8,
+                  right: 60,
+                  left: 40,
+                  child: SideScrolledRunLegend(lines: lines),
+                ),
+            ],
+          ),
         ),
       ),
     );

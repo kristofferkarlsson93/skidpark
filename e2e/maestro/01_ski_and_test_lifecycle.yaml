@@ -1,0 +1,92 @@
+appId: com.krikar.skidpark.skidpark.e2e
+name: Skid- och testlivscykel
+tags:
+  - e2e
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- runFlow: _helpers/wait_for_home_ready.yaml
+
+- tapOn:
+    id: "navigation-skis"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Parkskida"
+
+- tapOn:
+    id: "navigation-tests"
+- tapOn: "Skapa mitt första test"
+- assertVisible: "[\\s\\S]*1 av 1 valda"
+- tapOn: "Lägg till ny skida"
+- tapOn:
+    id: "ski-name-field"
+- inputText: "Testskida"
+- pressKey: back
+- assertVisible: "Avbryt"
+- tapOn: "Lägg till"
+- assertVisible: "[\\s\\S]*2 av 2 valda"
+- tapOn: "Avbryt"
+
+- tapOn: "Ingen"
+- assertVisible: "[\\s\\S]*0 av 2 valda"
+- tapOn: "Alla"
+- assertVisible: "[\\s\\S]*2 av 2 valda"
+
+- tapOn:
+    id: "glide-test-name-field"
+- eraseText
+- inputText: "Livscykeltest"
+- scrollUntilVisible:
+    element:
+      id: "glide-test-notes-section"
+    direction: DOWN
+- tapOn:
+    id: "glide-test-notes-section"
+- tapOn:
+    id: "glide-test-notes-field"
+- inputText: "Kall nysnö"
+- pressKey: back
+- assertVisible: "Nytt glidtest"
+- tapOn: "Skapa test"
+- assertVisible: "Nytt åk"
+
+- tapOn: "Fler alternativ"
+- tapOn: "Redigera testinfo"
+- assertVisible: "Redigera test"
+- assertVisible: "Livscykeltest"
+- assertVisible: "Kall nysnö"
+- assertVisible: "[\\s\\S]*2 av 2 valda"
+
+- tapOn: "Parkskida"
+- assertVisible: "[\\s\\S]*1 av 2 valda"
+- scrollUntilVisible:
+    element:
+      text: "Lägg till ny skida"
+    direction: DOWN
+- tapOn: "Lägg till ny skida"
+- tapOn:
+    id: "ski-name-field"
+- inputText: "Ersättningsskida"
+- pressKey: back
+- assertVisible: "Avbryt"
+- tapOn: "Lägg till"
+- assertVisible: "[\\s\\S]*2 av 3 valda"
+- tapOn: "Avbryt"
+- tapOn: "Spara ändringar"
+- assertVisible: "Nytt åk"
+
+- tapOn: "Fler alternativ"
+- tapOn: "Radera glidtestet"
+- assertVisible: "Radera \"Livscykeltest\"?"
+- tapOn: "Radera"
+- assertVisible: "Testet raderat"
+- assertNotVisible: "Livscykeltest"
+
+- tapOn:
+    id: "navigation-skis"
+- assertVisible: "Parkskida"
+- assertVisible: "Testskida"
+- assertVisible: "Ersättningsskida"

@@ -15,6 +15,7 @@ void main() {
         title: 'Tomt test',
         notes: null,
         useSensorFusion: false,
+        isExample: false,
       ),
       runCount: 0,
       testedSkiCount: 0,
@@ -34,5 +35,36 @@ void main() {
     expect(find.text('0 skidor'), findsNothing);
     expect(find.textContaining('Skapad idag'), findsOneWidget);
     expect(find.textContaining('Senast idag'), findsNothing);
+  });
+
+  testWidgets('example tests are clearly labeled without a stale date', (
+    tester,
+  ) async {
+    final summary = GlideTestSummary(
+      test: StoredGlideTestData(
+        id: 2,
+        createdAt: DateTime(2024, 1, 15),
+        title: 'Exempeltest',
+        notes: null,
+        useSensorFusion: false,
+        isExample: true,
+      ),
+      runCount: 4,
+      testedSkiCount: 2,
+      latestActivityAt: DateTime(2024, 1, 15),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+          body: GlideTestListCard(summary: summary, onTestCardClicked: () {}),
+        ),
+      ),
+    );
+
+    expect(find.text('Exempel'), findsOneWidget);
+    expect(find.text('Utforska kurvor och datakvalitet'), findsOneWidget);
+    expect(find.textContaining('2024'), findsNothing);
   });
 }

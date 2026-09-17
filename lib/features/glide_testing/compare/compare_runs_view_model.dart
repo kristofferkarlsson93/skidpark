@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:skidpark/common/database/database.dart';
@@ -28,7 +27,6 @@ class CompareRunsViewModel extends ChangeNotifier {
   List<EnrichedTestRun> _testRuns = [];
   List<EnrichedTestRun> _releasePointTestRuns = [];
   List<EnrichedTestRun> _averageRunPerSki = [];
-  int? _baselineRunId;
 
   bool _useAverageView = false;
 
@@ -195,8 +193,8 @@ class CompareRunsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateGlideTestInfo(GlideTestCandidate updatedTest) {
-    _glideTestRepository.update(_glideTest!.id, updatedTest);
+  Future<void> updateGlideTestInfo(GlideTestCandidate updatedTest) {
+    return _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
 
   void exportAllGlideTestData() async {
@@ -212,8 +210,8 @@ class CompareRunsViewModel extends ChangeNotifier {
     }
   }
 
-  void deleteCurrentGlideTest() {
-    _glideTestRepository.deleteGlideTest(glideTest!.id);
+  Future<void> deleteCurrentGlideTest() {
+    return _glideTestRepository.deleteGlideTest(glideTest!.id);
   }
 
   void deleteTestRun(int testRunId) {
@@ -271,11 +269,8 @@ class CompareRunsViewModel extends ChangeNotifier {
       return;
     }
 
-    _baselineRunId ??= _rawRuns.map((r) => r.id).reduce(math.min);
-
     _testRuns = _rawRuns.map((run) {
-      final int runNumber = (run.id - _baselineRunId!) + 1;
-      return _calculateTestRunData(run, runNumber);
+      return _calculateTestRunData(run);
     }).toList();
 
     notifyListeners();
@@ -301,10 +296,7 @@ class CompareRunsViewModel extends ChangeNotifier {
     }
   }
 
-  EnrichedTestRun _calculateTestRunData(
-    DecodedTestRun storedRun,
-    int runNumber,
-  ) {
+  EnrichedTestRun _calculateTestRunData(DecodedTestRun storedRun) {
     // calculate max speed on raw data, to not lose speed by interpolation.
     final maxSpeed = RunDataProcessor.calculateMaxSpeed(storedRun.gpsData);
     final normalizedPositions = RunDataProcessor.processRun(
@@ -330,7 +322,7 @@ class CompareRunsViewModel extends ChangeNotifier {
       _msToKmh(maxSpeed),
       storedRun.skiName,
       normalizedPositions,
-      runNumber,
+      storedRun.runNumber,
     );
   }
 

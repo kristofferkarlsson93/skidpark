@@ -1,0 +1,86 @@
+appId: com.krikar.skidpark.skidpark.e2e
+name: Navigering och avbrutna åk
+tags:
+  - e2e
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- setLocation:
+    latitude: 59.329300
+    longitude: 18.068600
+- runFlow: _helpers/wait_for_home_ready.yaml
+
+- tapOn:
+    id: "navigation-skis"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Testskida A"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Testskida B"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Reservskida"
+
+- tapOn:
+    id: "navigation-tests"
+- tapOn: "Skapa mitt första test"
+- tapOn:
+    id: "glide-test-name-field"
+- eraseText
+- inputText: "Navigationstest"
+- pressKey: back
+- assertVisible: "Nytt glidtest"
+- tapOn: "Ingen"
+- tapOn: "Testskida A"
+- tapOn: "Testskida B"
+- assertVisible: "[\\s\\S]*2 av 3 valda"
+- tapOn: "Skapa test"
+
+- tapOn: "Nytt åk"
+- assertVisible: "Välj skida för åket"
+- tapOn: "Avbryt"
+- assertVisible: "Nytt åk"
+
+- tapOn: "Nytt åk"
+- tapOn: "Välj annan skida"
+- assertVisible: "Välj en annan skida"
+- assertVisible: "Reservskida"
+- tapOn: "Tillbaka till testets skidor"
+- assertVisible: "Välj skida för åket"
+- assertVisible: "Testskida A"
+
+- tapOn: "Välj annan skida"
+- tapOn: "Reservskida"
+- assertVisible: "Välj skida för åket"
+- assertVisible: "Reservskida"
+- tapOn: "Avbryt"
+
+- tapOn: "Nytt åk"
+- assertNotVisible: "Välj annan skida"
+- tapOn: "Lägg till ny skida"
+- assertVisible:
+    id: "ski-name-field"
+- tapOn: "Avbryt"
+- assertNotVisible:
+    id: "ski-name-field"
+
+- tapOn: "Lägg till ny skida"
+- tapOn:
+    id: "ski-name-field"
+- inputText: "Nyskapad skida"
+- pressKey: back
+- assertVisible: "Lägg till och välj"
+- tapOn: "Lägg till och välj"
+- assertVisible: "Nyskapad skida"
+- tapOn: "STARTA TEST"
+- assertVisible: "Samlar in data..."
+- tapOn: "Avbryt och kasta"
+- assertVisible: "Nytt åk"
+- assertVisible: "Tom graf"
+- assertNotVisible: "Åk 1 - Nyskapad skida"

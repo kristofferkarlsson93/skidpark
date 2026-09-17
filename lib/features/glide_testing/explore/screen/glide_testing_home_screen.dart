@@ -7,6 +7,8 @@ import '../../../../common/shared_widgets/app_brand_title.dart';
 import '../../../../common/shared_widgets/compact_create_button.dart';
 import '../../../../common/shared_widgets/load_error_view.dart';
 import '../../create/glide_test_form.dart';
+import '../../compare/screens/glide_test_compare_screen.dart';
+import '../../example_data/example_data_installer.dart';
 import '../../models/glide_test_candidate.dart';
 import '../widgets/dev_import_dialog.dart';
 import '../widgets/glide_testing_intro_card.dart';
@@ -28,6 +30,7 @@ class _GlideTestingHomeScreenState extends State<GlideTestingHomeScreen> {
     super.initState();
     _repository = context.read<GlideTestRepository>();
     _summaryStream = _repository.watchTestSummaries();
+    _installExampleData();
   }
 
   @override
@@ -36,12 +39,12 @@ class _GlideTestingHomeScreenState extends State<GlideTestingHomeScreen> {
       stream: _summaryStream,
       builder: (context, snapshot) {
         final tests = snapshot.data ?? const <GlideTestSummary>[];
-        final hasTests = tests.isNotEmpty;
+        final hasOwnTests = tests.any((summary) => !summary.test.isExample);
 
         return Scaffold(
           appBar: AppBar(
             title: const AppBrandTitle(),
-            actions: hasTests
+            actions: hasOwnTests
                 ? [
                     Padding(
                       padding: const EdgeInsets.only(right: 4),
@@ -76,7 +79,12 @@ class _GlideTestingHomeScreenState extends State<GlideTestingHomeScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (tests.isEmpty) {
+    final ownTests = tests.where((summary) => !summary.test.isExample).toList();
+    final exampleTests = tests
+        .where((summary) => summary.test.isExample)
+        .toList();
+
+    if (ownTests.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
@@ -84,35 +92,85 @@ class _GlideTestingHomeScreenState extends State<GlideTestingHomeScreen> {
             onCreateTest: _createTest,
             onLongPressGuide: kDebugMode ? _openDevImport : null,
           ),
+          if (exampleTests.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Utforska ett exempel',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            MyGlideTestsList(
+              glideTests: exampleTests,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+            ),
+          ],
         ],
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.only(top: 14),
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
           child: Text(
             'Dina test',
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
-        Expanded(child: MyGlideTestsList(glideTests: tests)),
+        MyGlideTestsList(
+          glideTests: ownTests,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+        if (exampleTests.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 24, 18, 12),
+            child: Text(
+              'Exempel',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          MyGlideTestsList(
+            glideTests: exampleTests,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          ),
+        ],
       ],
     );
   }
 
+  Future<void> _installExampleData() async {
+    try {
+      await context.read<ExampleDataInstaller?>()?.ensureInstalled();
+    } catch (error) {
+      debugPrint('Could not install example data: $error');
+    }
+  }
+
   Future<void> _createTest() async {
-    final candidate = await showModalBottomSheet<GlideTestCandidate>(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => const GlideTestForm(),
+    final candidate = await Navigator.push<GlideTestCandidate>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => const GlideTestForm(),
+      ),
     );
 
-    if (candidate != null) {
-      await _repository.create(candidate);
-    }
+    if (candidate == null || !mounted) return;
+    final testId = await _repository.create(candidate);
+    if (!mounted) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GlideTestCompareScreen(glideTestId: testId),
+      ),
+    );
   }
 
   void _retry() {
