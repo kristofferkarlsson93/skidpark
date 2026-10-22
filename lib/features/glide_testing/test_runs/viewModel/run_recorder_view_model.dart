@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:skidpark/common/database/repository/ski_repository.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/features/glide_testing/models/test_run_candidate.dart';
 import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
 import 'package:skidpark/features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_barometer_event.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_gps_event.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_gyroscope_event.dart';
+import 'package:skidpark/features/glide_testing/test_runs/models/raw_rotation_vector_event.dart';
 import 'package:skidpark/features/ski_management/models/ski.dart';
 
 import '../../../../common/database/database.dart';
@@ -165,14 +168,28 @@ class RunRecorderViewModel extends ChangeNotifier {
 
     _cancelAutoSave();
     dataRecorder.stopRecording();
-    final positions = List<Position>.from(dataRecorder.recordedPositions);
+    final gpsEvents = List<RawGpsEvent>.from(dataRecorder.recordedGpsEvents);
     final elapsedSeconds = dataRecorder.elapsedSeconds;
     final accelerometerEvents = List<RawAccelerometerEvent>.from(
       dataRecorder.recordedAccelerometerEvents,
     );
+    final gyroscopeEvents = List<RawGyroscopeEvent>.from(
+      dataRecorder.recordedGyroscopeEvents,
+    );
+    final barometerEvents = List<RawBarometerEvent>.from(
+      dataRecorder.recordedBarometerEvents,
+    );
+    final rotationVectorEvents = List<RawRotationVectorEvent>.from(
+      dataRecorder.recordedRotationVectorEvents,
+    );
+    final sensorMetadata = dataRecorder.recordedSensorMetadata;
 
     log(
-      "Stop and save: ${accelerometerEvents.length} accel events and ${positions.length} GPS positions",
+      'Stop and save: ${gpsEvents.length} GPS, '
+      '${accelerometerEvents.length} accelerometer, '
+      '${gyroscopeEvents.length} gyroscope, '
+      '${barometerEvents.length} barometer and '
+      '${rotationVectorEvents.length} rotation vector samples',
     );
 
     final candidate = TestRunCandidate(
@@ -180,8 +197,12 @@ class RunRecorderViewModel extends ChangeNotifier {
       skiId: selectedSki.id,
       glideTestId: _glideTestId,
       elapsedSeconds: elapsedSeconds,
-      gpsData: positions,
+      gpsEvents: gpsEvents,
       accelerometerEvents: accelerometerEvents,
+      gyroscopeEvents: gyroscopeEvents,
+      barometerEvents: barometerEvents,
+      rotationVectorEvents: rotationVectorEvents,
+      sensorMetadata: sensorMetadata,
     );
 
     _saveState = RunSaveState.saving;
@@ -291,10 +312,9 @@ class RunRecorderViewModel extends ChangeNotifier {
       return;
     }
 
-    if (dataRecorder.recordedPositions.length >= 20) {
-      final last2Positions = dataRecorder.recordedPositions.sublist(
-        dataRecorder.recordedPositions.length - 2,
-      );
+    final positions = dataRecorder.recordedPositions;
+    if (positions.length >= 20) {
+      final last2Positions = positions.sublist(positions.length - 2);
       // 0.15 ms ~= 0.54 kmh.
       final hasStopped = last2Positions.every((pos) => pos.speed <= 0.15);
       if (hasStopped) {

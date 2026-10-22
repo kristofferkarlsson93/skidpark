@@ -183,7 +183,7 @@ void main() {
     expect(exported.runs.single.skiId, testedSkiId);
     expect(exported.skis.map((ski) => ski.id), [untestedSkiId, testedSkiId]);
     final exportedJson = exported.toJson();
-    expect(exportedJson['version'], 2);
+    expect(exportedJson['version'], 3);
     expect(
       (exportedJson['runs'] as List<dynamic>).single,
       containsPair('runNumber', 1),

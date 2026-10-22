@@ -147,18 +147,6 @@ class RecordTestRun extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 16),
-
-                Center(
-                  child: Text(
-                    '${viewModel.dataRecorder.dataPoints} mätpunkter sparade',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                        0.5,
-                      ),
-                    ),
-                  ),
-                ),
                 const Spacer(),
 
                 Container(

@@ -2,11 +2,15 @@ import 'dart:convert';
 
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:geolocator/geolocator.dart';
 
 import '../../../common/database/database.dart';
 import '../../../common/database/repository/test_run_repository.dart';
 import '../test_runs/models/raw_accelerometer_event.dart';
+import '../test_runs/models/raw_barometer_event.dart';
+import '../test_runs/models/raw_gps_event.dart';
+import '../test_runs/models/raw_gyroscope_event.dart';
+import '../test_runs/models/raw_rotation_vector_event.dart';
+import '../test_runs/models/sensor_recording_metadata.dart';
 
 class GlideTestImportService {
   GlideTestImportService(this._database);
@@ -72,10 +76,38 @@ class GlideTestImportService {
               runNumber: drift.Value(run.runNumber),
               startedAt: run.startedAt,
               elapsedSeconds: run.elapsedSeconds,
-              gpsData: TestRunRepository.encodeGpsPositions(run.gpsData),
+              gpsData: TestRunRepository.encodeGpsEvents(run.gpsEvents),
               accelerometerData: TestRunRepository.encodeAccelEvents(
                 run.accelerometerEvents,
               ),
+              gyroscopeData: run.hasExtendedSensorData
+                  ? drift.Value(
+                      TestRunRepository.encodeGyroscopeEvents(
+                        run.gyroscopeEvents,
+                      ),
+                    )
+                  : const drift.Value.absent(),
+              barometerData: run.hasExtendedSensorData
+                  ? drift.Value(
+                      TestRunRepository.encodeBarometerEvents(
+                        run.barometerEvents,
+                      ),
+                    )
+                  : const drift.Value.absent(),
+              rotationVectorData: run.hasExtendedSensorData
+                  ? drift.Value(
+                      TestRunRepository.encodeRotationVectorEvents(
+                        run.rotationVectorEvents,
+                      ),
+                    )
+                  : const drift.Value.absent(),
+              sensorMetadata: run.sensorMetadata == null
+                  ? const drift.Value.absent()
+                  : drift.Value(
+                      TestRunRepository.encodeSensorMetadata(
+                        run.sensorMetadata!,
+                      ),
+                    ),
             ),
         ]);
       });
@@ -187,16 +219,26 @@ class _ImportedRun {
     required this.runNumber,
     required this.startedAt,
     required this.elapsedSeconds,
-    required this.gpsData,
+    required this.gpsEvents,
     required this.accelerometerEvents,
+    required this.gyroscopeEvents,
+    required this.barometerEvents,
+    required this.rotationVectorEvents,
+    required this.sensorMetadata,
+    required this.hasExtendedSensorData,
   });
 
   final int oldSkiId;
   final int runNumber;
   final DateTime startedAt;
   final int elapsedSeconds;
-  final List<Position> gpsData;
+  final List<RawGpsEvent> gpsEvents;
   final List<RawAccelerometerEvent> accelerometerEvents;
+  final List<RawGyroscopeEvent> gyroscopeEvents;
+  final List<RawBarometerEvent> barometerEvents;
+  final List<RawRotationVectorEvent> rotationVectorEvents;
+  final SensorRecordingMetadata? sensorMetadata;
+  final bool hasExtendedSensorData;
 
   factory _ImportedRun.fromJson(
     Map<String, dynamic> json, {
@@ -229,6 +271,37 @@ class _ImportedRun {
       );
     }
 
+    final sensorDataValue = json['sensorData'];
+    if (sensorDataValue != null && sensorDataValue is! Map<String, dynamic>) {
+      throw const FormatException('Sensordata har fel format.');
+    }
+    final sensorData = sensorDataValue as Map<String, dynamic>?;
+    final gyroscopeEvents = sensorData == null
+        ? <RawGyroscopeEvent>[]
+        : TestRunRepository.decodeGyroscopeEvents(
+            _optionalCompressedBlob(sensorData, 'gyroscope'),
+          );
+    final barometerEvents = sensorData == null
+        ? <RawBarometerEvent>[]
+        : TestRunRepository.decodeBarometerEvents(
+            _optionalCompressedBlob(sensorData, 'barometer'),
+          );
+    final rotationVectorEvents = sensorData == null
+        ? <RawRotationVectorEvent>[]
+        : TestRunRepository.decodeRotationVectorEvents(
+            _optionalCompressedBlob(sensorData, 'rotationVector'),
+          );
+    final sensorMetadataJson = sensorData?['metadata'];
+    if (sensorMetadataJson != null &&
+        sensorMetadataJson is! Map<String, dynamic>) {
+      throw const FormatException('Sensormetadata har fel format.');
+    }
+    final sensorMetadata = sensorMetadataJson == null
+        ? null
+        : SensorRecordingMetadata.fromJson(
+            sensorMetadataJson as Map<String, dynamic>,
+          );
+
     return _ImportedRun(
       oldSkiId: _requiredInt(json, 'skiId'),
       runNumber: _optionalPositiveInt(
@@ -238,14 +311,35 @@ class _ImportedRun {
       ),
       startedAt: DateTime.parse(_requiredString(json, 'startedAt')),
       elapsedSeconds: _requiredInt(json, 'elapsedSeconds'),
-      gpsData: gpsJson.map((value) {
+      gpsEvents: gpsJson.map((value) {
         if (value is! Map<String, dynamic>) {
           throw const FormatException('En GPS-punkt har fel format.');
         }
-        return Position.fromMap(value);
+        return RawGpsEvent.fromJson(value);
       }).toList(),
       accelerometerEvents: accelerometerEvents,
+      gyroscopeEvents: gyroscopeEvents,
+      barometerEvents: barometerEvents,
+      rotationVectorEvents: rotationVectorEvents,
+      sensorMetadata: sensorMetadata,
+      hasExtendedSensorData: sensorData != null,
     );
+  }
+}
+
+drift.Uint8List? _optionalCompressedBlob(
+  Map<String, dynamic> json,
+  String key,
+) {
+  final value = json[key];
+  if (value == null) return null;
+  if (value is! String) {
+    throw FormatException('Fältet sensorData.$key har fel format.');
+  }
+  try {
+    return base64Decode(value);
+  } on FormatException {
+    throw FormatException('Fältet sensorData.$key är inte giltig base64.');
   }
 }
 

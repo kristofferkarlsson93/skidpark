@@ -7,6 +7,11 @@ import 'package:drift/drift.dart' as drift;
 
 import '../../../features/glide_testing/models/decoded_test_run.dart';
 import '../../../features/glide_testing/test_runs/models/raw_accelerometer_event.dart';
+import '../../../features/glide_testing/test_runs/models/raw_barometer_event.dart';
+import '../../../features/glide_testing/test_runs/models/raw_gps_event.dart';
+import '../../../features/glide_testing/test_runs/models/raw_gyroscope_event.dart';
+import '../../../features/glide_testing/test_runs/models/raw_rotation_vector_event.dart';
+import '../../../features/glide_testing/test_runs/models/sensor_recording_metadata.dart';
 import '../database.dart';
 
 class TestRunRepository {
@@ -15,9 +20,21 @@ class TestRunRepository {
   TestRunRepository(this._db);
 
   Future<int> storeTestRun(TestRunCandidate testRunCandidate) async {
-    final compressedGpsData = encodeGpsPositions(testRunCandidate.gpsData);
+    final compressedGpsData = encodeGpsEvents(testRunCandidate.gpsEvents);
     final compressedAccelData = encodeAccelEvents(
       testRunCandidate.accelerometerEvents,
+    );
+    final compressedGyroscopeData = encodeGyroscopeEvents(
+      testRunCandidate.gyroscopeEvents,
+    );
+    final compressedBarometerData = encodeBarometerEvents(
+      testRunCandidate.barometerEvents,
+    );
+    final compressedRotationVectorData = encodeRotationVectorEvents(
+      testRunCandidate.rotationVectorEvents,
+    );
+    final compressedSensorMetadata = encodeSensorMetadata(
+      testRunCandidate.sensorMetadata,
     );
 
     return _db.transaction(() async {
@@ -30,6 +47,10 @@ class TestRunRepository {
         elapsedSeconds: testRunCandidate.elapsedSeconds,
         gpsData: compressedGpsData,
         accelerometerData: compressedAccelData,
+        gyroscopeData: drift.Value(compressedGyroscopeData),
+        barometerData: drift.Value(compressedBarometerData),
+        rotationVectorData: drift.Value(compressedRotationVectorData),
+        sensorMetadata: drift.Value(compressedSensorMetadata),
       );
 
       return _db.into(_db.testRun).insert(companion);
@@ -81,35 +102,40 @@ class TestRunRepository {
   }
 
   static DecodedTestRun decodeRun(TestRunData rawRun, StoredSkiData skiData) {
-    final List<Position> positions = _decodeGpsPositions(rawRun.gpsData);
+    final gpsEvents = decodeGpsEvents(rawRun.gpsData);
 
     final List<RawAccelerometerEvent> accelerometerEvents = _decodeAccelEvents(
       rawRun.accelerometerData,
     );
+    final gyroscopeEvents = decodeGyroscopeEvents(rawRun.gyroscopeData);
+    final barometerEvents = decodeBarometerEvents(rawRun.barometerData);
+    final rotationVectorEvents = decodeRotationVectorEvents(
+      rawRun.rotationVectorData,
+    );
+    final sensorMetadata = decodeSensorMetadata(rawRun.sensorMetadata);
 
     return DecodedTestRun(
-      rawRun.id,
-      rawRun.startedAt,
-      rawRun.skiId,
-      rawRun.glideTestId,
-      rawRun.runNumber,
-      rawRun.elapsedSeconds,
-      skiData.name,
-      positions,
-      accelerometerEvents,
+      id: rawRun.id,
+      startedAt: rawRun.startedAt,
+      skiId: rawRun.skiId,
+      glideTestId: rawRun.glideTestId,
+      runNumber: rawRun.runNumber,
+      elapsedSeconds: rawRun.elapsedSeconds,
+      skiName: skiData.name,
+      gpsEvents: gpsEvents,
+      accelerometerEvents: accelerometerEvents,
+      gyroscopeEvents: gyroscopeEvents,
+      barometerEvents: barometerEvents,
+      rotationVectorEvents: rotationVectorEvents,
+      sensorMetadata: sensorMetadata,
     );
   }
 
-  static List<Position> _decodeGpsPositions(drift.Uint8List compressedData) {
-    final gzipDecoder = GZipDecoder();
-    final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
-
-    final jsonString = utf8.decode(decompressedBytes);
-
-    final List<dynamic> jsonList = jsonDecode(jsonString);
+  static List<RawGpsEvent> decodeGpsEvents(drift.Uint8List compressedData) {
+    final jsonList = _decodeJson(compressedData) as List<dynamic>;
 
     return jsonList
-        .map((jsonMap) => Position.fromMap(jsonMap as Map<String, dynamic>))
+        .map((jsonMap) => RawGpsEvent.fromJson(jsonMap as Map<String, dynamic>))
         .toList();
   }
 
@@ -120,50 +146,91 @@ class TestRunRepository {
       return [];
     }
 
-    final gzipDecoder = GZipDecoder();
-    final decompressedBytes = gzipDecoder.decodeBytes(compressedData.toList());
-
-    final jsonString = utf8.decode(decompressedBytes);
-
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-
-    return jsonList
-        .map(
-          (jsonMap) =>
-              RawAccelerometerEvent.fromJson(jsonMap as Map<String, dynamic>),
-        )
-        .toList();
+    return _decodeEvents(compressedData, RawAccelerometerEvent.fromJson);
   }
 
-  // Save space in storage
   static drift.Uint8List encodeGpsPositions(List<Position> positions) {
-    final List<Map<String, dynamic>> positionListAsMap = positions
-        .map((pos) => pos.toJson())
-        .toList();
-    final String gpsDataJsonString = jsonEncode(positionListAsMap);
-    final gpsDataBytes = utf8.encode(gpsDataJsonString);
-
-    final gzipEncoder = GZipEncoder();
-    final drift.Uint8List compressedGpsData = gzipEncoder.encodeBytes(
-      gpsDataBytes,
+    return encodeGpsEvents(
+      positions.map((position) => RawGpsEvent.fromPosition(position)),
     );
-    return compressedGpsData;
   }
 
-  // Save space in storage
-  static drift.Uint8List encodeAccelEvents(
-    List<RawAccelerometerEvent> accelEvents,
-  ) {
-    final List<Map<String, dynamic>> accelListAsMap = accelEvents
-        .map((event) => event.toJson())
-        .toList();
-    final String accelDataJsonString = jsonEncode(accelListAsMap);
-    final accelDataBytes = utf8.encode(accelDataJsonString);
+  static drift.Uint8List encodeGpsEvents(Iterable<RawGpsEvent> events) {
+    return _encodeEvents(events.map((event) => event.toJson()));
+  }
 
-    final gzipEncoder = GZipEncoder();
-    final drift.Uint8List compressedAccelData = gzipEncoder.encodeBytes(
-      accelDataBytes,
+  static drift.Uint8List encodeAccelEvents(List<RawAccelerometerEvent> events) {
+    return _encodeEvents(events.map((event) => event.toJson()));
+  }
+
+  static drift.Uint8List encodeGyroscopeEvents(List<RawGyroscopeEvent> events) {
+    return _encodeEvents(events.map((event) => event.toJson()));
+  }
+
+  static List<RawGyroscopeEvent> decodeGyroscopeEvents(
+    drift.Uint8List? compressedData,
+  ) {
+    return _decodeEvents(compressedData, RawGyroscopeEvent.fromJson);
+  }
+
+  static drift.Uint8List encodeBarometerEvents(List<RawBarometerEvent> events) {
+    return _encodeEvents(events.map((event) => event.toJson()));
+  }
+
+  static List<RawBarometerEvent> decodeBarometerEvents(
+    drift.Uint8List? compressedData,
+  ) {
+    return _decodeEvents(compressedData, RawBarometerEvent.fromJson);
+  }
+
+  static drift.Uint8List encodeRotationVectorEvents(
+    List<RawRotationVectorEvent> events,
+  ) {
+    return _encodeEvents(events.map((event) => event.toJson()));
+  }
+
+  static List<RawRotationVectorEvent> decodeRotationVectorEvents(
+    drift.Uint8List? compressedData,
+  ) {
+    return _decodeEvents(compressedData, RawRotationVectorEvent.fromJson);
+  }
+
+  static drift.Uint8List encodeSensorMetadata(
+    SensorRecordingMetadata metadata,
+  ) {
+    return _encodeJson(metadata.toJson());
+  }
+
+  static SensorRecordingMetadata? decodeSensorMetadata(
+    drift.Uint8List? compressedData,
+  ) {
+    if (compressedData == null || compressedData.isEmpty) return null;
+    return SensorRecordingMetadata.fromJson(
+      _decodeJson(compressedData) as Map<String, dynamic>,
     );
-    return compressedAccelData;
+  }
+
+  static drift.Uint8List _encodeEvents(Iterable<Map<String, dynamic>> events) {
+    return _encodeJson(events.toList());
+  }
+
+  static List<T> _decodeEvents<T>(
+    drift.Uint8List? compressedData,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    if (compressedData == null || compressedData.isEmpty) return [];
+    final jsonList = _decodeJson(compressedData) as List<dynamic>;
+    return jsonList
+        .map((json) => fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  static drift.Uint8List _encodeJson(Object value) {
+    return GZipEncoder().encodeBytes(utf8.encode(jsonEncode(value)));
+  }
+
+  static Object? _decodeJson(drift.Uint8List compressedData) {
+    final bytes = GZipDecoder().decodeBytes(compressedData.toList());
+    return jsonDecode(utf8.decode(bytes));
   }
 }

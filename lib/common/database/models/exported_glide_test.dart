@@ -19,7 +19,7 @@ class ExportedGlideTest {
 
   Map<String, dynamic> toJson() {
     return {
-      'version': 2,
+      'version': 3,
       'deviceInfo': deviceInfo,
       'exportedAt': DateTime.now().toIso8601String(),
       'glideTest': {
@@ -49,10 +49,24 @@ class ExportedGlideTest {
           'skiName': ski.name,
           'startedAt': r.startedAt.toIso8601String(),
           'elapsedSeconds': r.elapsedSeconds,
-          'gpsData': r.gpsData.map((data) => data.toJson()).toList(),
+          'gpsData': r.gpsEvents.map((event) => event.toJson()).toList(),
           'accelerometerData': base64.encode(
             TestRunRepository.encodeAccelEvents(r.accelerometerEvents),
           ),
+          'sensorData': {
+            'metadata': r.sensorMetadata?.toJson(),
+            'gyroscope': base64.encode(
+              TestRunRepository.encodeGyroscopeEvents(r.gyroscopeEvents),
+            ),
+            'barometer': base64.encode(
+              TestRunRepository.encodeBarometerEvents(r.barometerEvents),
+            ),
+            'rotationVector': base64.encode(
+              TestRunRepository.encodeRotationVectorEvents(
+                r.rotationVectorEvents,
+              ),
+            ),
+          },
         };
       }).toList(),
     };

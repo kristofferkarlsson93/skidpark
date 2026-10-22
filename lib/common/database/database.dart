@@ -19,7 +19,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(
@@ -37,19 +37,38 @@ class AppDatabase extends _$AppDatabase {
       await _createRunNumberIndex();
     },
     onUpgrade: (Migrator m, int from, int to) async {
+      // The old feat-barrometer-recording branch also used schema version 5,
+      // but its schema contained barometer_data and did not yet contain the
+      // product-flow tables introduced by the main branch's version 5. Detect
+      // that alternate lineage by its actual columns so test-phone data can be
+      // upgraded in place instead of deleting the existing pressure samples.
+      final isLegacyBarometerVersion5 =
+          from == 5 &&
+          await _columnExists('test_run', 'barometer_data') &&
+          !await _columnExists('stored_glide_test', 'is_example');
+
       if (from < 2) {
         await m.addColumn(storedGlideTest, storedGlideTest.useSensorFusion);
       }
       if (from < 4) {
+        final newColumns = <GeneratedColumn<Object>>[
+          testRun.runNumber,
+          testRun.gyroscopeData,
+          testRun.rotationVectorData,
+          testRun.sensorMetadata,
+        ];
+        if (!await _columnExists('test_run', 'barometer_data')) {
+          newColumns.add(testRun.barometerData);
+        }
         await m.alterTable(
           TableMigration(
             testRun,
-            newColumns: [testRun.runNumber],
+            newColumns: newColumns,
             columnTransformer: {testRun.runNumber: const Constant(1)},
           ),
         );
       }
-      if (from < 5) {
+      if (from < 5 || isLegacyBarometerVersion5) {
         await m.addColumn(storedGlideTest, storedGlideTest.isExample);
         await m.addColumn(storedSki, storedSki.isExample);
         await m.createTable(glideTestSki);
@@ -84,6 +103,20 @@ class AppDatabase extends _$AppDatabase {
         ''');
         await _createRunNumberIndex();
       }
+      if (from < 7 && from >= 4) {
+        if (!await _columnExists('test_run', 'gyroscope_data')) {
+          await m.addColumn(testRun, testRun.gyroscopeData);
+        }
+        if (!await _columnExists('test_run', 'barometer_data')) {
+          await m.addColumn(testRun, testRun.barometerData);
+        }
+        if (!await _columnExists('test_run', 'rotation_vector_data')) {
+          await m.addColumn(testRun, testRun.rotationVectorData);
+        }
+        if (!await _columnExists('test_run', 'sensor_metadata')) {
+          await m.addColumn(testRun, testRun.sensorMetadata);
+        }
+      }
     },
     beforeOpen: (details) async {
       // Enable foreign keys.
@@ -113,5 +146,10 @@ class AppDatabase extends _$AppDatabase {
       CREATE UNIQUE INDEX IF NOT EXISTS $_runNumberIndexName
       ON test_run (glide_test_id, run_number)
     ''');
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final columns = await customSelect('PRAGMA table_info($tableName)').get();
+    return columns.any((row) => row.read<String>('name') == columnName);
   }
 }
