@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rotation_sensor/flutter_rotation_sensor.dart';
 import 'package:geolocator/geolocator.dart';
@@ -145,9 +146,11 @@ class DataRecorder extends ChangeNotifier {
           },
           onError: (error) {
             _sensorErrors['gps'] = error.toString();
-            log('GPS error', stackTrace: error);
+            _accuracyGrade = GpsAccuracy.unknown;
+            log('GPS error', error: error);
             _positionStreamSubscription?.cancel();
             _positionStreamSubscription = null;
+            notifyListeners();
           },
         );
   }
@@ -354,11 +357,13 @@ class DataRecorder extends ChangeNotifier {
         //   setOngoing: true, // Can remove notification.
         // ),
       );
-    } else if (Platform.isIOS) {
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       return AppleSettings(
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 0,
-        activityType: ActivityType.automotiveNavigation,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+        allowBackgroundLocationUpdates: false,
       );
     } else {
       return const LocationSettings(
@@ -370,6 +375,10 @@ class DataRecorder extends ChangeNotifier {
 
   GpsAccuracy _gradeAccuracy(double accuracy) {
     // log(accuracy.toStringAsFixed(2));
+    if (!accuracy.isFinite || accuracy <= 0) {
+      return GpsAccuracy.unknown;
+    }
+
     if (accuracy > 15) {
       return GpsAccuracy.bad;
     } else if (accuracy > 8) {
@@ -388,8 +397,8 @@ class DataRecorder extends ChangeNotifier {
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!context.mounted) return false;
     if (!serviceEnabled) {
-      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -405,11 +414,12 @@ class DataRecorder extends ChangeNotifier {
     }
 
     permission = await Geolocator.checkPermission();
+    if (!context.mounted) return false;
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (!context.mounted) return false;
 
       if (permission == LocationPermission.denied) {
-        if (!context.mounted) return false;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Behörighet till platsdata nekades.')),
         );
@@ -418,7 +428,6 @@ class DataRecorder extends ChangeNotifier {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -433,6 +442,52 @@ class DataRecorder extends ChangeNotifier {
       return false;
     }
 
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      if (!context.mounted) return false;
+      await _requestPreciseLocationIfAvailable(context);
+    }
     return true;
+  }
+
+  static Future<void> _requestPreciseLocationIfAvailable(
+    BuildContext context,
+  ) async {
+    try {
+      var accuracy = await Geolocator.getLocationAccuracy();
+      if (!context.mounted) return;
+      if (accuracy == LocationAccuracyStatus.reduced) {
+        accuracy = await Geolocator.requestTemporaryFullAccuracy(
+          purposeKey: 'GlideRecording',
+        );
+        if (!context.mounted) return;
+      }
+
+      if (accuracy == LocationAccuracyStatus.reduced) {
+        if (!context.mounted) return;
+        _showReducedAccuracyWarning(context);
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      log('Could not request precise location', error: error);
+      _showReducedAccuracyWarning(context);
+    }
+  }
+
+  static void _showReducedAccuracyWarning(BuildContext context) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Exakt plats kunde inte bekräftas. Åket fortsätter, men '
+          'GPS-jämförelsen kan påverkas.',
+        ),
+        action: SnackBarAction(
+          label: 'Inställningar',
+          onPressed: () {
+            unawaited(Geolocator.openAppSettings());
+          },
+        ),
+      ),
+    );
   }
 }

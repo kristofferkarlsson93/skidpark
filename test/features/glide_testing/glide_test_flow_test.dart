@@ -15,7 +15,7 @@ void main() {
     tester,
   ) async {
     final database = AppDatabase(NativeDatabase.memory());
-    final volumePressHandler = VolumePressHandler();
+    final volumePressHandler = UnsupportedVolumeButtonInput();
     addTearDown(database.close);
     addTearDown(volumePressHandler.dispose);
 
@@ -59,6 +59,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nytt åk'), findsOneWidget);
+    expect(find.textContaining('volym ner'), findsNothing);
     expect(await database.select(database.storedGlideTest).get(), hasLength(1));
     expect(await database.select(database.glideTestSki).get(), hasLength(1));
 

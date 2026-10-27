@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:skidpark/common/shared_widgets/big_button.dart';
+import 'package:skidpark/common/services/volume_press_handler.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 import 'package:skidpark/features/ski_management/create/widgets/quick_add_ski.dart';
 import 'package:skidpark/features/ski_management/models/ski.dart';
@@ -146,6 +148,9 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final supportsVolumeInput = context
+        .read<VolumeButtonInput>()
+        .supportsVolumeInput;
     final selectableSkis = widget.viewModel.availableSkis;
     final markedIndex = widget.viewModel.markedSkiIndex;
     final showQuickAdd =
@@ -260,18 +265,19 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const InstructionGuide(
-                      firstInstruction: InstructionItem(
-                        icon: Icons.unfold_more,
-                        primaryText: "Volym + / -",
-                        secondaryText: "Välj skida",
+                    if (supportsVolumeInput)
+                      const InstructionGuide(
+                        firstInstruction: InstructionItem(
+                          icon: Icons.unfold_more,
+                          primaryText: "Volym + / -",
+                          secondaryText: "Välj skida",
+                        ),
+                        secondInstruction: InstructionItem(
+                          icon: Icons.arrow_drop_down,
+                          primaryText: "Håll in volym -",
+                          secondaryText: "Starta test",
+                        ),
                       ),
-                      secondInstruction: InstructionItem(
-                        icon: Icons.arrow_drop_down,
-                        primaryText: "Håll in volym -",
-                        secondaryText: "Starta test",
-                      ),
-                    ),
                     const SizedBox(height: 16),
 
                     BigButton(

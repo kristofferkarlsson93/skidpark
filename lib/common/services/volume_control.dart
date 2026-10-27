@@ -9,4 +9,8 @@ class VolumeControl {
       return null;
     });
   }
+
+  static void stopListeningForVolumeKeys() {
+    platform.setMethodCallHandler(null);
+  }
 }

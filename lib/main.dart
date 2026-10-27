@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:skidpark/theme/app_theme.dart';
 import 'package:provider/provider.dart';
@@ -40,7 +41,9 @@ void main() {
               ExampleDataInstaller(db, importService),
         ),
         Provider<VolumeButtonInput>(
-          create: (_) => VolumePressHandler(),
+          create: (_) => defaultTargetPlatform == TargetPlatform.android
+              ? VolumePressHandler()
+              : UnsupportedVolumeButtonInput(),
           dispose: (_, input) => input.dispose(),
         ),
       ],

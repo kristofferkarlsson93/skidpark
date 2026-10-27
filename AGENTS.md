@@ -65,6 +65,10 @@ experience.
 
 ## Measurement and data integrity
 
+- Evaluate analysis methods primarily by whether they preserve and reveal
+  meaningful differences between runs and skis. Relate observed differences to
+  normal variation in repeated runs; assess absolute accuracy by its impact on
+  those relative comparisons.
 - Preserve raw recorded sensor data; do not silently change its meaning or
   overwrite it when introducing new processing.
 - Be explicit about units, coordinate axes, sampling frequency, timestamps,

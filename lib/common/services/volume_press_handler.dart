@@ -7,6 +7,8 @@ import 'volume_control.dart';
 enum VolumeButton { up, down }
 
 abstract interface class VolumeButtonInput {
+  bool get supportsVolumeInput;
+
   Stream<VolumeButton> get shortPressStream;
 
   Stream<VolumeButton> get longPressStream;
@@ -16,6 +18,9 @@ abstract interface class VolumeButtonInput {
 
 class VolumePressHandler implements VolumeButtonInput {
   static const Duration _longPressThreshold = Duration(milliseconds: 500);
+
+  @override
+  bool get supportsVolumeInput => true;
 
   final _shortPressController = StreamController<VolumeButton>.broadcast();
   final _longPressController = StreamController<VolumeButton>.broadcast();
@@ -70,10 +75,25 @@ class VolumePressHandler implements VolumeButtonInput {
 
   @override
   void dispose() {
+    VolumeControl.stopListeningForVolumeKeys();
     _shortPressController.close();
     _longPressController.close();
     for (var timer in _activeTimers.values) {
       timer?.cancel();
     }
   }
+}
+
+class UnsupportedVolumeButtonInput implements VolumeButtonInput {
+  @override
+  bool get supportsVolumeInput => false;
+
+  @override
+  Stream<VolumeButton> get shortPressStream => const Stream.empty();
+
+  @override
+  Stream<VolumeButton> get longPressStream => const Stream.empty();
+
+  @override
+  void dispose() {}
 }

@@ -17,6 +17,18 @@ import 'package:skidpark/features/glide_testing/test_runs/screen/run_recording_s
 import 'package:skidpark/features/glide_testing/test_runs/viewModel/run_recorder_view_model.dart';
 
 void main() {
+  test(
+    'unsupported volume input reports no support and emits no events',
+    () async {
+      final volumeInput = UnsupportedVolumeButtonInput();
+
+      expect(volumeInput.supportsVolumeInput, isFalse);
+      expect(await volumeInput.shortPressStream.isEmpty, isTrue);
+      expect(await volumeInput.longPressStream.isEmpty, isTrue);
+      volumeInput.dispose();
+    },
+  );
+
   test('volume buttons navigate, start, and save exactly one run', () async {
     final saveCompleter = Completer<int>();
     final fixture = await _RecorderFixture.create(
@@ -75,6 +87,85 @@ void main() {
     expect(fixture.repository.storeCallCount, 2);
     expect(fixture.dataRecorder.resetCount, 1);
   });
+
+  testWidgets(
+    'unsupported volume input keeps ski selection and recording screen controls usable',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final skiRepository = SkiRepository(database);
+      final glideTestRepository = GlideTestRepository(database);
+      final testRunRepository = TestRunRepository(database);
+      final volumeInput = UnsupportedVolumeButtonInput();
+      final dataRecorder = _FakeDataRecorder();
+      addTearDown(() async {
+        volumeInput.dispose();
+        dataRecorder.dispose();
+        await database.close();
+      });
+
+      final skiId = await database
+          .into(database.storedSki)
+          .insert(StoredSkiCompanion.insert(name: 'SP1'));
+      final testId = await database
+          .into(database.storedGlideTest)
+          .insert(StoredGlideTestCompanion.insert(title: 'Test'));
+      await glideTestRepository.addSkiToTest(testId, skiId);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<SkiRepository>.value(value: skiRepository),
+            Provider<GlideTestRepository>.value(value: glideTestRepository),
+            Provider<TestRunRepository>.value(value: testRunRepository),
+            Provider<VolumeButtonInput>.value(value: volumeInput),
+          ],
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: FilledButton(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RunRecorderScreen(
+                        glideTestId: testId,
+                        dataRecorder: dataRecorder,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Öppna inspelning'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Öppna inspelning'));
+      await tester.pumpAndSettle();
+      expect(find.text('Välj skida för åket'), findsOneWidget);
+      expect(find.textContaining('VOLYM'), findsNothing);
+
+      await tester.tap(find.text('SP1'));
+      await tester.pump();
+      await tester.tap(find.text('STARTA TEST'));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Samlar in data...'), findsOneWidget);
+      expect(find.textContaining('VOLYM'), findsNothing);
+      expect(find.text('SPARA'), findsOneWidget);
+      expect(dataRecorder.startCount, 1);
+
+      await tester.tap(find.text('SPARA'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Öppna inspelning'), findsOneWidget);
+      expect(await database.select(database.testRun).get(), hasLength(1));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
 
   testWidgets(
     'new ski can be added before cancel and volume-save still closes route',
@@ -301,6 +392,9 @@ class _FakeVolumeButtonInput implements VolumeButtonInput {
   final _longPressController = StreamController<VolumeButton>.broadcast(
     sync: true,
   );
+
+  @override
+  bool get supportsVolumeInput => true;
 
   @override
   Stream<VolumeButton> get shortPressStream => _shortPressController.stream;

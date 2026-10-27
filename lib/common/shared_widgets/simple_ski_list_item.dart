@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../database/database.dart';
 
 class SimpleSkiListItem extends StatelessWidget {
+  static const _unselectedBorderColor = Color(0xFF666979);
+
   final StoredSkiData skiDetails;
   final bool isActive;
-  final bool isConfirmedStart; // NY PARAMETER
+  final bool isConfirmedStart;
   final VoidCallback? onSelected;
   final double height;
 
@@ -21,6 +23,7 @@ class SimpleSkiListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isSelected = isActive || isConfirmedStart;
 
     Color backgroundColor;
     Color textColor;
@@ -33,51 +36,67 @@ class SimpleSkiListItem extends StatelessWidget {
     } else if (isActive) {
       backgroundColor = theme.colorScheme.primaryContainer;
       textColor = theme.colorScheme.onPrimaryContainer;
-      borderColor = theme.colorScheme.primaryContainer;
+      borderColor = theme.colorScheme.primary;
     } else {
       backgroundColor = theme.colorScheme.surfaceContainerLow;
       textColor = theme.colorScheme.onSurface;
-      borderColor = theme.colorScheme.outlineVariant.withOpacity(0.3);
+      borderColor = _unselectedBorderColor;
     }
 
-    return InkWell(
-      onTap: onSelected,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: height,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: borderColor,
-            width: (isActive || isConfirmedStart) ? 2.0 : 1.0,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              skiDetails.name,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return Semantics(
+      selected: isSelected,
+      child: InkWell(
+        onTap: onSelected,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: height,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: borderColor,
+              width: isSelected ? 2.0 : 1.5,
             ),
-            if (skiDetails.brandAndModel != null)
-              Text(
-                skiDetails.brandAndModel!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: textColor.withOpacity(0.8),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      skiDetails.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (skiDetails.brandAndModel != null)
+                      Text(
+                        skiDetails.brandAndModel!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: textColor.withValues(alpha: 0.8),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-          ],
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 24,
+                child: isSelected
+                    ? Icon(Icons.check_rounded, color: textColor)
+                    : null,
+              ),
+            ],
+          ),
         ),
       ),
     );
