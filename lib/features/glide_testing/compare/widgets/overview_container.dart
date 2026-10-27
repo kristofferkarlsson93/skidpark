@@ -7,10 +7,9 @@ import 'package:skidpark/features/glide_testing/compare/models/graph_line.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/compare_graph.dart';
 
 import '../compare_runs_view_model.dart';
-import 'compare_list.dart';
 
-class OverviewContainer extends StatelessWidget {
-  const OverviewContainer({super.key});
+class OverviewGraph extends StatelessWidget {
+  const OverviewGraph({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,50 +18,34 @@ class OverviewContainer extends StatelessWidget {
         .read<VolumeButtonInput>()
         .supportsVolumeInput;
     final selectedRuns = viewModel.currentDisplayRuns;
-    return Column(
-      children: [
-        Expanded(
-          flex: 3,
-          child: CompareGraph(
-            lines: selectedRuns
-                .map(
-                  (r) => GraphLine.fromEnrichedTestRun(
-                    r,
-                    viewModel.calculateRunLabel(r),
-                  ),
-                )
-                .toList(),
-            maxY: selectedRuns.map((r) => r.maxSpeedKmh).fold(0, math.max),
-            highlightedLineId: viewModel.highlightedRunId,
-            emptyGraphContent: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (viewModel.testRuns.isNotEmpty) ...[
-                    Text("Välj ett eller flera åk i kontrollpanelen"),
-                    SizedBox(height: 12),
-                  ],
-                  if (supportsVolumeInput)
-                    Text(
-                      "Tips: Håll in volym ner för att spela in ett nytt åk.",
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
-                ],
-              ),
+    return CompareGraph(
+      lines: selectedRuns
+          .map(
+            (r) => GraphLine.fromEnrichedTestRun(
+              r,
+              viewModel.calculateRunLabel(r),
             ),
-          ),
+          )
+          .toList(),
+      maxY: selectedRuns.map((r) => r.maxSpeedKmh).fold(0, math.max),
+      highlightedLineId: viewModel.highlightedRunId,
+      emptyGraphContent: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (viewModel.testRuns.isNotEmpty) ...[
+              Text("Välj ett eller flera åk i kontrollpanelen"),
+              SizedBox(height: 12),
+            ],
+            if (supportsVolumeInput)
+              Text(
+                "Tips: Håll in volym ner för att spela in ett nytt åk.",
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+          ],
         ),
-        Expanded(
-          flex: 2,
-          child: CompareList(
-            runs: selectedRuns,
-            isAverageView: viewModel.useAverageView,
-            highlightedRunId: viewModel.highlightedRunId,
-            onRunTapped: (runId) => viewModel.toggleHighlightedRun(runId),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

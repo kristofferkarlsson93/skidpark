@@ -82,5 +82,6 @@ tags:
 - assertVisible: "Samlar in data..."
 - tapOn: "Avbryt och kasta"
 - assertVisible: "Nytt åk"
-- assertVisible: "Tom graf"
+- assertVisible: "Så gör du ett glidtest[\\s\\S]*"
+- assertNotVisible: "Översikt"
 - assertNotVisible: "Åk 1 - Nyskapad skida"

@@ -5,8 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
+import 'package:skidpark/features/glide_testing/compare/models/analysis_page.dart';
 import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
-import 'package:skidpark/features/glide_testing/compare/screens/glide_test_compare_screen.dart';
 import 'package:skidpark/features/glide_testing/compare/services/average_per_ski_calculator.dart';
 import 'package:skidpark/features/glide_testing/compare/services/glide_test_export_service.dart';
 import 'package:skidpark/features/glide_testing/compare/services/release_point_analysis.dart';
@@ -50,15 +50,16 @@ class CompareRunsViewModel extends ChangeNotifier {
   double get releasePoint {
     if (_releasePoint != null) {
       return _releasePoint!;
-    } else if (currentSelectedTestRuns.isNotEmpty) {
-      return currentSelectedTestRuns
-          .expand((r) => r.positionData)
+    } else {
+      final positions = currentSelectedTestRuns
+          .expand((run) => run.positionData)
+          .toList();
+      if (positions.isEmpty) return 0;
+      return positions
           .reduce(
             (a, b) => a.speed > b.speed ? a : b,
           ) // Finding max speed of any run
           .distanceTraveled;
-    } else {
-      return 0;
     }
   }
 
@@ -154,6 +155,7 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   void setCurrentAnalysisPage(AnalysisPage page) {
     _activeAnalysisPage = page;
+    _recalculateReleasePointAnalysisIfActive();
     notifyListeners();
   }
 
@@ -284,7 +286,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   }
 
   void _recalculateReleasePointAnalysisIfActive() {
-    if (_activeAnalysisPage == AnalysisPage.deepAnalysis &&
+    if (_activeAnalysisPage == AnalysisPage.releasePoint &&
         _releasePointAnalysisMode == ReleasePointAnalysisMode.view) {
       final runs = _useAverageView
           ? _averageRunPerSki

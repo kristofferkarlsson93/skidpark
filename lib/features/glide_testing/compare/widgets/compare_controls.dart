@@ -51,9 +51,11 @@ class CompareControls extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Välj åk att visa i vyn',
-                  style: theme.textTheme.labelLarge,
+                Expanded(
+                  child: Text(
+                    'Välj åk att visa i vyn',
+                    style: theme.textTheme.labelLarge,
+                  ),
                 ),
                 TextButton(
                   onPressed: () {

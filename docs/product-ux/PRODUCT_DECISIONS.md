@@ -100,7 +100,25 @@ Statusmarkeringar:
 - **Beslutat:** Datakvalitet hör till respektive åk och ska inte duplicera
   åklistan på en separat skärm.
 - **Beslutat:** En dedikerad sidomeny är lämplig för flera filter och
-  expertinställningar. Aktiva val ska vara synliga när menyn är stängd.
+  expertinställningar. Åkurval och medelvisning syns när menyn är stängd;
+  beräkningssättets etikett visas inte i sammanfattningsraden. Sidomenyn
+  innehåller ingen länk till guiden, som nås via sin flik.
+- **Beslutat:** Analysvyer byts med namngivna flikar under grafen, utan
+  svepnavigering. Ordningen är `Översikt`, `Släppunkt`, `Guide`. Grafens stora
+  yta och placering bevaras; sidomenyn behåller åkurval och beräkning.
+- **Beslutat:** Flikrad och urvalssammanfattning skrollar tillsammans med
+  nederdelens innehåll för att ge åklistan mer plats. Grafen behåller sina
+  60 procent av arbetsytan. Skrolla tillbaka upp i nederdelen för att nå flikarna.
+- **Beslutat:** Ett test utan åk visar bara guiden, utan flikrad eller tom graf.
+  `Nytt åk` är fortsatt synligt. När åk finns öppnas Översikt och guiden finns
+  längst till höger.
+- **Beslutat:** Guiden ska vara en saklig, kort bruksanvisning. Tre synliga
+  steg beskriver samma backe/startplats, inspelning och upprepade åk. Fördjupning
+  om analys och volymknappar kan fällas ut. Den detaljerade
+  [mockupen](analysis-prototypes/index.html) är godkänd med formuleringen
+  `Gör flera åk med varje skidpar`: guiden får inte antyda att ett test är
+  begränsat till två skidpar. Tidigare alternativ med svep och vyväljare är
+  inte målbilden.
 - **Beslutat:** `Nytt åk`, skidval och inspelning använder helskärmar som inte kan
   stängas genom ett oavsiktligt tryck utanför.
 - **Beslutat:** Att öppna eller analysera ett test ska inte begära

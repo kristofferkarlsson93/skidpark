@@ -9,14 +9,12 @@ import '../../compare_runs_view_model.dart';
 import '../../models/enriched_test_run.dart';
 import '../../models/graph_line.dart';
 
-class ReleasePointContainer extends StatelessWidget {
-  const ReleasePointContainer({super.key});
+class ReleasePointGraph extends StatelessWidget {
+  const ReleasePointGraph({super.key});
 
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
     final viewModel = context.watch<CompareRunsViewModel>();
-    final useAverageView = viewModel.useAverageView;
     final isEditMode =
         viewModel.releasePointAnalysisMode == ReleasePointAnalysisMode.edit;
 
@@ -27,93 +25,97 @@ class ReleasePointContainer extends StatelessWidget {
     final lines = runsToShow
         .map(
           (r) =>
-          GraphLine.fromEnrichedTestRun(r, viewModel.calculateRunLabel(r)),
-    )
+              GraphLine.fromEnrichedTestRun(r, viewModel.calculateRunLabel(r)),
+        )
         .toList();
 
     final maxY = lines.isNotEmpty
         ? runsToShow.map((r) => r.maxSpeedKmh).fold(0.0, math.max)
         : 0.0;
 
-    return Column(
-      children: [
-        Expanded(
-          flex: 3,
-          child: CompareGraph(
-            lines: lines,
-            maxY: maxY,
-            maybeVerticalLineXCoordinate: isEditMode
-                ? viewModel.releasePoint
-                : null,
-            emptyGraphContent: _buildEmptyState(),
-          ),
-        ),
+    return CompareGraph(
+      lines: lines,
+      maxY: maxY,
+      maybeVerticalLineXCoordinate: isEditMode ? viewModel.releasePoint : null,
+      emptyGraphContent: const Center(child: Text('Ingen data vald')),
+    );
+  }
+}
 
-        Expanded(
-          flex: 2,
-          child: Container(
-            color: theme.colorScheme.surface,
-            child: Column(
+class ReleasePointPanel extends StatelessWidget {
+  const ReleasePointPanel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final viewModel = context.watch<CompareRunsViewModel>();
+    final useAverageView = viewModel.useAverageView;
+    final isEditMode =
+        viewModel.releasePointAnalysisMode == ReleasePointAnalysisMode.edit;
+    final runsToShow = isEditMode
+        ? viewModel.currentDisplayRuns
+        : viewModel.currentSelectedReleasePointTestRuns;
+
+    return Container(
+      color: theme.colorScheme.surface,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+            child: Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                Expanded(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () => _showInfoDialog(context),
-                              borderRadius: BorderRadius.circular(20),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Icon(
-                                  Icons.info_outline,
-                                  size: 24,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                isEditMode
-                                    ? "Välj släpp-punkt"
-                                    : "Simulerat släpp: ${viewModel.releasePoint.toStringAsFixed(0)} m",
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                      InkWell(
+                        onTap: () => _showInfoDialog(context),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.info_outline,
+                            size: 24,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ),
-
-                      if (!isEditMode)
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          tooltip: "Justera punkt",
-                          onPressed: () =>
-                              viewModel.enterEditReleasePointAnalysisMode(),
-                          visualDensity: VisualDensity.compact,
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          isEditMode
+                              ? "Välj släpp-punkt"
+                              : "Simulerat släpp: ${viewModel.releasePoint.toStringAsFixed(0)} m",
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
+                      ),
                     ],
                   ),
                 ),
 
-                Expanded(
-                  child: isEditMode
-                      ? _buildEditControlsPanel(context)
-                      : _buildResultList(context, runsToShow, useAverageView),
-                ),
+                if (!isEditMode)
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    tooltip: "Justera punkt",
+                    onPressed: () =>
+                        viewModel.enterEditReleasePointAnalysisMode(),
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
           ),
-        ),
-      ],
+
+          Expanded(
+            child: isEditMode
+                ? _buildEditControlsPanel(context)
+                : _buildResultList(context, runsToShow, useAverageView),
+          ),
+        ],
+      ),
     );
   }
 
@@ -124,9 +126,11 @@ class ReleasePointContainer extends StatelessWidget {
         return AlertDialog(
           title: const Text("Simulera släpp vid punkt"),
           content: const Text(
-            "Det tillförlitligaste sättet att testa skidor är genom att hålla en kompis i handen och glida nerför en backe. På given signal släpper man händerna och ser hur skidorna spelar ut mot varandra.\n\n"
-                "Denna funktion gör samma sak digitalt. Vi räknar om kurvorna så att alla skidor har exakt samma fart vid linjen (släpp-punkten).\n\n"
-                "Grafen visar därefter hur skidorna borde ha presterat mot varandra.",
+            'Kurvorna räknas om för jämförelse från en vald punkt. '
+            'Flytta linjen med reglaget och tryck på Analysera från punkten.\n\n'
+            'Det är en beräknad jämförelse. Resultatet visar inte säkert hur '
+            'två skidåkare skulle ha glidit bredvid varandra. Jämför också '
+            'variationen mellan flera åk med samma skidor.',
           ),
           actions: [
             TextButton(
@@ -160,9 +164,9 @@ class ReleasePointContainer extends StatelessWidget {
 
     final worstDistance = runs.isNotEmpty
         ? (runs as Iterable).fold<double>(
-      100000.0,
-          (minDist, r) => math.min(minDist, r.traveledDistance as double),
-    )
+            100000.0,
+            (minDist, r) => math.min(minDist, r.traveledDistance as double),
+          )
         : 0.0;
 
     return ListView.builder(
@@ -184,8 +188,12 @@ class ReleasePointContainer extends StatelessWidget {
         final diff = run.traveledDistance - worstDistance;
         final isReference = diff <= 0.05;
 
-        final diffText = isReference ? "Referens" : "+${diff.toStringAsFixed(1)} m";
-        final diffColor = isReference ? theme.colorScheme.onSurfaceVariant : Colors.green;
+        final diffText = isReference
+            ? "Referens"
+            : "+${diff.toStringAsFixed(1)} m";
+        final diffColor = isReference
+            ? theme.colorScheme.onSurfaceVariant
+            : Colors.green;
         final diffWeight = isReference ? FontWeight.normal : FontWeight.bold;
 
         return Padding(
@@ -209,14 +217,18 @@ class ReleasePointContainer extends StatelessWidget {
                     Text(
                       title,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: isReference ? FontWeight.normal : FontWeight.w500,
+                        fontWeight: isReference
+                            ? FontWeight.normal
+                            : FontWeight.w500,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       "Tappar ${speedLossPer10m.toStringAsFixed(2)} km/h per 10m",
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
+                        color: theme.colorScheme.onSurfaceVariant.withAlpha(
+                          150,
+                        ),
                       ),
                     ),
                   ],
@@ -235,9 +247,5 @@ class ReleasePointContainer extends StatelessWidget {
         );
       },
     );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(child: Text("Ingen data vald"));
   }
 }

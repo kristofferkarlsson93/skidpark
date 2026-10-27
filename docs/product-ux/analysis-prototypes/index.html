@@ -4,35 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101116">
-  <meta name="description" content="Tre klickbara förslag för SkidParks testarbetsyta. Jämför flikar, svepsidor och en skalbar vyväljare.">
-  <title>SkidPark — tre sätt att hitta i analysen</title>
+  <meta name="description" content="Klickbar mockup av SkidParks testvy med flikar och en guide för inspelning och analys.">
+  <title>SkidPark — testvy med guide</title>
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
 <body>
   <main class="workbench">
     <aside class="brief">
-      <a class="brand" href="#a"><span class="brand-symbol">∿</span> SkidPark <span class="eyebrow">DESIGNSTUDIE / 01</span></a>
-      <div class="intro"><p class="eyebrow">TESTARBETSYTAN</p><h1>Samma graf.<br>Tre vägar in.</h1><p class="lede">Mer hjälp före första åket.<br>Mer plats för nästa analys.</p></div>
-      <nav class="concepts" aria-label="Välj prototyp">
-        <button data-concept="a"><span class="concept-number">A</span><span><strong>Synliga flikar</strong><small>Direkt, tydligt, välbekant.</small></span><span class="concept-arrow">↗</span></button>
-        <button data-concept="b"><span class="concept-number">B</span><span><strong>Svepbara sidor</strong><small>En guide och två analysvyer.</small></span><span class="concept-arrow">↗</span></button>
-        <button data-concept="c"><span class="concept-number">C</span><span><strong>En samlad vyväljare</strong><small>Fler analyser, samma utrymme.</small></span><span class="concept-arrow">↗</span></button>
-      </nav>
+      <a class="brand" href="#empty"><span class="brand-symbol">∿</span> SkidPark <span class="eyebrow">MOCKUP / 02</span></a>
+      <div class="intro"><p class="eyebrow">TESTARBETSYTAN</p><h1>Testvy med guide</h1><p class="lede">Flikar för analysen och praktisk hjälp före första åket.</p></div>
       <div class="scenario"><span class="eyebrow">VÄLJ TESTETS INNEHÅLL</span><div class="segmented" aria-label="Testets innehåll"><button data-scenario="empty">Utan åk</button><button data-scenario="runs">Med 4 åk</button></div></div>
-      <section id="concept-note" class="concept-note" aria-live="polite"></section>
-      <details class="study-details"><summary>Om prototyperna</summary><p>Tre alternativa lösningar, inte tre steg i samma flöde. Grafens placering och fördelningen 60/40 mellan graf och nederdel är gemensamma.</p><p>Fiktiva kurvor och värden. Inspelning, GPS, export och beräkningar är inte implementerade. Ingen data sparas.</p><p>Underlaget är aktuell Flutter-kod, projektets produktbeslut och en lokal skärmbild från 26 oktober. Pekgester behöver också provas i appen på en telefon.</p><p>Inspiration: <a href="https://support.strava.com/en-us/articles/15401943/viewing-activities" target="_blank" rel="noreferrer">Stravas väg från översikt till analys</a> och <a href="https://support.garmin.com/en-IE/?faq=Kc8agkXjSE7khwFFdZQuV6" target="_blank" rel="noreferrer">Garmins separata data- och interaktionsytor</a>. Mönster att undersöka, inte validering för SkidPark.</p></details>
+      <section class="concept-note"><h2>Det här visar mockupen</h2><p><strong>Utan åk:</strong> guiden visas direkt, utan flikrad.</p><p><strong>Med åk:</strong> Översikt, Släppunkt och Guide. Byt vy genom att trycka på en flik.</p><p>Grafens yta och placering är bevarade. Sidopanelen innehåller åkurval och beräkning.</p></section>
+      <section class="review-notes"><h2>Prova texterna</h2><ol><li>Läs de tre stegen i guiden.</li><li>Öppna <strong>Jämför åken</strong> och <strong>Volymknappar på Android</strong>.</li><li>Välj <strong>Med 4 åk</strong> och öppna fliken <strong>Guide</strong> för att se samma hjälp i ett test med data.</li></ol><button data-action="preview-guide" class="secondary">Visa guide i test med åk</button></section>
+      <details class="study-details"><summary>Avgränsning</summary><p>En vidareutveckling av flikförslaget A. Tidigare alternativ med svep och vyväljare har ersatts av den valda riktningen.</p><p>Kurvor och värden är fiktiva. Nytt åk visar en förenklad skärmsekvens. Ingen GPS används och ingen data sparas.</p><p>Guide och ordalydelse är förslag att granska. Appens Flutter-kod är inte ändrad.</p></details>
       <p class="workbench-footer">KLICKBAR SKISS <span>27 OKTOBER 2026</span></p>
     </aside>
     <section class="preview" aria-label="Klickbar mobilprototyp">
-      <div class="preview-caption"><span id="preview-name">A / SYNLIGA FLIKAR</span><button id="reset">Återställ ↺</button></div>
+      <div class="preview-caption"><span id="preview-name">GUIDE · UTAN ÅK</span><button id="reset">Återställ ↺</button></div>
       <div class="phone" id="phone">
         <div class="status-bar" aria-hidden="true"><span>09:41</span><span class="status-island"></span><span>▮▮▮ &nbsp;◒ &nbsp;▰</span></div>
         <div class="app" id="app"></div>
         <div id="overlays"></div>
         <div class="home-indicator" aria-hidden="true"></div>
       </div>
-      <div class="preview-foot"><span class="demo-dot"></span> Fiktiva exempeldata <span>Tryck, dra och utforska</span></div>
+      <div class="preview-foot"><span class="demo-dot"></span> Klickbar mockup <span>Fiktiva analysvärden</span></div>
     </section>
   </main>
 </body>

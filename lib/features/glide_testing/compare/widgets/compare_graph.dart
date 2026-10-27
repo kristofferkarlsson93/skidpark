@@ -60,9 +60,7 @@ class CompareGraph extends StatelessWidget {
               if (!isFullscreen && lines.isNotEmpty)
                 Positioned(
                   right: 8,
-                  // Try to calculate where it would fit in the left hand toolbar.. Dirty.
-                  // Basically - the toolbar, space, first icon, second icon, space
-                  top: kToolbarHeight + 8 + (20 * 2) + (48 * 2) + 8,
+                  top: kToolbarHeight + 56,
                   child: CircleAvatar(
                     backgroundColor: theme.colorScheme.surfaceContainerLowest,
                     child: IconButton(

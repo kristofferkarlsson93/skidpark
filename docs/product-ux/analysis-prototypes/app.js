@@ -27,16 +27,19 @@ const runs = [
   { id: 3, ski: 'SP1', color: '#f5c86b', max: '33,6', mean: '22,9', distance: '145', time: '22,8', phase: 2, delta: '+2,0 m' },
   { id: 4, ski: 'SP2', color: '#7db9ff', max: '33,2', mean: '22,5', distance: '141', time: '22,6', phase: 3, delta: '+0,7 m', warning: true },
 ];
-const concepts = {
-  a: { title: 'A / SYNLIGA FLIKAR', heading: 'Allt syns. Inget behöver upptäckas.', description: 'Vyvalen får namn i en flikrad under grafen. Hjälp ligger i en egen flik. Sidopanelen behåller åkurval och beräkning; den öppnas med reglageknappen vid grafen.', tradeoff: 'Lätt att förstå. Vid fler vyer behöver flikraden kunna rullas i sidled.', tasks: ['Byt mellan Översikt, Släppunkt och Guide.', 'Öppna reglagen och välj bort ett åk.', 'Markera en åkrad och dra över grafen.'] },
-  b: { title: 'B / SVEPSIDOR', heading: 'En liten guidebok runt grafen.', description: 'Guide, Översikt och Släppunkt blir sidor. Svep i nederdelen eller använd pilarna. Ett tomt test öppnas på guiden; ett test med åk öppnas på översikten.', tradeoff: 'Lugn och rymlig. Svepytan måste läras in, och många sidor blir fler svep.', tasks: ['Svep åt vänster i nederdelen.', 'Dra i grafen: sidan ska ligga kvar.', 'Öppna reglagen och byt sedan sida.'] },
-  c: { title: 'C / SAMLAD VYVÄLJARE', heading: 'Välj efter vad du vill undersöka.', description: 'En namngiven vyväljare öppnar en meny med korta förklaringar. Urval har en egen knapp bredvid. Sidopanelens innehåll gäller alla vyer.', tradeoff: 'Rymmer många analyser utan fler knappar. Ett vybyte kräver två tryck.', tasks: ['Öppna Översikt-knappen och välj Släppunkt.', 'Tryck Urval och prova Medel per skida.', 'Öppna guiden via vyväljaren.'] },
-};
-function initialState(concept, hasRuns) {
-  return { concept, hasRuns, page: concept === 'b' && !hasRuns ? 'guide' : 'overview', selected: new Set([1, 2, 3, 4]), highlight: null, average: false, fusion: true, release: 78, analyzed: false, overlay: null, recordingSki: 'SP1', recording: false };
+function initialState(hasRuns) {
+  return { hasRuns, page: hasRuns ? 'overview' : 'guide', selected: new Set([1, 2, 3, 4]), highlight: null, average: false, fusion: true, release: 78, analyzed: false, overlay: null, recordingSki: 'SP1', recording: false };
 }
-const route = location.hash.slice(1).split('/');
-let state = initialState(concepts[route[0]] ? route[0] : 'a', route[1] === 'runs');
+function stateFromRoute() {
+  const parts = location.hash.slice(1).split('/');
+  // Keep links from the first design study usable after choosing one direction.
+  if (['a', 'b', 'c'].includes(parts[0])) parts.shift();
+  const next = initialState(parts[0] === 'runs');
+  if (next.hasRuns && ['overview', 'release', 'guide'].includes(parts[1])) next.page = parts[1];
+  return next;
+}
+let state = stateFromRoute();
+const guideState = { open: new Set(), emptyScroll: 0, mainScroll: 0, detailsScroll: 0 };
 let overlayOrigin = null;
 const app = document.querySelector('#app');
 const overlays = document.querySelector('#overlays');
@@ -51,17 +54,18 @@ function displayRuns() {
   });
 }
 function routeState() {
-  history.replaceState(null, '', `#${state.concept}/${state.hasRuns ? 'runs' : 'empty'}`);
+  history.replaceState(null, '', state.hasRuns ? `#runs/${state.page}` : '#empty');
 }
 function render() {
-  document.querySelectorAll('[data-concept]').forEach(el => el.setAttribute('aria-pressed', el.dataset.concept === state.concept));
   document.querySelectorAll('[data-scenario]').forEach(el => el.setAttribute('aria-pressed', (el.dataset.scenario === 'runs') === state.hasRuns));
-  const concept = concepts[state.concept];
-  document.querySelector('#preview-name').textContent = concept.title;
-  document.querySelector('#concept-note').innerHTML = `<h2>${concept.heading}</h2><p>${concept.description}</p><p class="tradeoff"><strong>Avvägning.</strong> ${concept.tradeoff}</p><ol>${concept.tasks.map(task => `<li>${task}</li>`).join('')}</ol>`;
-  app.innerHTML = `<section class="graph-region" aria-label="${state.page === 'guide' ? 'Guide till glidtestet' : 'Graf: hastighet över sträcka'}">${topbar()}${graphContent()}${graphTools()}</section><section class="lower" aria-label="Vyval och åk" data-swipe-zone>${navigation()}${lowerContent()}</section>`;
+  document.querySelector('#preview-name').textContent = state.hasRuns ? `${viewNames[state.page].toUpperCase()} · MED ÅK` : 'GUIDE · UTAN ÅK';
+  if (state.hasRuns) {
+    app.innerHTML = `<section class="graph-region ${state.page === 'guide' ? 'guide-region' : ''}" aria-label="${state.page === 'guide' ? 'Guide till glidtestet' : 'Graf: hastighet över sträcka'}">${topbar()}${graphContent()}${graphTools()}</section><section class="lower" aria-label="Vyval och innehåll">${navigation()}${lowerContent()}</section>`;
+  } else {
+    app.innerHTML = `<section class="guide-screen" aria-label="Guide till glidtestet">${topbar()}<div class="guide-scroll"><p class="guide-context">Inga åk i testet</p>${guideInstructions()}${helpCards()}</div></section>`;
+  }
   bindGraph(app);
-  bindSwipe();
+  restoreGuideState();
   renderOverlay();
 }
 function topbar() {
@@ -70,16 +74,10 @@ function topbar() {
 function graphTools() {
   if (state.page === 'guide') return '';
   const changed = state.selected.size < 4 || state.average || !state.fusion;
-  return `<div class="graph-tools">${state.concept !== 'c' ? button('drawer', `${icon('filter')}${changed && state.hasRuns ? '<span class="badge">•</span>' : ''}`, 'icon-button tool', 'Urval och beräkning') : ''}${state.hasRuns && displayRuns().length ? iconButton('fullscreen', 'expand', 'Visa graf i helskärm', 'tool') : ''}</div>`;
+  return `<div class="graph-tools">${button('drawer', `${icon('filter')}${changed ? '<span class="badge">•</span>' : ''}`, 'icon-button tool', 'Urval och beräkning')}${displayRuns().length ? iconButton('fullscreen', 'expand', 'Visa graf i helskärm', 'tool') : ''}</div>`;
 }
-function skiChips() { return '<div class="ski-chips"><span class="ski-chip"><i></i>SP1</span><span class="ski-chip"><i></i>SP2</span></div>'; }
-function emptyArt() { return `<div class="empty-art"><svg viewBox="0 0 110 66" fill="none" aria-hidden="true"><path d="M8 58C20 58 30 13 52 13S82 58 102 58" stroke="currentColor" stroke-width="2" stroke-dasharray="3 5" opacity=".5"/><circle cx="8" cy="58" r="4" fill="#70ddc5"/><circle cx="52" cy="13" r="4" fill="currentColor"/><path d="M48 59h12m-6-6v12" stroke="currentColor" stroke-width="2"/></svg></div>`; }
 function graphContent() {
-  if (state.page === 'guide') return `<div class="guide-hero"><span class="eyebrow">EN PERSON. FLERA GLIDÅK.</span><h2>Lär känna glidet.<br>Ett åk i taget.</h2><p>Gör upprepade åk i samma backe. Jämför sedan kurvorna och variationen mellan åken.</p><div class="guide-step"><span>1</span>Välj skida och spela in.</div><div class="guide-step"><span>2</span>Upprepa med nästa skida.</div><div class="guide-step"><span>3</span>Granska skillnaderna i grafen.</div>${button('new-run', 'Spela in ett åk →', 'text-button')}</div>`;
-  if (!state.hasRuns) {
-    const headline = state.concept === 'c' ? 'Två skidor.\nNästa steg: ett åk.' : 'Ditt test är redo.';
-    return `<div class="empty-hero">${emptyArt()}<span class="eyebrow">SÖRSKOG · INGA ÅK ÄN</span><h2>${headline.replace('\n', '<br>')}</h2><p>${state.page === 'release' ? 'Spela först in några åk. Sedan kan du undersöka glidet från en gemensam, simulerad släppunkt.' : 'Spela in ditt första glidåk. Här växer kurvorna fram när du har sparat.'}</p>${skiChips()}${button('new-run', `${icon('play')}Spela in första åket`, 'primary')}</div>`;
-  }
+  if (state.page === 'guide') return `<div class="guide-instructions-scroll">${guideInstructions()}</div>`;
   if (!displayRuns().length) return `<div class="empty-hero"><span class="eyebrow">4 ÅK FINNS I TESTET</span><h2>Vilka åk vill du se?</h2><p>Alla åk är dolda just nu. Välj i sidopanelen eller visa alla igen.</p><div style="height:20px"></div>${button('select-all', 'Visa alla 4 åk', 'primary')}</div>`;
   return `${chart()}<span class="graph-caption">${state.page === 'release' ? 'Streckad linje = vald släppunkt' : 'Tryck eller dra för att läsa av'}</span>`;
 }
@@ -103,37 +101,77 @@ function chart() {
   </svg>`;
 }
 function navigation() {
-  if (state.concept === 'a') return `<nav class="view-nav" aria-label="Analysvyer" role="tablist">${['overview', 'release', 'guide'].map(page => `<button role="tab" aria-selected="${state.page === page}" data-page="${page}">${viewNames[page]}</button>`).join('')}</nav>`;
-  if (state.concept === 'b') {
-    const pages = ['guide', 'overview', 'release'];
-    const index = pages.indexOf(state.page);
-    return `<nav class="swipe-nav" aria-label="Byt sida"><button class="icon-button" data-step="-1" aria-label="Föregående sida" ${index === 0 ? 'disabled' : ''}>${icon('back')}</button><div class="swipe-title">${viewNames[state.page]}<span class="page-dots" aria-label="Sida ${index + 1} av 3">${pages.map(page => `<i class="${page === state.page ? 'active' : ''}"></i>`).join('')}</span></div><button class="icon-button" data-step="1" aria-label="Nästa sida" ${index === 2 ? 'disabled' : ''}>${icon('next')}</button></nav>`;
-  }
-  return `<nav class="view-picker-bar" aria-label="Analys och urval">${button('view-picker', `${icon(state.page === 'overview' ? 'graph' : state.page === 'release' ? 'release' : 'book')}${viewNames[state.page]}${icon('down')}`, 'view-picker-trigger')}${button('drawer', `${icon('filter')}Urval${state.hasRuns ? ` ${state.selected.size}/4` : ''}`, 'filter-trigger')}</nav>`;
+  return `<nav class="view-nav" aria-label="Analysvyer" role="tablist">${['overview', 'release', 'guide'].map(page => `<button role="tab" id="tab-${page}" aria-selected="${state.page === page}" aria-controls="view-content" tabindex="${state.page === page ? 0 : -1}" data-page="${page}">${viewNames[page]}</button>`).join('')}</nav>`;
 }
 function summary() {
   if (!state.hasRuns || state.page === 'guide') return '';
   return `<div class="selection-summary">${button('drawer', `${icon('filter')}${state.selected.size} av 4 åk · ${state.average ? 'Medel per skida' : 'Enskilda åk'}`)}<span class="selection-method">${state.fusion ? 'GPS + sensorer' : 'GPS'}</span></div>`;
 }
 function lowerContent() {
-  const swipeHint = state.concept === 'b' ? '<div class="swipe-hint">← Svep här nere för att byta sida →</div>' : '';
   let content;
   if (state.page === 'guide') content = helpCards();
-  else if (!state.hasRuns) content = emptyLower();
   else if (!displayRuns().length) content = '<div class="empty-inline"><h3>Inga åk valda</h3><p>Åken finns kvar i testet.</p></div>';
   else if (state.page === 'release') content = releaseContent();
   else content = runList();
-  return `${summary()}<div class="lower-scroll ${!state.hasRuns ? 'empty-lower' : ''}">${content}</div>${swipeHint}`;
-}
-function emptyLower() {
-  if (state.concept === 'c') return `<div class="help-title"><strong>Vad vill du göra?</strong></div>${button('new-run', `${icon('play')}<span><strong>Spela in ett åk</strong><small>Välj skida och börja i backen</small></span><span class="task-arrow">→</span>`, 'task-link')}${button('guide', `${icon('book')}<span><strong>Få grepp om glidtestet</strong><small>Teståk, volymknappar och analys</small></span><span class="task-arrow">→</span>`, 'task-link')}`;
-  return `<div class="help-title"><strong>${state.page === 'release' ? 'Innan du simulerar ett släpp' : 'Bra att veta i backen'}</strong></div>${helpCards(true)}`;
+  return `${summary()}<div class="lower-scroll ${state.page === 'guide' ? 'guide-details' : ''}" id="view-content" role="tabpanel" aria-labelledby="tab-${state.page}">${content}</div>`;
 }
 function runList() {
   return displayRuns().map(run => `<button class="run-row ${state.highlight === run.id ? 'selected' : ''}" data-run="${run.id}" aria-pressed="${state.highlight === run.id}"><div class="run-title"><span class="line-symbol ${run.ski === 'SP2' ? 'dashed' : ''}" style="--line:${run.color}"></span>${state.average ? run.ski : `Åk ${run.id} · ${run.ski}`}<small>${state.average ? `${run.count} åk` : 'Visa kurva'}</small></div><div class="run-stats"><div><label>Medelfart</label><span>${run.mean}</span> <em>km/h</em></div><div><label>Maxfart</label><span>${run.max}</span> <em>km/h</em></div><div><label>Sträcka</label><span>${run.distance}</span> <em>m</em></div><div><label>Tid</label><span>${run.time}</span> <em>s</em></div></div>${run.warning ? '<div class="quality-warning">△ GPS-avbrott i åk 4 · tolka med försiktighet</div>' : ''}</button>`).join('');
 }
-function helpCards(compact = false) {
-  return `<details class="help-card"><summary>${icon('skis')}Så gör du ett glidåk</summary><div class="help-body"><ol><li>Välj en backe där du kan glida säkert. Starta på samma plats.</li><li>Välj skida och starta inspelningen. Håll telefonen i handen på liknande sätt.</li><li>Glid utan att staka. Försök hålla samma kroppsställning.</li><li>Stoppa och spara. Upprepa med båda skidorna, gärna flera gånger.</li></ol></div></details><details class="help-card"><summary>${icon('volume')}Använd volymknapparna</summary><div class="help-body"><span class="platform-tag">ANDROID</span><p><strong>I testet:</strong> håll in volym ner för Nytt åk.</p><p><strong>I skidvalet:</strong> kort tryck upp/ner byter markering. Håll in volym ner för att starta med markerad skida.</p><p><strong>Under åket:</strong> ett kort tryck på volym ner stoppar och sparar.</p><p>På iPhone använder du knapparna på skärmen.</p></div></details>${compact ? '' : `<details class="help-card"><summary>${icon('graph')}Läs kurvorna tillsammans</summary><div class="help-body"><p>I Översikt ser du hastighet över sträcka. Tryck på ett åk för att markera dess kurva, och dra i grafen för att läsa av.</p><p>Jämför upprepade åk: är skillnaden mellan skidor större än variationen med samma skida? GPS-avbrott visas vid åket.</p></div></details><details class="help-card"><summary>${icon('release')}Vad är simulerad släppunkt?</summary><div class="help-body"><p>Ett sätt att undersöka hur glidet skiljer sig efter en vald punkt, med en beräknad gemensam startfart.</p><p>Det är en modellbaserad uppskattning. Välj punkt, granska kurvorna och jämför med variationen mellan upprepade åk. Vyn avgör inte vilken skida som är bäst.</p></div></details>`}`;
+function guideInstructions() {
+  return `<article class="guide-instructions">
+    <h2>Så gör du ett glidtest</h2>
+    <ol class="guide-steps">
+      <li><h3>Använd samma backe och startplats</h3><p>Försök hålla samma kroppsställning under åken och telefonen på liknande sätt.</p></li>
+      <li><h3>Spela in ett åk</h3><p>Tryck på <strong>Nytt åk</strong>, välj skida och starta inspelningen. Glid utan att staka. Stoppa och spara när åket är klart.</p></li>
+      <li><h3>Gör flera åk med varje skidpar</h3><p>Flera åk med samma skidor hjälper dig att bedöma hur mycket resultaten varierar.</p></li>
+    </ol>
+  </article>`;
+}
+function helpCards() {
+  return `<details class="help-card" data-guide-section="compare">
+    <summary>Jämför åken</summary>
+    <div class="help-body">
+      <h3>Översikt</h3>
+      <p>Grafen visar hastighet över beräknad sträcka. Tryck på en åkrad för att markera dess kurva. Tryck eller dra i grafen för att läsa av.</p>
+      <h3>Välj åk att visa</h3>
+      <p>Reglageknappen öppnar sidopanelen. Där väljer du vilka åk som visas och om du vill se enskilda åk eller medel per skida. Samma val gäller i båda analysvyerna.</p>
+      <h3>Simulerad släppunkt</h3>
+      <p>Här räknas kurvorna om för jämförelse från en vald punkt. Flytta linjen med reglaget och tryck på <strong>Analysera från punkten</strong>.</p>
+      <p>Det är en beräknad jämförelse. Resultatet visar inte säkert hur två skidåkare skulle ha glidit bredvid varandra.</p>
+      <h3>Bedöm variationen</h3>
+      <p>Jämför skillnaden mellan skidorna med variationen mellan flera åk på samma skidor. Om åken med samma skidor skiljer sig mycket åt är det svårare att bedöma små skillnader mellan skidparen.</p>
+      <p>Kontrollera också eventuella varningar vid åken, till exempel avbrott i GPS-datan.</p>
+    </div>
+  </details>
+  <details class="help-card" data-guide-section="volume">
+    <summary>Volymknappar på Android</summary>
+    <div class="help-body">
+      <h3>I testet</h3>
+      <p>Håll in <strong>volym ner</strong> för att öppna <strong>Nytt åk</strong>.</p>
+      <h3>I skidvalet</h3>
+      <p>Tryck kort på <strong>volym upp eller ner</strong> för att byta markerad skida.</p>
+      <p>Håll in <strong>volym ner</strong> för att starta inspelningen med den markerade skidan.</p>
+      <h3>Under inspelningen</h3>
+      <p>Tryck kort på <strong>volym ner</strong> för att stoppa och spara åket.</p>
+      <p class="platform-note">På iPhone använder du knapparna på skärmen.</p>
+    </div>
+  </details>`;
+}
+function restoreGuideState() {
+  app.querySelectorAll('[data-guide-section]').forEach(details => {
+    const section = details.dataset.guideSection;
+    details.open = guideState.open.has(section);
+    details.addEventListener('toggle', () => {
+      if (details.open) guideState.open.add(section); else guideState.open.delete(section);
+    });
+  });
+  for (const [selector, key] of [['.guide-scroll', 'emptyScroll'], ['.guide-instructions-scroll', 'mainScroll'], ['.guide-details', 'detailsScroll']]) {
+    const scroller = app.querySelector(selector);
+    if (!scroller) continue;
+    scroller.scrollTop = guideState[key];
+    scroller.addEventListener('scroll', () => { guideState[key] = scroller.scrollTop; });
+  }
 }
 function releaseContent() {
   if (!state.analyzed) return `<div class="release-intro">Undersök glidet från en gemensam punkt. Flytta linjen med reglaget.</div><div class="release-slider"><label for="release-distance">Simulerad släppunkt <output id="release-value">${state.release} m</output></label><input id="release-distance" data-control="release" type="range" min="30" max="115" step="1" value="${state.release}">${button('analyze', 'Analysera från punkten', 'primary')}</div>`;
@@ -146,10 +184,6 @@ function drawerContent() {
 function sheet(title, body, extra = '') {
   return `<section class="bottom-sheet ${extra}" role="dialog" aria-modal="true" aria-label="${title}" tabindex="-1"><div class="sheet-handle"></div><header class="overlay-header"><h2>${title}</h2>${iconButton('close', 'close', 'Stäng')}</header><div class="overlay-body">${body}</div></section>`;
 }
-function viewChoices() {
-  const descriptions = { overview: 'Se hela åket och jämför hastighetskurvor.', release: 'Undersök glidet efter en vald punkt.', guide: 'Så testar du, navigerar och tolkar.' };
-  return `<p class="panel-note">Vad vill du titta närmare på?</p>${['overview', 'release', 'guide'].map(page => `<button class="view-choice ${state.page === page ? 'active' : ''}" data-page="${page}"><span class="choice-icon">${icon(page === 'overview' ? 'graph' : page === 'release' ? 'release' : 'book')}</span><span><strong>${page === 'release' ? 'Simulerad släppunkt' : viewNames[page]}</strong><small>${descriptions[page]}</small></span>${state.page === page ? `<span class="checkmark">${icon('check')}</span>` : ''}</button>`).join('')}<p class="panel-note" style="margin-top:16px">Åkurvalet följer med när du byter vy.</p>`;
-}
 function recordingScreen() {
   const title = state.recording ? 'Spelar in' : 'Nytt åk';
   return `<section class="full-screen" role="dialog" aria-modal="true" aria-label="${title}" tabindex="-1"><header class="overlay-header"><h2>${title}</h2>${iconButton('close', 'close', 'Avbryt och återgå till testet')}</header><div class="recording-body">${state.recording ? '<div class="recording-clock">00:12</div><p class="demo-label">Demoinspelning · inga sensorer används</p>' : `<span class="eyebrow">SÖRSKOG</span><h2 style="margin-top:14px">Vilken skida åker du med?</h2><p>Välj en av testets skidor.</p>${['SP1', 'SP2'].map(ski => `<button class="view-choice ${state.recordingSki === ski ? 'active' : ''}" data-ski="${ski}"><span class="choice-icon">${icon('skis')}</span><span><strong>${ski}</strong><small>${ski === 'SP1' ? 'Fischer Speedmax' : 'Atomic Redster'}</small></span>${state.recordingSki === ski ? `<span class="checkmark">${icon('check')}</span>` : ''}</button>`).join('')}<p class="panel-note">Förenklad skiss av inspelningsflödet. Start och spara visar bara nästa exempelbild.</p>`}</div><footer class="recording-footer">${button(state.recording ? 'save-demo' : 'start-demo', state.recording ? 'Stoppa och spara' : `${icon('play')}Starta åk`, 'primary')}</footer></section>`;
@@ -161,10 +195,8 @@ function renderOverlay() {
   if (!state.overlay) { overlays.innerHTML = ''; return; }
   let content = '';
   if (state.overlay === 'drawer') content = `<aside class="drawer" role="dialog" aria-modal="true" aria-label="Urval och beräkning" tabindex="-1"><header class="overlay-header"><h2>Urval & beräkning</h2>${iconButton('close', 'close', 'Stäng sidopanelen')}</header>${drawerContent()}</aside>`;
-  if (state.overlay === 'view-picker') content = sheet('Välj analysvy', viewChoices());
   if (state.overlay === 'more') content = sheet('Sörskog', `${button('test-info', `${icon('info')}<span><strong>Om testet</strong><small>Skidor, datum och antal åk</small></span><span class="task-arrow">→</span>`, 'task-link')}${button('drawer-guide', `${icon('book')}<span><strong>Guide till glidtestet</strong><small>Teståk, volymknappar och analys</small></span><span class="task-arrow">→</span>`, 'task-link')}`);
-  if (state.overlay === 'test-info') content = sheet('Om testet', `<div class="test-info"><strong>Sörskog</strong>27 oktober 2026 · ${state.hasRuns ? 4 : 0} åk<strong>Skidor i testet</strong>SP1 · Fischer Speedmax<br>SP2 · Atomic Redster<strong>Anteckning</strong>Jämför i samma backe. Upprepa med båda paren.</div>`);
-  if (state.overlay === 'help') content = sheet('Guide till glidtestet', helpCards(), 'help-sheet');
+  if (state.overlay === 'test-info') content = sheet('Om testet', `<div class="test-info"><strong>Sörskog</strong>27 oktober 2026 · ${state.hasRuns ? 4 : 0} åk<strong>Skidor i testet</strong>SP1 · Fischer Speedmax<br>SP2 · Atomic Redster<strong>Anteckning</strong>Jämför i samma backe. Gör flera åk med varje skidpar.</div>`);
   if (state.overlay === 'fullscreen') content = `<section class="full-screen" role="dialog" aria-modal="true" aria-label="Graf i helskärm" tabindex="-1"><header class="overlay-header"><h2>${viewNames[state.page]}</h2>${iconButton('close', 'close', 'Stäng helskärm')}</header><div class="selection-summary">${state.selected.size} av 4 åk · ${state.average ? 'Medel per skida' : 'Enskilda åk'}<span class="selection-method">${state.fusion ? 'GPS + sensorer' : 'GPS'}</span></div><div class="graph-region">${chart()}</div><div class="selection-summary">Tryck eller dra för att läsa av · fiktiva kurvor</div></section>`;
   if (state.overlay === 'recording') content = recordingScreen();
   if (state.overlay === 'tests') content = `<section class="full-screen" role="dialog" aria-modal="true" aria-label="Tester" tabindex="-1"><header class="overlay-header"><h2>Tester</h2>${iconButton('close', 'close', 'Återgå till testet')}</header><div class="overlay-body"><p class="panel-note">Endast testarbetsytan utforskas i den här prototypen.</p>${button('close', `${icon('graph')}<span><strong>Sörskog</strong><small>27 oktober · 2 skidor · ${state.hasRuns ? 4 : 0} åk</small></span><span class="task-arrow">→</span>`, 'task-link')}</div></section>`;
@@ -191,30 +223,26 @@ function closeOverlay() {
   else app.querySelector('[data-action="more"]')?.focus({ preventScroll: true });
 }
 function changePage(page) {
-  state.page = page;
+  state.page = state.hasRuns ? page : 'guide';
   state.overlay = null;
+  routeState();
   render();
 }
-function stepPage(step) {
-  const pages = ['guide', 'overview', 'release'];
-  const next = pages.indexOf(state.page) + step;
-  if (next >= 0 && next < pages.length) changePage(pages[next]);
-}
 function changeScenario(hasRuns) {
-  state = initialState(state.concept, hasRuns);
+  state = initialState(hasRuns);
   routeState();
   render();
 }
 const actions = {
   drawer: () => openOverlay('drawer'),
-  'view-picker': () => openOverlay('view-picker'),
   more: () => openOverlay('more'),
   'test-info': () => openOverlay('test-info'),
   tests: () => openOverlay('tests'),
   fullscreen: () => openOverlay('fullscreen'),
   close: closeOverlay,
   guide: () => changePage('guide'),
-  'drawer-guide': () => { state.overlay = 'help'; renderOverlay(); overlays.querySelector('[role="dialog"]')?.focus(); },
+  'drawer-guide': () => changePage('guide'),
+  'preview-guide': () => { if (!state.hasRuns) changeScenario(true); changePage('guide'); },
   'select-all': () => { state.selected = new Set([1, 2, 3, 4]); render(); },
   'toggle-all': () => { state.selected = state.selected.size === 4 ? new Set() : new Set([1, 2, 3, 4]); state.highlight = null; render(); },
   analyze: () => { state.analyzed = true; render(); },
@@ -223,24 +251,15 @@ const actions = {
   'start-demo': () => { state.recording = true; renderOverlay(); overlays.querySelector('[role="dialog"]')?.focus(); },
   'save-demo': () => changeScenario(true),
 };
-let suppressClickUntil = 0;
 document.addEventListener('click', event => {
-  if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
-  const conceptButton = event.target.closest('[data-concept]');
-  if (conceptButton) {
-    state.concept = conceptButton.dataset.concept;
-    state.page = state.concept === 'b' && !state.hasRuns ? 'guide' : 'overview';
-    state.overlay = null;
-    routeState();
-    render();
-    return;
-  }
   const scenario = event.target.closest('[data-scenario]');
   if (scenario) { changeScenario(scenario.dataset.scenario === 'runs'); return; }
   const pageButton = event.target.closest('[data-page]');
-  if (pageButton) { changePage(pageButton.dataset.page); return; }
-  const step = event.target.closest('[data-step]');
-  if (step && !step.disabled) { stepPage(Number(step.dataset.step)); return; }
+  if (pageButton) {
+    changePage(pageButton.dataset.page);
+    app.querySelector(`#tab-${state.page}`)?.focus({ preventScroll: true });
+    return;
+  }
   const run = event.target.closest('[data-run]');
   if (run) {
     const id = state.average ? run.dataset.run : Number(run.dataset.run);
@@ -256,7 +275,11 @@ document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action && actions[action]) actions[action]();
 });
-document.querySelector('#reset').addEventListener('click', () => changeScenario(state.hasRuns));
+document.querySelector('#reset').addEventListener('click', () => {
+  guideState.open.clear();
+  guideState.emptyScroll = guideState.mainScroll = guideState.detailsScroll = 0;
+  changeScenario(state.hasRuns);
+});
 document.addEventListener('change', event => {
   const control = event.target.dataset.control;
   if (!control || control === 'release') return;
@@ -278,6 +301,16 @@ document.addEventListener('input', event => {
   app.querySelectorAll('[data-release-label]').forEach(label => { label.setAttribute('x', x + 5); label.textContent = `${state.release} m`; });
 });
 document.addEventListener('keydown', event => {
+  const activeTab = event.target.closest('[role="tab"]');
+  if (!state.overlay && activeTab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+    event.preventDefault();
+    const pages = ['overview', 'release', 'guide'];
+    const current = pages.indexOf(state.page);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? 2 : (current + (event.key === 'ArrowRight' ? 1 : -1) + pages.length) % pages.length;
+    changePage(pages[next]);
+    app.querySelector(`#tab-${state.page}`).focus();
+    return;
+  }
   if (!state.overlay) return;
   if (event.key === 'Escape') { event.preventDefault(); closeOverlay(); return; }
   if (event.key !== 'Tab') return;
@@ -315,29 +348,8 @@ function bindGraph(root) {
     svg.addEventListener('pointercancel', () => { dragging = false; });
   });
 }
-function bindSwipe() {
-  if (state.concept !== 'b') return;
-  const zone = app.querySelector('[data-swipe-zone]');
-  let start = null;
-  zone.addEventListener('pointerdown', event => {
-    if (event.target.closest('input, .swipe-nav, .selection-summary')) return;
-    start = { x: event.clientX, y: event.clientY };
-  });
-  zone.addEventListener('pointerup', event => {
-    if (!start) return;
-    const dx = event.clientX - start.x;
-    const dy = event.clientY - start.y;
-    start = null;
-    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.6) {
-      suppressClickUntil = Date.now() + 300;
-      stepPage(dx < 0 ? 1 : -1);
-    }
-  });
-  zone.addEventListener('pointercancel', () => { start = null; });
-}
 window.addEventListener('hashchange', () => {
-  const next = location.hash.slice(1).split('/');
-  state = initialState(concepts[next[0]] ? next[0] : 'a', next[1] === 'runs');
+  state = stateFromRoute();
   render();
 });
 render();

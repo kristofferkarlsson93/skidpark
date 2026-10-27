@@ -55,15 +55,23 @@ class _VolumeInputHandlerState extends State<VolumeInputHandler> {
 
   void _setupListeners() {
     if (widget.onShortPress != null) {
-      _shortPressSubscription = _volumeButtonInput.shortPressStream.listen(
-        widget.onShortPress!,
-      );
+      _shortPressSubscription = _volumeButtonInput.shortPressStream.listen((
+        button,
+      ) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          widget.onShortPress?.call(button);
+        }
+      });
     }
 
     if (widget.onLongPress != null) {
-      _longPressSubscription = _volumeButtonInput.longPressStream.listen(
-        widget.onLongPress!,
-      );
+      _longPressSubscription = _volumeButtonInput.longPressStream.listen((
+        button,
+      ) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          widget.onLongPress?.call(button);
+        }
+      });
     }
   }
 

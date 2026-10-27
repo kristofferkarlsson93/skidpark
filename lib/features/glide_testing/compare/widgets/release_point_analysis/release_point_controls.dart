@@ -2,7 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/Release_point_selector.dart';
+
+import 'release_point_selector.dart';
 
 import '../../compare_runs_view_model.dart';
 
@@ -19,6 +20,9 @@ class ReleasePointControls extends StatelessWidget {
 
     final viewModel = context.watch<CompareRunsViewModel>();
     final hasRuns = viewModel.currentSelectedTestRuns.isNotEmpty;
+    final hasSpeedData = viewModel.currentSelectedTestRuns.any(
+      (run) => run.positionData.isNotEmpty,
+    );
 
     final shortestDistance = hasRuns
         ? viewModel.currentSelectedTestRuns
@@ -33,7 +37,7 @@ class ReleasePointControls extends StatelessWidget {
         SizedBox(
           height: 40,
           child: ReleasePointSelector(
-            enabled: hasRuns,
+            enabled: hasSpeedData,
             maxValue: shortestDistance,
             value: viewModel.releasePoint,
             onChanged: (newValue) => viewModel.setReleasePoint(newValue),
@@ -44,13 +48,17 @@ class ReleasePointControls extends StatelessWidget {
           width: double.infinity,
           height: 45,
           child: FilledButton.icon(
-            onPressed: hasRuns
+            onPressed: hasSpeedData
                 ? () => viewModel.triggerReleasePointAnalysis()
                 : null,
             icon: const Icon(Icons.analytics),
-            label: const Text("Analysera Glid"),
+            label: const Text("Analysera från punkten"),
           ),
         ),
+        if (hasRuns && !hasSpeedData) ...[
+          const SizedBox(height: 12),
+          const Text('Åken saknar användbara hastighetspunkter.'),
+        ],
       ],
     );
   }
