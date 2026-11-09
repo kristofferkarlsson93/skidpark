@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/stop_and_save_button.dart';
 
-import '../../../../common/services/volume_press_handler.dart';
 import '../../../../common/shared_widgets/flat_stats_card.dart';
 import '../viewModel/run_recorder_view_model.dart';
 import 'instructions_guide.dart';
@@ -25,9 +23,7 @@ class RecordTestRun extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    final supportsVolumeInput = context
-        .read<VolumeButtonInput>()
-        .supportsVolumeInput;
+    final stopLabel = viewModel.inputInstructions.stopLabel;
 
     return SafeArea(
       child: Padding(
@@ -170,10 +166,10 @@ class RecordTestRun extends StatelessWidget {
                   child: Column(
                     children: [
                       InstructionGuide(
-                        firstInstruction: supportsVolumeInput
-                            ? const InstructionItem(
+                        firstInstruction: stopLabel != null
+                            ? InstructionItem(
                                 icon: Icons.save_alt,
-                                primaryText: "Volym -",
+                                primaryText: stopLabel,
                                 secondaryText: "Spara åket nu",
                               )
                             : const InstructionItem(
@@ -181,7 +177,7 @@ class RecordTestRun extends StatelessWidget {
                                 primaryText: "Vid stopp",
                                 secondaryText: "Sparas åket\nautomatiskt",
                               ),
-                        secondInstruction: supportsVolumeInput
+                        secondInstruction: stopLabel != null
                             ? const InstructionItem(
                                 icon: Icons.stop_circle,
                                 primaryText: "Vid stopp",

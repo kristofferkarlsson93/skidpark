@@ -87,7 +87,10 @@ class GlideTestRepository {
     )..where((test) => test.id.equals(glideTestId))).getSingleOrNull();
   }
 
-  Stream<List<StoredSkiData>> watchSkisForTest(int glideTestId) {
+  Stream<List<StoredSkiData>> watchSkisForTest(
+    int glideTestId, {
+    bool includeArchived = false,
+  }) {
     final query =
         _db.select(_db.storedSki).join([
             drift.innerJoin(
@@ -98,7 +101,9 @@ class GlideTestRepository {
           ])
           ..where(
             _db.glideTestSki.glideTestId.equals(glideTestId) &
-                _db.storedSki.archivedAt.isNull(),
+                (includeArchived
+                    ? const drift.Constant(true)
+                    : _db.storedSki.archivedAt.isNull()),
           )
           ..orderBy([drift.OrderingTerm.asc(_db.glideTestSki.sortOrder)]);
 
@@ -159,6 +164,28 @@ class GlideTestRepository {
     );
   }
 
+  Future<void> updateDetails(
+    int glideTestId, {
+    required String title,
+    required String notes,
+  }) {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) throw ArgumentError('Test name cannot be empty.');
+    return _db.transaction(() async {
+      final test = await getTestById(glideTestId);
+      if (test == null) throw StateError('The glide test no longer exists.');
+      if (test.isExample) throw StateError('Example tests cannot be changed.');
+      await (_db.update(
+        _db.storedGlideTest,
+      )..where((row) => row.id.equals(glideTestId))).write(
+        StoredGlideTestCompanion(
+          title: drift.Value(trimmedTitle),
+          notes: drift.Value(notes.trim().isEmpty ? null : notes.trim()),
+        ),
+      );
+    });
+  }
+
   Future<void> update(int glideTestId, GlideTestCandidate updatedTest) {
     return _db.transaction(() async {
       final test = await getTestById(glideTestId);
@@ -181,6 +208,9 @@ class GlideTestRepository {
 
   Future<void> replaceSkisForTest(int glideTestId, List<int> skiIds) {
     return _db.transaction(() async {
+      final test = await getTestById(glideTestId);
+      if (test == null) throw StateError('The glide test no longer exists.');
+      if (test.isExample) throw StateError('Example tests cannot be changed.');
       final validatedIds = await _validateRealSkiIds(skiIds);
       await _replaceSkiRelations(glideTestId, validatedIds);
     });
@@ -287,17 +317,18 @@ class GlideTestRepository {
             .get();
 
     final skiIds = await getSkiIdsForTest(glideTestId);
+    final relatedSkiIds = {...skiIds, ...runs.map((run) => run.skiId)};
     final unorderedSkis = await (_db.select(
       _db.storedSki,
-    )..where((s) => s.id.isIn(skiIds))).get();
+    )..where((s) => s.id.isIn(relatedSkiIds))).get();
     final skisById = {for (final ski in unorderedSkis) ski.id: ski};
-    final skis = [for (final skiId in skiIds) skisById[skiId]!];
+    final skis = [for (final skiId in relatedSkiIds) skisById[skiId]!];
 
     final decodedRuns = runs
         .map(
           (r) => TestRunRepository.decodeRun(
             r,
-            skis.firstWhere((s) => s.id == r.skiId),
+            skisById[r.skiId]!,
           ),
         )
         .toList();
@@ -308,6 +339,7 @@ class GlideTestRepository {
       test: test,
       runs: decodedRuns,
       skis: skis,
+      selectedSkiIds: skiIds,
       deviceInfo: deviceInfo,
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:skidpark/features/glide_testing/compare/models/enriched_test_run.dart';
+import '../models/enriched_test_run.dart';
 
 class SelectRunCard extends StatelessWidget {
   final bool isSelected;

@@ -1,33 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class GlideTestGuide extends StatelessWidget {
-  const GlideTestGuide({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      key: const PageStorageKey('empty-test-guide'),
-      padding: const EdgeInsets.fromLTRB(21, kToolbarHeight + 16, 21, 28),
-      children: const [
-        GuideInstructions(),
-        SizedBox(height: 8),
-        GuideDetails(),
-      ],
-    );
-  }
-}
+import '../../../../common/input/hands_free_controls_factory.dart';
 
 class GuideInstructions extends StatelessWidget {
   const GuideInstructions({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Så gör du ett glidtest', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 22),
         const _GuideStep(
           number: 1,
           title: 'Använd samma backe och startplats',
@@ -103,9 +86,11 @@ class GuideDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final controls = context.read<HandsFreeControlsFactory>();
+    final instructions = controls.instructions;
+    return Column(
       children: [
-        _GuideSection(
+        const _GuideSection(
           title: 'Jämför åken',
           children: [
             _GuideParagraph(
@@ -126,28 +111,24 @@ class GuideDetails extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 10),
-        _GuideSection(
-          title: 'Volymknappar på Android',
-          children: [
-            _GuideParagraph(
-              title: 'I testet',
-              text: 'Håll in volym ner för att öppna Nytt åk.',
-            ),
-            _GuideParagraph(
-              title: 'I skidvalet',
-              text: 'Tryck kort på volym upp eller ner för att byta markerad skida.\n\nHåll in volym ner för att starta inspelningen med den markerade skidan.',
-            ),
-            _GuideParagraph(
-              title: 'Under inspelningen',
-              text: 'Tryck kort på volym ner för att stoppa och spara åket.',
-            ),
-            Divider(),
-            _GuideParagraph(
-              text: 'På iPhone använder du knapparna på skärmen.',
-            ),
-          ],
-        ),
+        const SizedBox(height: 10),
+        if (controls.isSupported)
+          _GuideSection(
+            title: 'Styr med vantar',
+            children: [
+              _GuideParagraph(title: 'I testet', text: instructions.openRun),
+              _GuideParagraph(
+                title: 'I skidvalet',
+                text: '${instructions.selectSki}\n\n${instructions.confirmSki}',
+              ),
+              _GuideParagraph(
+                title: 'Under inspelningen',
+                text: instructions.stopLabel != null
+                    ? 'Tryck kort på ${instructions.stopLabel} för att stoppa och spara åket.'
+                    : 'Gesterna är avstängda under åket. Åket sparas automatiskt vid stopp. Du kan också trycka på Spara.',
+              ),
+            ],
+          ),
       ],
     );
   }

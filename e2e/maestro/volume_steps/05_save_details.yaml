@@ -1,0 +1,11 @@
+appId: com.krikar.skidpark.skidpark.e2e
+---
+# Körs efter ett långt volymtryck med ett osparat utkast på en annan flik.
+- assertVisible: "Graf med 1 åk"
+- assertNotVisible: "Välj skida för åket"
+- tapOn: "Testet[\\s\\S]*"
+- assertVisible: "Spara"
+- assertVisible: "2026-10-30 09:30 -5"
+- assertNotVisible: "Välj skida för åket"
+- tapOn: "Spara"
+- assertVisible: "[\\s\\S]*2026-10-30 09:30 -5[\\s\\S]*"

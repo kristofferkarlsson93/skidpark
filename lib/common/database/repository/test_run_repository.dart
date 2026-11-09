@@ -230,7 +230,7 @@ class TestRunRepository {
   }
 
   static Object? _decodeJson(drift.Uint8List compressedData) {
-    final bytes = GZipDecoder().decodeBytes(compressedData.toList());
+    final bytes = GZipDecoder().decodeBytes(compressedData, verify: true);
     return jsonDecode(utf8.decode(bytes));
   }
 }

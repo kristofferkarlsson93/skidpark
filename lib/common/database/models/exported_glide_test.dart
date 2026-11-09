@@ -7,6 +7,7 @@ import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
 class ExportedGlideTest {
   final StoredGlideTestData test;
   final List<StoredSkiData> skis;
+  final List<int> selectedSkiIds;
   final List<DecodedTestRun> runs;
   final Map<String, dynamic> deviceInfo;
 
@@ -15,11 +16,14 @@ class ExportedGlideTest {
     required this.skis,
     required this.runs,
     required this.deviceInfo,
+    required this.selectedSkiIds,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'version': 3,
+      // Related skis also include historical runs' skis that are no longer selected.
+      'selectedSkiIds': selectedSkiIds,
       'deviceInfo': deviceInfo,
       'exportedAt': DateTime.now().toIso8601String(),
       'glideTest': {

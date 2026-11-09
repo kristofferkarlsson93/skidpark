@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
@@ -28,6 +29,23 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  testWidgets('bundles only the public example and no local user data', (
+    tester,
+  ) async {
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final assets = manifest.listAssets();
+
+    expect(assets.where((asset) => asset.startsWith('assets/example_data/')), [
+      'assets/example_data/glide_test.json',
+    ]);
+    expect(
+      assets.where(
+        (asset) => asset.startsWith('user_data/') || asset.startsWith('docs/'),
+      ),
+      isEmpty,
+    );
+  });
 
   test(
     'installs the persisted example once through the normal data path',

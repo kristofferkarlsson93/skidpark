@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:skidpark/common/shared_widgets/big_button.dart';
-import 'package:skidpark/common/services/volume_press_handler.dart';
 import 'package:skidpark/features/glide_testing/test_runs/widgets/gps_accuracy_banner.dart';
 import 'package:skidpark/features/ski_management/create/widgets/quick_add_ski.dart';
 import 'package:skidpark/features/ski_management/models/ski.dart';
@@ -25,10 +23,10 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
   final TextEditingController _newSkiNameController = TextEditingController();
   final FocusNode _newSkiNameFocusNode = FocusNode();
   static const double _itemHeight = 88.0;
-  bool _isStarting = false;
   bool _isQuickAddOpen = false;
   bool _isAddingSki = false;
   String? _newSkiNameError;
+  int? _lastScrolledIndex;
 
   @override
   void initState() {
@@ -38,7 +36,6 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
 
   @override
   void dispose() {
-    if (_isQuickAddOpen) widget.viewModel.resumeVolumeInput();
     widget.viewModel.removeListener(_scrollToCurrentIndex);
     _scrollController.dispose();
     _newSkiNameController.dispose();
@@ -48,6 +45,8 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
 
   void _scrollToCurrentIndex() {
     final index = widget.viewModel.markedSkiIndex;
+    if (index == _lastScrolledIndex) return;
+    _lastScrolledIndex = index;
 
     if (index >= 0 && _scrollController.hasClients) {
       final targetOffset =
@@ -61,22 +60,8 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
     }
   }
 
-  Future<void> _handleStart() async {
-    if (_isStarting) return;
-    setState(() {
-      _isStarting = true;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (mounted) {
-      widget.viewModel.startRun();
-      _isStarting = false;
-    }
-  }
-
   void _openQuickAdd() {
-    widget.viewModel.suspendVolumeInput();
+    widget.viewModel.suspendHandsFreeInput();
     setState(() {
       _isQuickAddOpen = true;
       _newSkiNameError = null;
@@ -104,7 +89,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
   void _closeQuickAdd() {
     if (_isAddingSki) return;
     FocusScope.of(context).unfocus();
-    widget.viewModel.resumeVolumeInput();
+    widget.viewModel.resumeHandsFreeInput();
     setState(() {
       _isQuickAddOpen = false;
       _newSkiNameError = null;
@@ -130,7 +115,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
       if (!mounted) return;
 
       FocusScope.of(context).unfocus();
-      widget.viewModel.resumeVolumeInput();
+      widget.viewModel.resumeHandsFreeInput();
       setState(() {
         _isQuickAddOpen = false;
         _isAddingSki = false;
@@ -148,9 +133,7 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final supportsVolumeInput = context
-        .read<VolumeButtonInput>()
-        .supportsVolumeInput;
+    final inputInstructions = widget.viewModel.inputInstructions;
     final selectableSkis = widget.viewModel.availableSkis;
     final markedIndex = widget.viewModel.markedSkiIndex;
     final showQuickAdd =
@@ -216,9 +199,8 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                       isConfirmedStart:
                           (widget.viewModel.selectedSki?.id == currentSki.id ||
                               index == markedIndex) &&
-                          (_isStarting ||
-                              widget.viewModel.isHardwareStartTriggered),
-                      onSelected: _isQuickAddOpen
+                          widget.viewModel.isStarting,
+                      onSelected: _isQuickAddOpen || widget.viewModel.isStarting
                           ? null
                           : () => widget.viewModel.selectSki(currentSki),
                     ),
@@ -265,17 +247,36 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (supportsVolumeInput)
-                      const InstructionGuide(
+                    if (!widget.viewModel.isStarting &&
+                        widget.viewModel.inputError == null &&
+                        widget.viewModel.inputGuidance != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          widget.viewModel.inputGuidance!,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    if (widget.viewModel.inputError case final error?)
+                      Text(error)
+                    else if (widget.viewModel.isStarting)
+                      Text(
+                        widget.viewModel.startCountdownSeconds > 0
+                            ? 'Inspelningen startar om ${widget.viewModel.startCountdownSeconds}…'
+                            : 'Förbereder inspelningen…',
+                        style: theme.textTheme.titleMedium,
+                      )
+                    else if (inputInstructions.selectionLabel != null)
+                      InstructionGuide(
                         firstInstruction: InstructionItem(
                           icon: Icons.unfold_more,
-                          primaryText: "Volym + / -",
-                          secondaryText: "Välj skida",
+                          primaryText: inputInstructions.selectionLabel!,
+                          secondaryText: 'Välj skida',
                         ),
                         secondInstruction: InstructionItem(
-                          icon: Icons.arrow_drop_down,
-                          primaryText: "Håll in volym -",
-                          secondaryText: "Starta test",
+                          icon: Icons.play_arrow,
+                          primaryText: inputInstructions.confirmationLabel!,
+                          secondaryText: 'Starta test',
                         ),
                       ),
                     const SizedBox(height: 16),
@@ -286,33 +287,32 @@ class _StartTestRunWidgetState extends State<StartTestRunWidget> {
                               markedIndex >= 0)
                           ? theme.colorScheme.primary
                           : theme.colorScheme.surfaceContainerHighest,
-                      title: 'STARTA TEST',
-                      onPress:
-                          (widget.viewModel.selectedSki == null &&
-                              markedIndex < 0)
+                      title: widget.viewModel.isStarting
+                          ? 'AVBRYT START'
+                          : 'STARTA TEST',
+                      onPress: widget.viewModel.isStarting
+                          ? widget.viewModel.cancelPendingStart
+                          : (widget.viewModel.selectedSki == null &&
+                                markedIndex < 0)
                           ? null
-                          : () async {
-                              if (widget.viewModel.selectedSki == null &&
-                                  markedIndex >= 0) {
-                                await widget.viewModel.selectSki(
-                                  selectableSkis[markedIndex],
-                                );
-                              }
-                              await _handleStart();
-                            },
+                          : () => widget.viewModel.requestStart(),
                     ),
 
                     const SizedBox(height: 8),
 
                     if (widget.viewModel.canChooseOtherSki)
                       TextButton(
-                        onPressed: widget.viewModel.showOtherSkis,
+                        onPressed: widget.viewModel.isStarting
+                            ? null
+                            : widget.viewModel.showOtherSkis,
                         child: const Text('Välj annan skida'),
                       ),
 
                     if (widget.viewModel.canReturnToTestSkis)
                       TextButton(
-                        onPressed: widget.viewModel.showTestSkis,
+                        onPressed: widget.viewModel.isStarting
+                            ? null
+                            : widget.viewModel.showTestSkis,
                         child: const Text('Tillbaka till testets skidor'),
                       ),
 

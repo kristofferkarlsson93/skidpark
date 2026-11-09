@@ -1,16 +1,13 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/common/shared_widgets/volume_input_handler.dart';
+import 'package:skidpark/common/shared_widgets/hands_free_input_handler.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/glide_test_more_menu.dart';
 
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
-import '../../../../common/services/volume_press_handler.dart';
+import '../../../../common/input/hands_free_controls_factory.dart';
+import '../../../../common/input/hands_free_input.dart';
 import '../../compare/compare_runs_view_model.dart';
-import '../../create/glide_test_form.dart';
-import '../../models/glide_test_candidate.dart';
 import '../../test_runs/data_recorder.dart';
 import '../../test_runs/screen/run_recording_screen.dart';
 import '../models/analysis_page.dart';
@@ -28,14 +25,16 @@ class GlideTestCompareScreen extends StatefulWidget {
 
 class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _activateVolumeKeys = true;
+  bool _activateHandsFreeInput = true;
   bool _isDrawerOpen = false;
   bool _indicateNewRunMarked = false;
   bool _isStartingRecordingFlow = false;
+  bool _handsFreeFailed = false;
 
   Future<void> _openRunRecorder(BuildContext context) async {
     if (_isStartingRecordingFlow ||
         _isDrawerOpen ||
+        context.read<CompareRunsViewModel>().isEditingDetails ||
         ModalRoute.of(context)?.isCurrent != true) {
       return;
     }
@@ -56,7 +55,7 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
       final activeRecorder = DataRecorder();
       dataRecorder = activeRecorder;
       activeRecorder.startGPSSubscription(GpsMode.passive);
-      setState(() => _activateVolumeKeys = false);
+      setState(() => _activateHandsFreeInput = false);
 
       await Navigator.push<void>(
         context,
@@ -75,26 +74,10 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
       if (mounted) {
         setState(() {
           _indicateNewRunMarked = false;
-          _activateVolumeKeys = true;
+          _activateHandsFreeInput = true;
         });
       }
     }
-  }
-
-  void _editTestInfo(
-    BuildContext context,
-    CompareRunsViewModel viewModel,
-  ) async {
-    final updatedTest = await Navigator.push<GlideTestCandidate>(
-      context,
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (context) => GlideTestForm(testToEdit: viewModel.glideTest),
-      ),
-    );
-
-    if (updatedTest == null) return;
-    await viewModel.updateGlideTestInfo(updatedTest);
   }
 
   void _deleteGlideTest(
@@ -152,110 +135,158 @@ class _GlideTestCompareScreenState extends State<GlideTestCompareScreen> {
       ],
       child: SafeArea(
         bottom: false,
-        child: VolumeInputHandler(
-          shouldPublishEvents: _activateVolumeKeys && !_isDrawerOpen,
-          onLongPress: (button) async {
-            if (button == VolumeButton.down &&
+        child: Consumer<CompareRunsViewModel>(
+          builder: (context, viewModel, _) => HandsFreeInputHandler(
+            controller: context.read<HandsFreeControlsFactory>().controller,
+            stage: HandsFreeStage.overview,
+            enabled:
+                _activateHandsFreeInput &&
                 !_isDrawerOpen &&
-                ModalRoute.of(context)?.isCurrent == true) {
-              log("Go to record page via volume down");
-              setState(() {
-                _indicateNewRunMarked = true;
-              });
-              await Future.delayed(const Duration(milliseconds: 250));
-              if (context.mounted) {
-                _openRunRecorder(context);
-              }
-            }
-          },
-          child: Scaffold(
-            extendBodyBehindAppBar: true,
-            key: _scaffoldKey,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              actions: [
-                Consumer<CompareRunsViewModel>(
-                  builder: (context, viewModel, _) {
-                    if (viewModel.glideTest?.isExample ?? false) {
-                      return const SizedBox.shrink();
-                    }
-                    return FilledButton.icon(
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
-                          _indicateNewRunMarked
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.surfaceContainerLowest,
-                        ),
-                      ),
-                      onPressed: () => _openRunRecorder(context),
-                      label: Text(
-                        'Nytt åk',
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                      icon: Icon(
-                        Icons.play_circle_outline,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    );
-                  },
-                ),
-                Consumer<CompareRunsViewModel>(
-                  builder: (context, viewModel, _) {
-                    return GlideTestMoreMenu(
-                      onSelectEdit: viewModel.glideTest?.isExample ?? false
-                          ? null
-                          : () => _editTestInfo(context, viewModel),
-                      onSelectExport: () {
-                        viewModel.exportAllGlideTestData();
-                      },
-                      onSelectDelete: () {
-                        _deleteGlideTest(context, viewModel);
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
-            onEndDrawerChanged: (isOpen) {
-              setState(() => _isDrawerOpen = isOpen);
+                !viewModel.isEditingDetails &&
+                !_handsFreeFailed &&
+                viewModel.glideTest != null &&
+                !viewModel.glideTest!.isExample,
+            onError: (message) {
+              setState(() => _handsFreeFailed = true);
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(message)));
             },
-            endDrawer: Drawer(
-              backgroundColor: theme.colorScheme.surfaceContainerHigh,
-              child: const CompareControls(),
-            ),
-            body: Consumer<CompareRunsViewModel>(
-              builder: (context, viewModel, child) {
-                if (viewModel.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
+            onAction: (action) async {
+              if (action == HandsFreeAction.confirm &&
+                  !_isDrawerOpen &&
+                  ModalRoute.of(context)?.isCurrent == true) {
+                setState(() {
+                  _indicateNewRunMarked = true;
+                });
+                await Future.delayed(const Duration(milliseconds: 250));
+                if (context.mounted) {
+                  _openRunRecorder(context);
                 }
-                final isGuide =
-                    viewModel.testRuns.isEmpty ||
-                    viewModel.activeAnalysisPage == AnalysisPage.guide;
-                return Stack(
-                  children: [
-                    AnalysisWorkspace(
-                      onOpenControls: () =>
-                          _scaffoldKey.currentState?.openEndDrawer(),
-                    ),
-                    if (!isGuide)
-                      Positioned(
-                        top: kToolbarHeight,
-                        right: 8,
-                        child: CircleAvatar(
-                          backgroundColor:
-                              theme.colorScheme.surfaceContainerLowest,
-                          child: IconButton(
-                            icon: const Icon(Icons.tune),
-                            color: theme.colorScheme.onSurface,
-                            tooltip: 'Filtrera',
-                            onPressed: () =>
-                                _scaffoldKey.currentState?.openEndDrawer(),
+              }
+            },
+            child: PopScope(
+              canPop: !viewModel.isEditingDetails,
+              onPopInvokedWithResult: (didPop, result) async {
+                if (didPop || viewModel.isSavingDetails) return;
+                final discard =
+                    !viewModel.hasUnsavedDetails ||
+                    await showDialog<bool>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            title: const Text('Lämna utan att spara?'),
+                            content: const Text(
+                              'Dina ändringar i testinformationen sparas inte.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, false),
+                                child: const Text('Fortsätt skriva'),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, true),
+                                child: const Text('Lämna'),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                  ],
-                );
+                        ) ==
+                        true;
+                if (discard && context.mounted) {
+                  viewModel.cancelEditingDetails();
+                  Navigator.of(context).pop();
+                }
               },
+              child: Scaffold(
+                extendBodyBehindAppBar: true,
+                key: _scaffoldKey,
+                appBar: AppBar(
+                  backgroundColor: Colors.transparent,
+                  actions: [
+                    Consumer<CompareRunsViewModel>(
+                      builder: (context, viewModel, _) {
+                        if (viewModel.glideTest?.isExample ?? false) {
+                          return const SizedBox.shrink();
+                        }
+                        return FilledButton.icon(
+                          style: ButtonStyle(
+                            foregroundColor: WidgetStateProperty.resolveWith(
+                              (states) => states.contains(WidgetState.disabled)
+                                  ? theme.colorScheme.onSurface.withValues(
+                                      alpha: .38,
+                                    )
+                                  : theme.colorScheme.onSurface,
+                            ),
+                            backgroundColor: WidgetStateProperty.all(
+                              _indicateNewRunMarked
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.surfaceContainerLowest,
+                            ),
+                          ),
+                          onPressed: viewModel.isEditingDetails
+                              ? null
+                              : () => _openRunRecorder(context),
+                          label: const Text('Nytt åk'),
+                          icon: const Icon(Icons.play_circle_outline),
+                        );
+                      },
+                    ),
+                    Consumer<CompareRunsViewModel>(
+                      builder: (context, viewModel, _) {
+                        return GlideTestMoreMenu(
+                          onSelectExport: () {
+                            viewModel.exportAllGlideTestData();
+                          },
+                          onSelectDelete: () {
+                            _deleteGlideTest(context, viewModel);
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                onEndDrawerChanged: (isOpen) {
+                  setState(() => _isDrawerOpen = isOpen);
+                },
+                endDrawer: Drawer(
+                  backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                  child: const CompareControls(),
+                ),
+                body: Consumer<CompareRunsViewModel>(
+                  builder: (context, viewModel, child) {
+                    if (viewModel.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final isTestInfo =
+                        viewModel.testRuns.isEmpty ||
+                        viewModel.activeAnalysisPage == AnalysisPage.testInfo;
+                    return Stack(
+                      children: [
+                        AnalysisWorkspace(
+                          onOpenControls: () =>
+                              _scaffoldKey.currentState?.openEndDrawer(),
+                        ),
+                        if (!isTestInfo)
+                          Positioned(
+                            top: kToolbarHeight,
+                            right: 8,
+                            child: CircleAvatar(
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerLowest,
+                              child: IconButton(
+                                icon: const Icon(Icons.tune),
+                                color: theme.colorScheme.onSurface,
+                                tooltip: 'Filtrera',
+                                onPressed: () =>
+                                    _scaffoldKey.currentState?.openEndDrawer(),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),

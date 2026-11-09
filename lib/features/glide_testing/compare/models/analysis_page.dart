@@ -1,1 +1,1 @@
-enum AnalysisPage { overview, releasePoint, guide }
+enum AnalysisPage { overview, releasePoint, testInfo }

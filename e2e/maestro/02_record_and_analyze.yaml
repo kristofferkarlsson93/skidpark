@@ -43,9 +43,10 @@ tags:
     timeout: 15000
 - assertVisible: "Graf med 1 åk"
 
-- tapOn: "Guide[\\s\\S]*"
+- tapOn: "Testet[\\s\\S]*"
 - assertVisible: "Så gör du ett glidtest[\\s\\S]*"
-- assertVisible: "[\\s\\S]*Gör flera åk med varje skidpar[\\s\\S]*"
+- assertVisible: "GPS-test"
+- assertVisible: "Anteckningar om testet"
 - tapOn: "Släppunkt[\\s\\S]*"
 - assertVisible: "Graf med 1 åk"
 - tapOn: "Översikt[\\s\\S]*"

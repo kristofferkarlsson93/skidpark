@@ -4,7 +4,7 @@ import 'package:skidpark/features/glide_testing/compare/widgets/average_per_ski_
 import 'package:skidpark/features/glide_testing/compare/widgets/sensor_fusion_switch.dart';
 
 import '../../compare/compare_runs_view_model.dart';
-import '../../../../legacy/select_run_card.dart';
+import 'select_run_card.dart';
 
 class CompareControls extends StatelessWidget {
   const CompareControls({super.key});

@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skidpark/common/services/volume_press_handler.dart';
+
+import '../../../../common/input/hands_free_controls_factory.dart';
+
 import 'package:skidpark/features/glide_testing/compare/models/graph_line.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/compare_graph.dart';
 
@@ -14,9 +16,7 @@ class OverviewGraph extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<CompareRunsViewModel>();
-    final supportsVolumeInput = context
-        .read<VolumeButtonInput>()
-        .supportsVolumeInput;
+    final controls = context.read<HandsFreeControlsFactory>();
     final selectedRuns = viewModel.currentDisplayRuns;
     return CompareGraph(
       lines: selectedRuns
@@ -38,9 +38,9 @@ class OverviewGraph extends StatelessWidget {
               Text("Välj ett eller flera åk i kontrollpanelen"),
               SizedBox(height: 12),
             ],
-            if (supportsVolumeInput)
+            if (controls.isSupported)
               Text(
-                "Tips: Håll in volym ner för att spela in ett nytt åk.",
+                'Tips: ${controls.instructions.openRun}',
                 style: TextStyle(fontStyle: FontStyle.italic),
               ),
           ],

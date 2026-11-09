@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:archive/archive.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
@@ -12,6 +13,88 @@ import 'package:skidpark/features/glide_testing/test_runs/models/raw_rotation_ve
 import 'package:skidpark/features/glide_testing/test_runs/models/sensor_recording_metadata.dart';
 
 void main() {
+  for (final stream in ['accelerometer', 'gyroscope']) {
+    for (final damage in ['checksum', 'truncated trailer']) {
+      test('rejects $stream data with $damage without storing data', () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final compressed = GZipEncoder().encodeBytes(utf8.encode('[]'));
+        final damaged = compressed.toList();
+        if (damage == 'checksum') {
+          damaged[damaged.length - 8] ^= 0xff;
+        } else {
+          damaged.removeRange(damaged.length - 4, damaged.length);
+        }
+        final encoded = base64Encode(damaged);
+
+        await expectLater(
+          GlideTestImportService(database).importJson(
+            jsonEncode({
+              'version': 3,
+              'glideTest': {
+                'title': 'Skadad sensordata',
+                'createdAt': '2026-11-09T12:00:00.000Z',
+              },
+              'skis': [
+                {'id': 10, 'name': 'SP1'},
+              ],
+              'selectedSkiIds': [10],
+              'runs': [
+                {
+                  'skiId': 10,
+                  'startedAt': '2026-11-09T12:01:00.000Z',
+                  'elapsedSeconds': 10,
+                  'gpsData': <Object>[],
+                  if (stream == 'accelerometer') 'accelerometerData': encoded,
+                  if (stream == 'gyroscope')
+                    'sensorData': {'gyroscope': encoded},
+                },
+              ],
+            }),
+            asExample: false,
+          ),
+          throwsA(isA<ArchiveException>()),
+        );
+
+        expect(await database.select(database.storedGlideTest).get(), isEmpty);
+        expect(await database.select(database.storedSki).get(), isEmpty);
+        expect(await database.select(database.testRun).get(), isEmpty);
+      });
+    }
+  }
+
+  test('rejects invalid explicit ski selections before storing data', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    for (final selection in [
+      [999],
+      [10, 10],
+      ['10'],
+      null,
+    ]) {
+      await expectLater(
+        GlideTestImportService(database).importJson(
+          jsonEncode({
+            'version': 3,
+            'glideTest': {
+              'title': 'Fel urval',
+              'createdAt': '2026-10-30T12:00:00.000Z',
+            },
+            'skis': [
+              {'id': 10, 'name': 'SP1'},
+            ],
+            'selectedSkiIds': selection,
+            'runs': [],
+          }),
+          asExample: false,
+        ),
+        throwsFormatException,
+      );
+    }
+    expect(await database.select(database.storedGlideTest).get(), isEmpty);
+    expect(await database.select(database.storedSki).get(), isEmpty);
+  });
+
   test('preserves explicit run numbers from version 2 exports', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);

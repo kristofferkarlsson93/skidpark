@@ -74,7 +74,7 @@
 			<string>Exakt plats behövs för att mäta hastighet och position under glidtestet. Ungefärlig plats ger ett osäkert mätunderlag.</string>
 		</dict>
 		<key>NSMotionUsageDescription</key>
-		<string>SkidPark registrerar telefonens rörelse, orientering och lufttryck under glidtest för att uppskatta hastighet och undersöka mätkvaliteten.</string>
+		<string>SkidPark använder telefonens rörelse för geststyrning och registrerar rörelse, orientering och lufttryck under glidtest för att uppskatta hastighet och undersöka mätkvaliteten.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

@@ -13,7 +13,6 @@ import 'package:skidpark/features/glide_testing/compare/services/release_point_a
 import 'package:skidpark/features/glide_testing/compare/services/run_data_processor.dart';
 import 'package:skidpark/features/glide_testing/compare/widgets/release_point_analysis/release_point_controls.dart';
 import 'package:skidpark/features/glide_testing/models/decoded_test_run.dart';
-import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
 
 class CompareRunsViewModel extends ChangeNotifier {
   final TestRunRepository _testRunRepository;
@@ -21,6 +20,9 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   StreamSubscription? _runsSubscription;
   StreamSubscription? _glideTestSubscription;
+  StreamSubscription<List<StoredSkiData>>? _selectedSkisSubscription;
+  List<StoredSkiData> _selectedSkis = const [];
+  List<StoredSkiData> get selectedSkis => _selectedSkis;
 
   StoredGlideTestData? _glideTest;
   List<DecodedTestRun> _rawRuns = [];
@@ -67,6 +69,49 @@ class CompareRunsViewModel extends ChangeNotifier {
 
   bool get isLoading => _glideTest == null;
 
+  bool _isEditingDetails = false;
+  bool _hasUnsavedDetails = false;
+  bool _isSavingDetails = false;
+  bool get isEditingDetails => _isEditingDetails;
+  bool get hasUnsavedDetails => _hasUnsavedDetails;
+  bool get isSavingDetails => _isSavingDetails;
+
+  void beginEditingDetails() {
+    _isEditingDetails = true;
+    notifyListeners();
+  }
+
+  void setDetailsChanged(bool changed) {
+    if (_hasUnsavedDetails == changed) return;
+    _hasUnsavedDetails = changed;
+    notifyListeners();
+  }
+
+  void cancelEditingDetails() {
+    _isEditingDetails = false;
+    _hasUnsavedDetails = false;
+    notifyListeners();
+  }
+
+  Future<void> saveDetails({
+    required String title,
+    required String notes,
+  }) async {
+    if (_isSavingDetails) return;
+    _isSavingDetails = true;
+    notifyListeners();
+    try {
+      final id = _glideTest!.id;
+      await _glideTestRepository.updateDetails(id, title: title, notes: notes);
+      _glideTest = await _glideTestRepository.getTestById(id);
+      _isEditingDetails = false;
+      _hasUnsavedDetails = false;
+    } finally {
+      _isSavingDetails = false;
+      notifyListeners();
+    }
+  }
+
   List<EnrichedTestRun> get testRuns => _testRuns;
 
   List<EnrichedTestRun> get currentSelectedTestRuns =>
@@ -110,6 +155,12 @@ class CompareRunsViewModel extends ChangeNotifier {
     log("Starting CompareRunsViewModel for glideTest $glideTestId");
     _listenToGlideTest(glideTestId);
     _listenToRuns(glideTestId);
+    _selectedSkisSubscription = _glideTestRepository
+        .watchSkisForTest(glideTestId, includeArchived: true)
+        .listen((skis) {
+          _selectedSkis = skis;
+          notifyListeners();
+        });
   }
 
   void toggleSelectedTestRun(EnrichedTestRun testRun) {
@@ -193,10 +244,6 @@ class CompareRunsViewModel extends ChangeNotifier {
   void enterEditReleasePointAnalysisMode() {
     _releasePointAnalysisMode = ReleasePointAnalysisMode.edit;
     notifyListeners();
-  }
-
-  Future<void> updateGlideTestInfo(GlideTestCandidate updatedTest) {
-    return _glideTestRepository.update(_glideTest!.id, updatedTest);
   }
 
   void exportAllGlideTestData() async {
@@ -336,56 +383,7 @@ class CompareRunsViewModel extends ChangeNotifier {
   void dispose() {
     _runsSubscription?.cancel();
     _glideTestSubscription?.cancel();
+    _selectedSkisSubscription?.cancel();
     super.dispose();
   }
-
-  //   List<EnrichedTestRun> get displayTestRuns {
-  //     // 1. Hämta de valda åken
-  //     final selected = currentSelectedTestRuns;
-  //
-  //     if (selected.length < 2) {
-  //       return selected;
-  //     }
-  //
-  //     // 3. Extrahera bara positions-listorna för att skicka till Aligner
-  //     final List<List<CalculatedPosition>> rawPositionLists = selected
-  //         .map((r) => r.positionData)
-  //         .toList();
-  //
-  //     // 4. Kör Alignment-logiken
-  //     final List<List<CalculatedPosition>> alignedPositionLists =
-  //         RunAligner.alignMultipleRuns(runs: rawPositionLists);
-  //
-  //     // 5. Packa ner de nya positionerna i nya EnrichedTestRun-objekt
-  //     // Vi måste skapa kopior eftersom EnrichedTestRun antagligen är immutable
-  //     List<EnrichedTestRun> alignedRuns = [];
-  //
-  //     for (int i = 0; i < selected.length; i++) {
-  //       final originalRun = selected[i];
-  //       final newPositions = alignedPositionLists[i];
-  //
-  //       // Skapa en kopia av run-objektet men med nya positions
-  //       alignedRuns.add(
-  //         EnrichedTestRun(
-  //           originalRun.id,
-  //           originalRun.startedAt,
-  //           originalRun.skiId,
-  //           originalRun.glideTestId,
-  //           originalRun.elapsedSeconds,
-  //           originalRun.traveledDistance,
-  //           // Behåll original-statistiken!
-  //           originalRun.averageSpeed,
-  //           // Behåll original-statistiken!
-  //           originalRun.maxSpeed,
-  //           // Behåll original-statistiken!
-  //           originalRun.skiName,
-  //           newPositions,
-  //           // <--- HÄR ÄR ÄNDRINGEN
-  //           originalRun.runNumber,
-  //         ),
-  //       );
-  //     }
-  //
-  //     return alignedRuns;
-  //   }
 }

@@ -7,8 +7,10 @@ import 'common/database/database.dart';
 import 'common/database/repository/glide_test_repository.dart';
 import 'common/database/repository/ski_repository.dart';
 import 'common/database/repository/test_run_repository.dart';
+import 'common/input/hands_free_controls_factory.dart';
 import 'common/navigation/bottom_navigation.dart';
 import 'common/services/volume_press_handler.dart';
+import 'common/shared_widgets/hands_free_input_handler.dart';
 import 'features/glide_testing/example_data/example_data_installer.dart';
 import 'features/glide_testing/import/glide_test_import_service.dart';
 
@@ -46,6 +48,13 @@ void main() {
               : UnsupportedVolumeButtonInput(),
           dispose: (_, input) => input.dispose(),
         ),
+        ProxyProvider<VolumeButtonInput, HandsFreeControlsFactory>(
+          update: (_, volumeInput, _) => HandsFreeControlsFactory(
+            platform: defaultTargetPlatform,
+            volumeInput: volumeInput,
+          ),
+          dispose: (_, factory) => factory.dispose(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -60,6 +69,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SkidPark',
+      navigatorObservers: [handsFreeRouteObserver],
       home: const BottomNavigator(),
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,

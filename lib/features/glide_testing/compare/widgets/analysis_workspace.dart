@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../compare_runs_view_model.dart';
 import '../models/analysis_page.dart';
 import 'compare_list.dart';
-import 'glide_test_guide.dart';
+import 'test_info.dart';
 import 'overview_container.dart';
 import 'release_point_analysis/release_point_container.dart';
 
@@ -19,7 +19,17 @@ class AnalysisWorkspace extends StatelessWidget {
     if (viewModel.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (viewModel.testRuns.isEmpty) return const GlideTestGuide();
+    if (viewModel.testRuns.isEmpty) {
+      return ListView(
+        key: const PageStorageKey('empty-test-info'),
+        padding: const EdgeInsets.fromLTRB(21, kToolbarHeight + 16, 21, 28),
+        children: const [
+          TestInfo(),
+          SizedBox(height: 24),
+          TestGuide(initiallyExpanded: true),
+        ],
+      );
+    }
 
     final page = viewModel.activeAnalysisPage;
     return Column(
@@ -33,14 +43,14 @@ class AnalysisWorkspace extends StatelessWidget {
               const OverviewGraph(),
               const ReleasePointGraph(),
               ListView(
-                key: const PageStorageKey('guide-instructions'),
+                key: const PageStorageKey('test-info'),
                 padding: const EdgeInsets.fromLTRB(
                   21,
                   kToolbarHeight + 16,
                   21,
                   18,
                 ),
-                children: const [GuideInstructions()],
+                children: const [TestInfo()],
               ),
             ],
           ),
@@ -79,17 +89,19 @@ class _AnalysisPanel extends StatelessWidget {
             length: AnalysisPage.values.length,
             initialIndex: page.index,
             child: TabBar(
-              onTap: (index) =>
-                  viewModel.setCurrentAnalysisPage(AnalysisPage.values[index]),
+              onTap: (index) {
+                FocusManager.instance.primaryFocus?.unfocus();
+                viewModel.setCurrentAnalysisPage(AnalysisPage.values[index]);
+              },
               tabs: const [
                 Tab(text: 'Översikt'),
                 Tab(text: 'Släppunkt'),
-                Tab(text: 'Guide'),
+                Tab(text: 'Testet'),
               ],
             ),
           ),
         ),
-        if (page != AnalysisPage.guide)
+        if (page != AnalysisPage.testInfo)
           SliverToBoxAdapter(
             child: _AnalysisSelectionSummary(onOpenControls: onOpenControls),
           ),
@@ -103,10 +115,10 @@ class _AnalysisPanel extends StatelessWidget {
           onRunTapped: viewModel.toggleHighlightedRun,
         ),
         AnalysisPage.releasePoint => const ReleasePointPanel(),
-        AnalysisPage.guide => ListView(
-          key: const PageStorageKey('guide-details'),
+        AnalysisPage.testInfo => ListView(
+          key: const PageStorageKey('test-guide'),
           padding: const EdgeInsets.fromLTRB(17, 14, 17, 20),
-          children: const [GuideDetails()],
+          children: const [TestGuide()],
         ),
       },
     );

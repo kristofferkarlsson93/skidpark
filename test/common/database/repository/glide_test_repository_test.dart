@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -7,6 +8,7 @@ import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/features/glide_testing/models/glide_test_candidate.dart';
+import 'package:skidpark/features/glide_testing/import/glide_test_import_service.dart';
 
 void main() {
   late AppDatabase database;
@@ -18,6 +20,107 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'exports legacy historical runs without a current selection losslessly',
+    () async {
+      final skiId = await database
+          .into(database.storedSki)
+          .insert(StoredSkiCompanion.insert(name: 'Historisk skida'));
+      final testId = await repository.create(
+        GlideTestCandidate(title: 'Äldre test', skiIds: [skiId]),
+      );
+      await _insertRun(database, testId, skiId, DateTime.utc(2026, 1, 1));
+      await (database.delete(
+        database.glideTestSki,
+      )..where((selection) => selection.glideTestId.equals(testId))).go();
+      final exported = await repository.exportRelatedData(testId);
+      final importedId = await GlideTestImportService(database)
+          .importJson(jsonEncode(exported.toJson()), asExample: false);
+      expect(await repository.getSkiIdsForTest(importedId), isEmpty);
+      final runs = await TestRunRepository(database)
+          .streamByGlideTest(importedId)
+          .first;
+      expect(runs.single.skiName, 'Historisk skida');
+    },
+  );
+
+  test('changing selection preserves metadata, historical runs and export round trip', () async {
+    final ids = <int>[];
+    for (final name in ['Tidigare skida', 'SP2', 'SP3']) {
+      ids.add(
+        await database
+            .into(database.storedSki)
+            .insert(StoredSkiCompanion.insert(name: name)),
+      );
+    }
+    final testId = await repository.create(
+      GlideTestCandidate(title: 'Nysnö', notes: 'Svag vind', skiIds: ids),
+    );
+    await repository.setUseSensorFusion(testId, true);
+    await _insertRun(database, testId, ids.first, DateTime.utc(2026, 10, 30));
+    final originalRun = await database.select(database.testRun).getSingle();
+
+    await repository.replaceSkisForTest(testId, [ids[2], ids[1]]);
+
+    expect(await repository.getSkiIdsForTest(testId), [ids[2], ids[1]]);
+    final test = (await repository.getTestById(testId))!;
+    expect(test.title, 'Nysnö');
+    expect(test.notes, 'Svag vind');
+    expect(test.useSensorFusion, isTrue);
+    expect(await database.select(database.testRun).getSingle(), originalRun);
+    final historical = (await TestRunRepository(
+      database,
+    ).streamByGlideTest(testId).first).single;
+    expect(historical.skiName, 'Tidigare skida');
+    expect(historical.runNumber, 1);
+
+    final exported = await repository.exportRelatedData(testId);
+    final json = exported.toJson();
+    expect(json['selectedSkiIds'], [ids[2], ids[1]]);
+    expect(exported.skis.map((ski) => ski.id), [ids[2], ids[1], ids.first]);
+    final importedId = await GlideTestImportService(database)
+        .importJson(jsonEncode(json), asExample: false);
+    final importedSkis = await repository.watchSkisForTest(importedId).first;
+    expect(importedSkis.map((ski) => ski.name), ['SP3', 'SP2']);
+    final importedRun = (await TestRunRepository(
+      database,
+    ).streamByGlideTest(importedId).first).single;
+    expect(importedRun.skiName, 'Tidigare skida');
+    expect(importedRun.runNumber, originalRun.runNumber);
+    expect(importedRun.gpsEvents.length, historical.gpsEvents.length);
+  });
+
+  test('invalid or read-only selection changes leave the original relations intact', () async {
+    final skiId = await database
+        .into(database.storedSki)
+        .insert(StoredSkiCompanion.insert(name: 'SP1'));
+    final testId = await repository.create(
+      GlideTestCandidate(title: 'Test', skiIds: [skiId]),
+    );
+    for (final invalid in [
+      <int>[],
+      [99999],
+    ]) {
+      await expectLater(
+        repository.replaceSkisForTest(testId, invalid),
+        throwsArgumentError,
+      );
+      expect(await repository.getSkiIdsForTest(testId), [skiId]);
+    }
+    await (database.update(database.storedGlideTest)
+          ..where((test) => test.id.equals(testId)))
+        .write(const StoredGlideTestCompanion(isExample: Value(true)));
+    await expectLater(
+      repository.replaceSkisForTest(testId, [skiId]),
+      throwsStateError,
+    );
+    await expectLater(
+      repository.replaceSkisForTest(99999, [skiId]),
+      throwsStateError,
+    );
+    expect(await repository.getSkiIdsForTest(testId), [skiId]);
+  });
 
   test('summaries count runs and selected skis', () async {
     final firstSkiId = await database

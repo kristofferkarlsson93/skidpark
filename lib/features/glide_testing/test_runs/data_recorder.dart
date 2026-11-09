@@ -71,7 +71,7 @@ class DataRecorder extends ChangeNotifier {
     return SensorRecordingMetadata(
       streams: {
         'gps': SensorStreamMetadata(
-          source: 'geolocator@14.0.3',
+          source: 'geolocator@14.1.2',
           unit: 'geolocator Position fields',
           coordinateFrame: 'WGS84',
           requestedSamplingPeriodMicroseconds: Platform.isAndroid
@@ -81,7 +81,7 @@ class DataRecorder extends ChangeNotifier {
           error: _sensorErrors['gps'],
         ),
         'userAccelerometer': SensorStreamMetadata(
-          source: 'sensors_plus@7.1.0',
+          source: 'sensors_plus@7.1.1+local.fc551db1',
           unit: 'm/s^2',
           coordinateFrame: 'device: +x right, +y top, +z out of screen',
           requestedSamplingPeriodMicroseconds:
@@ -90,7 +90,7 @@ class DataRecorder extends ChangeNotifier {
           error: _sensorErrors['userAccelerometer'],
         ),
         'gyroscope': SensorStreamMetadata(
-          source: 'sensors_plus@7.1.0',
+          source: 'sensors_plus@7.1.1+local.fc551db1',
           unit: 'rad/s',
           coordinateFrame: 'device: right-handed x/y/z axes',
           requestedSamplingPeriodMicroseconds:
@@ -99,7 +99,7 @@ class DataRecorder extends ChangeNotifier {
           error: _sensorErrors['gyroscope'],
         ),
         'barometer': SensorStreamMetadata(
-          source: 'sensors_plus@7.1.0',
+          source: 'sensors_plus@7.1.1+local.fc551db1',
           unit: 'hPa',
           coordinateFrame: 'scalar pressure',
           requestedSamplingPeriodMicroseconds:

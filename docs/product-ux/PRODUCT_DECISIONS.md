@@ -76,6 +76,8 @@ Statusmarkeringar:
 
 - **Beslutat:** `Nytt glidtest` är en helskärm, inte en bottom sheet eller drawer.
 - **Beslutat:** Testnamnet är förifyllt och redigerbart.
+- **Beslutat:** Anteckningar finns inte i skapandet. De kan läggas till i
+  testinformationen direkt efteråt eller senare, utan ett obligatoriskt steg.
 - **Beslutat:** Användaren väljer testets skidor vid skapandet. Alla egna skidor
   är valda från början och undantagen klickas ur.
 - **Beslutat:** Snabbvalen är `Alla`, `Ingen` och `Senaste testet`.
@@ -102,23 +104,36 @@ Statusmarkeringar:
 - **Beslutat:** En dedikerad sidomeny är lämplig för flera filter och
   expertinställningar. Åkurval och medelvisning syns när menyn är stängd;
   beräkningssättets etikett visas inte i sammanfattningsraden. Sidomenyn
-  innehåller ingen länk till guiden, som nås via sin flik.
+  innehåller ingen länk till guiden, som nås under `Testet`.
 - **Beslutat:** Analysvyer byts med namngivna flikar under grafen, utan
-  svepnavigering. Ordningen är `Översikt`, `Släppunkt`, `Guide`. Grafens stora
+  svepnavigering. Ordningen är `Översikt`, `Släppunkt`, `Testet`. Grafens stora
   yta och placering bevaras; sidomenyn behåller åkurval och beräkning.
 - **Beslutat:** Flikrad och urvalssammanfattning skrollar tillsammans med
   nederdelens innehåll för att ge åklistan mer plats. Grafen behåller sina
   60 procent av arbetsytan. Skrolla tillbaka upp i nederdelen för att nå flikarna.
-- **Beslutat:** Ett test utan åk visar bara guiden, utan flikrad eller tom graf.
-  `Nytt åk` är fortsatt synligt. När åk finns öppnas Översikt och guiden finns
-  längst till höger.
+- **Beslutat:** `Testet` visar testnamn och allmänna anteckningar, som kan
+  redigeras direkt med `Spara` och `Avbryt`. Guiden ligger under informationen
+  och är inledningsvis hopfälld när åk finns. Anteckningar per åk är uppskjutna.
+- **Beslutat:** Testinformationen samlar skidurval, anteckningar och guide. Skidurvalet
+  visas före anteckningarna. Tomma anteckningar visas som `Lägg till anteckning`,
+  utan stor tom textruta. Sparad text visas direkt, med högst tre rader och
+  `Visa hela anteckningen`/`Visa mindre` när texten är längre. All text finns kvar
+  vid redigering och sparning. Namn och anteckningar redigeras inline.
+  Guiden ligger kvar under `Testet`; ingen fjärde flik eller flytt till ⋮ införs.
+- **Beslutat:** Före anteckningarna visar `Skidor i testet` ett kompakt urval
+  och knappen `Ändra skidor`. Den öppnar en separat vy för enbart skidurvalet,
+  med `Alla`, `Ingen` och möjlighet att lägga till skidor som vid testskapande.
+  Namn och anteckningar redigeras bara på `Testet`; `Redigera testinfo` tas bort
+  ur menyn. Skidurvalet styr förslagen för nya åk. Att välja bort en skida
+  raderar eller döljer inte dess tidigare åk, som även ska följa med vid export.
+- **Beslutat:** Ett test utan åk visar testinformationen och den utfällda guiden,
+  utan flikrad eller tom graf. `Nytt åk` är fortsatt synligt. När åk finns öppnas
+  Översikt och `Testet` finns längst till höger.
 - **Beslutat:** Guiden ska vara en saklig, kort bruksanvisning. Tre synliga
   steg beskriver samma backe/startplats, inspelning och upprepade åk. Fördjupning
-  om analys och volymknappar kan fällas ut. Den detaljerade
-  [mockupen](analysis-prototypes/index.html) är godkänd med formuleringen
+  om analys och plattformens styrning kan fällas ut. Formuleringen är
   `Gör flera åk med varje skidpar`: guiden får inte antyda att ett test är
-  begränsat till två skidpar. Tidigare alternativ med svep och vyväljare är
-  inte målbilden.
+  begränsat till två skidpar.
 - **Beslutat:** `Nytt åk`, skidval och inspelning använder helskärmar som inte kan
   stängas genom ett oavsiktligt tryck utanför.
 - **Beslutat:** Att öppna eller analysera ett test ska inte begära
@@ -131,13 +146,21 @@ Statusmarkeringar:
 - **Pausat:** En ny visuell layout för själva analysgrafen. Kraven ovan ska
   bevaras när den frågan återupptas.
 
-## Aktuell leveransplan
+## Styrning och inspelningsstart
 
-- **Etapp 1:** appskal, tema, navigation, intro, testlista och skidpark.
-- **Etapp 2:** GPS-livscykel, exempeldata, helskärmen för nytt test, testbundet
-  skidurval och nytt åk.
-
-Den detaljerade och verifierbara planen finns i
-[start-flow-mockup/IMPLEMENTATION_PLAN.md](start-flow-mockup/IMPLEMENTATION_PLAN.md).
-Den godkända klickbara målbilden finns i
-[start-flow-mockup/index.html](start-flow-mockup/index.html).
+- **Beslutat:** iPhone använder skakning för `Nytt åk`, liten snabb
+  vänster-/högertippning med återgång för skidval och skakning för att bekräfta
+  och starta efter två sekunders nedräkning. Gestprovet har bedömts tillräckligt
+  användbart av produktägaren för inkoppling i ordinarie flöde. Bekräftelsen
+  låser skidvalet och gestlyssningen stoppas före nedräkningen. Start avbryts
+  vid skärmlås, appbyte, täckande vy eller tillbaka.
+  Under inspelningen är iPhone-gester avstängda; stopp sker via befintlig
+  skärmknapp eller autosparning. En särskild stoppgest är fortsatt uppskjuten.
+  Androids volymknappar använder samma handlingar med bibehållet knappbeteende.
+  Manuell knappstart går direkt utan nedräkning. Geststartens nedräkning ska
+  visa endast en stor siffra och vald skida på appens mörka bakgrund.
+  iPhone-skärmen hålls vaken i synligt skidval och inspelning; normalt
+  vilobeteende återställs när rutten lämnas eller appen blir inaktiv.
+  Den separata provvyn under `Mer` är borttagen. Styrningen används direkt i
+  test- och inspelningsflödet. Kvarvarande enhetskontroller finns i
+  [TODO.md](../../TODO.md).

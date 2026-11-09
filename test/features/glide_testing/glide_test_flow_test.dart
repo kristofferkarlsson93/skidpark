@@ -7,6 +7,8 @@ import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/ski_repository.dart';
 import 'package:skidpark/common/database/repository/test_run_repository.dart';
 import 'package:skidpark/common/services/volume_press_handler.dart';
+import 'package:skidpark/common/input/hands_free_controls_factory.dart';
+import 'package:skidpark/common/shared_widgets/hands_free_input_handler.dart';
 import 'package:skidpark/features/glide_testing/explore/screen/glide_testing_home_screen.dart';
 import 'package:skidpark/theme/app_theme.dart';
 
@@ -28,8 +30,16 @@ void main() {
           Provider<SkiRepository>.value(value: SkiRepository(database)),
           Provider<TestRunRepository>.value(value: TestRunRepository(database)),
           Provider<VolumeButtonInput>.value(value: volumePressHandler),
+          Provider<HandsFreeControlsFactory>(
+            create: (_) => HandsFreeControlsFactory(
+              platform: TargetPlatform.android,
+              volumeInput: volumePressHandler,
+            ),
+            dispose: (_, factory) => factory.dispose(),
+          ),
         ],
         child: MaterialApp(
+          navigatorObservers: [handsFreeRouteObserver],
           theme: AppTheme.darkTheme,
           home: const GlideTestingHomeScreen(),
         ),
@@ -40,6 +50,7 @@ void main() {
     await tester.tap(find.text('Skapa mitt första test'));
     await tester.pumpAndSettle();
     expect(find.text('Nytt glidtest'), findsOneWidget);
+    expect(find.text('Anteckningar'), findsNothing);
 
     await tester.ensureVisible(find.text('Lägg till ny skida'));
     await tester.tap(find.text('Lägg till ny skida'));
@@ -62,6 +73,24 @@ void main() {
     expect(find.textContaining('volym ner'), findsNothing);
     expect(await database.select(database.storedGlideTest).get(), hasLength(1));
     expect(await database.select(database.glideTestSki).get(), hasLength(1));
+
+    final createdTest = await database
+        .select(database.storedGlideTest)
+        .getSingle();
+    expect(createdTest.notes, isNull);
+    await tester.tap(find.text('Lägg till anteckning'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Anteckningar om testet'),
+      'Kall nysnö',
+    );
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Spara'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Spara'));
+    await tester.pumpAndSettle();
+    final updatedTest = await database
+        .select(database.storedGlideTest)
+        .getSingle();
+    expect(updatedTest.notes, 'Kall nysnö');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));

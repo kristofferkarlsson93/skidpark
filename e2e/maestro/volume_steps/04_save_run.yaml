@@ -18,5 +18,14 @@ appId: com.krikar.skidpark.skidpark.e2e
 - pressKey: "volume up"
 - pressKey: "volume down"
 - assertVisible: "Nytt åk"
-- tapOn: "Guide[\\s\\S]*"
+- tapOn: "Testet[\\s\\S]*"
 - assertVisible: "Så gör du ett glidtest[\\s\\S]*"
+- tapOn:
+    id: "test-info-edit-notes"
+- inputText: "2026-10-30 09:30 -5"
+- hideKeyboard
+- pressKey: "volume up"
+- pressKey: "volume down"
+- assertVisible: "Spara"
+- tapOn: "Översikt[\\s\\S]*"
+- assertVisible: "Graf med 1 åk"

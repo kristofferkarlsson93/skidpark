@@ -15,12 +15,28 @@ winning ski.
 - [Agent and project guidance](AGENTS.md)
 - [Current product and engineering tasks](TODO.md)
 - [Current product and UX decisions](docs/product-ux/PRODUCT_DECISIONS.md)
-- [Start-flow implementation plan](docs/product-ux/start-flow-mockup/IMPLEMENTATION_PLAN.md)
+- [iOS build and device instructions](docs/ios/README.md)
 
 Glide-test exports, participant feedback, and analyses derived from them are
 kept locally and are intentionally not version-controlled.
 
+- `user_data/exported_tests/`: local recordings and experimental test exports.
+- `user_data/feedback/`: participant feedback, including Markdown notes.
+- `docs/glide-data-analysis/`: local reports derived from those recordings.
+
+These directories are excluded from Git and are not Flutter assets. Git ignore
+rules control versioning, not app packaging: only the single example file
+`assets/example_data/glide_test.json` is declared in `pubspec.yaml` and bundled
+for new users. Keep experimental recordings out of `assets/`.
+
 ## Getting started
+
+Use Flutter 3.47.9 or newer, with Dart 3.13.7 or newer. Android uses the Gradle
+8.14.6 wrapper.
+
+The temporary `sensors_plus` override requires the sibling repository
+`../plus_plugins`, containing version 7.1.1 and the iOS sensor timestamp fix
+from commit `fc551db1`. The published package does not yet include that fix.
 
 ```shell
 flutter pub get

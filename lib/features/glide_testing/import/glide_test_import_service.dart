@@ -60,10 +60,10 @@ class GlideTestImportService {
 
       await _database.batch((batch) {
         batch.insertAll(_database.glideTestSki, [
-          for (final (index, ski) in importedTest.skis.indexed)
+          for (final (index, skiId) in importedTest.selectedSkiIds.indexed)
             GlideTestSkiCompanion.insert(
               glideTestId: testId,
-              skiId: newSkiIdsByOldId[ski.oldId]!,
+              skiId: newSkiIdsByOldId[skiId]!,
               sortOrder: index,
             ),
         ]);
@@ -125,6 +125,7 @@ class _ImportedGlideTest {
     required this.createdAt,
     required this.useSensorFusion,
     required this.skis,
+    required this.selectedSkiIds,
     required this.runs,
   });
 
@@ -133,6 +134,7 @@ class _ImportedGlideTest {
   final DateTime createdAt;
   final bool useSensorFusion;
   final List<_ImportedSki> skis;
+  final List<int> selectedSkiIds;
   final List<_ImportedRun> runs;
 
   factory _ImportedGlideTest.parse(String source) {
@@ -159,6 +161,7 @@ class _ImportedGlideTest {
       throw const FormatException('Importfilen måste innehålla skidor.');
     }
     final knownSkiIds = skis.map((ski) => ski.oldId).toSet();
+    final selectedSkiIds = _parseSelectedSkiIds(root, knownSkiIds);
 
     final runs = runsJson.indexed.map((entry) {
       final (index, value) = entry;
@@ -182,8 +185,29 @@ class _ImportedGlideTest {
       createdAt: DateTime.parse(_requiredString(testJson, 'createdAt')),
       useSensorFusion: testJson['useSensorFusion'] == true,
       skis: skis,
+      selectedSkiIds: selectedSkiIds,
       runs: runs,
     );
+  }
+
+  static List<int> _parseSelectedSkiIds(
+    Map<String, dynamic> root,
+    Set<int> knownSkiIds,
+  ) {
+    if (!root.containsKey('selectedSkiIds')) return knownSkiIds.toList();
+    final selection = root['selectedSkiIds'];
+    // Legacy tests can have historical runs without a current ski selection.
+    if (selection is! List<dynamic> ||
+        selection.any((id) => id is! int || !knownSkiIds.contains(id))) {
+      throw const FormatException(
+        'Testets skidurval måste hänvisa till kända skidor.',
+      );
+    }
+    final ids = selection.cast<int>();
+    if (ids.toSet().length != ids.length) {
+      throw const FormatException('Testets skidurval innehåller dubbletter.');
+    }
+    return ids;
   }
 }
 
@@ -254,7 +278,10 @@ class _ImportedRun {
     if (encodedAccelerometerData is String &&
         encodedAccelerometerData.isNotEmpty) {
       final compressedBytes = base64Decode(encodedAccelerometerData);
-      final decompressedBytes = GZipDecoder().decodeBytes(compressedBytes);
+      final decompressedBytes = GZipDecoder().decodeBytes(
+        compressedBytes,
+        verify: true,
+      );
       final decoded = jsonDecode(utf8.decode(decompressedBytes));
       if (decoded is! List<dynamic>) {
         throw const FormatException('Accelerometerdata har fel format.');

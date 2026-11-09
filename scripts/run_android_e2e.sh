@@ -63,6 +63,9 @@ run_maestro_flow "$E2E_FLOWS/02_record_and_analyze.yaml"
 echo "Running recorder navigation flow..."
 run_maestro_flow "$E2E_FLOWS/03_recorder_navigation_and_cancel.yaml"
 
+echo "Running test-info editing flow..."
+run_maestro_flow "$E2E_FLOWS/04_edit_test_info.yaml"
+
 echo "Running volume ownership flow..."
 run_maestro_flow "$E2E_FLOWS/volume_steps/01_setup.yaml"
 send_long_volume_down
@@ -72,6 +75,8 @@ run_maestro_flow "$E2E_FLOWS/volume_steps/03_select_ski.yaml"
 send_long_volume_down
 run_maestro_flow "$E2E_FLOWS/volume_steps/04_save_run.yaml"
 send_long_volume_down
-run_maestro_flow "$E2E_FLOWS/volume_steps/05_reopen.yaml"
+run_maestro_flow "$E2E_FLOWS/volume_steps/05_save_details.yaml"
+send_long_volume_down
+run_maestro_flow "$E2E_FLOWS/volume_steps/06_reopen.yaml"
 
 echo "All SkidPark Android E2E flows passed."

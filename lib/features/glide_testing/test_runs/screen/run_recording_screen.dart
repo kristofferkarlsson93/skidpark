@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skidpark/features/glide_testing/test_runs/data_recorder.dart';
@@ -7,8 +10,12 @@ import 'package:skidpark/features/glide_testing/test_runs/widgets/start_test_run
 import '../../../../common/database/repository/ski_repository.dart';
 import '../../../../common/database/repository/glide_test_repository.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
-import '../../../../common/services/volume_press_handler.dart';
+import '../../../../common/input/hands_free_controls_factory.dart';
+import '../../../../common/input/hands_free_input.dart';
+import '../../../../common/shared_widgets/hands_free_input_handler.dart';
+import '../../../../common/services/recording_display.dart';
 import '../viewModel/run_recorder_view_model.dart';
+import '../widgets/recording_start_countdown.dart';
 
 class RunRecorderScreen extends StatelessWidget {
   static const double paddingFromEdge = 16.0;
@@ -26,7 +33,7 @@ class RunRecorderScreen extends StatelessWidget {
     final skiRepository = context.read<SkiRepository>();
     final glideTestRepository = context.read<GlideTestRepository>();
     final testRunRepository = context.read<TestRunRepository>();
-    final volumeButtonInput = context.read<VolumeButtonInput>();
+    final controls = context.read<HandsFreeControlsFactory>().controller;
 
     return MultiProvider(
       providers: [
@@ -35,7 +42,7 @@ class RunRecorderScreen extends StatelessWidget {
             testRunRepository: testRunRepository,
             skiRepository: skiRepository,
             glideTestRepository: glideTestRepository,
-            volumeButtonInput: volumeButtonInput,
+            controls: controls,
             dataRecorder: dataRecorder,
             glideTestId: glideTestId,
           ),
@@ -56,12 +63,14 @@ class _RunRecorderContent extends StatefulWidget {
 
 class _RunRecorderContentState extends State<_RunRecorderContent> {
   RunRecorderViewModel? _viewModel;
+  RecordingDisplay? _display;
   bool _didHandleSavedRun = false;
   bool _didShowCurrentSaveFailure = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _display = context.read<HandsFreeControlsFactory>().recordingDisplay;
     final viewModel = context.read<RunRecorderViewModel>();
     if (identical(_viewModel, viewModel)) return;
 
@@ -104,27 +113,67 @@ class _RunRecorderContentState extends State<_RunRecorderContent> {
 
   @override
   void dispose() {
+    _setKeepAwake(false);
     _viewModel?.removeListener(_handleViewModelChange);
     super.dispose();
+  }
+
+  void _setKeepAwake(bool enabled) {
+    unawaited(
+      _display?.setKeepAwake(enabled).catchError((Object error) {
+        log('Could not update recording display', error: error);
+      }),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<RunRecorderViewModel>(
       builder: (context, viewModel, child) {
-        return PopScope(
-          canPop: !viewModel.isSaving,
-          child: Scaffold(
-            body: viewModel.viewState == RunViewState.selectSki
-                ? StartTestRunWidget(viewModel: viewModel)
-                : RecordTestRun(
-                    viewModel: viewModel,
-                    onStopAndSave: viewModel.stopAndSaveRun,
-                    onAbort: () {
-                      viewModel.abortRun();
-                      Navigator.pop(context);
-                    },
+        return HandsFreeInputHandler(
+          controller: context.read<HandsFreeControlsFactory>().controller,
+          stage: viewModel.viewState == RunViewState.selectSki
+              ? HandsFreeStage.skiSelection
+              : HandsFreeStage.recording,
+          enabled: viewModel.inputEnabled,
+          onAction: viewModel.handleHandsFreeAction,
+          onError: viewModel.handleInputError,
+          onGuidance: viewModel.updateInputGuidance,
+          onVisibilityChanged: (visible) {
+            viewModel.setRouteVisible(visible);
+            _setKeepAwake(visible);
+          },
+          child: PopScope(
+            canPop: !viewModel.isSaving,
+            child: Scaffold(
+              body: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Offstage(
+                    offstage: viewModel.startCountdownSeconds > 0,
+                    child: viewModel.viewState == RunViewState.selectSki
+                        ? StartTestRunWidget(viewModel: viewModel)
+                        : RecordTestRun(
+                            viewModel: viewModel,
+                            onStopAndSave: viewModel.stopAndSaveRun,
+                            onAbort: () {
+                              viewModel.abortRun();
+                              Navigator.pop(context);
+                            },
+                          ),
                   ),
+                  if (viewModel.startCountdownSeconds > 0)
+                    Positioned.fill(
+                      child: BlockSemantics(
+                        child: RecordingStartCountdown(
+                          seconds: viewModel.startCountdownSeconds,
+                          skiName: viewModel.selectedSki!.name,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         );
       },

@@ -30,8 +30,8 @@ that could materially change the recommendation.
    and capture screenshots. The local ADB server and emulator may require
    explicit permission to run outside the Codex sandbox.
 3. **Static evidence:** If no runnable app is available, inspect supplied
-   screenshots or generate the project's Appshots. Request targeted additional
-   states instead of pretending the flow was exercised.
+   screenshots or the repository's standalone HTML prototypes. Request targeted
+   additional states instead of pretending the flow was exercised.
 
 Use accessibility bounds from `dump-ui` to choose tap coordinates when
 possible. Coordinate taps alone are brittle, so re-dump the hierarchy or take

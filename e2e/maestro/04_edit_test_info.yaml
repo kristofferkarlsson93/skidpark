@@ -1,0 +1,187 @@
+appId: com.krikar.skidpark.skidpark.e2e
+name: Redigera testinfo före och efter ett åk
+tags:
+  - e2e
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- setLocation:
+    latitude: 59.329300
+    longitude: 18.068600
+- runFlow: _helpers/wait_for_home_ready.yaml
+- tapOn:
+    id: "navigation-skis"
+- runFlow:
+    file: _helpers/create_ski.yaml
+    env:
+      SKI_NAME: "Infoskida"
+- runFlow:
+    file: _helpers/create_test_with_all_skis.yaml
+    env:
+      TEST_NAME: "Infotest"
+
+# Numerisk testtext påverkas inte av emulatorns autokorrigering.
+# Tomt test: direkt redigering, tangentbord och beständig sparning.
+- assertNotVisible: "Översikt[\\s\\S]*"
+- assertVisible: "[\\s\\S]*Gör flera åk med varje skidpar[\\s\\S]*"
+- tapOn:
+    id: "test-info-edit-notes"
+- inputText: "12345"
+- scrollUntilVisible:
+    element:
+      text: "Spara"
+    direction: DOWN
+- tapOn: "Spara"
+- assertVisible: "[\\s\\S]*12345[\\s\\S]*"
+- back
+- tapOn: "Infotest[\\s\\S]*"
+- assertVisible: "[\\s\\S]*12345[\\s\\S]*"
+
+# Tomt namn får inte sparas. Avbryt återställer sparade värden.
+- tapOn: "Redigera testnamn"
+- tapOn:
+    id: "test-info-name-field"
+- eraseText: 8
+- hideKeyboard
+- tapOn: "Spara"
+- assertVisible: "Ange ett testnamn."
+- tapOn: "Avbryt"
+- scrollUntilVisible:
+    element:
+      text: "Redigera testnamn"
+    direction: UP
+- assertVisible: "Infotest"
+- assertVisible: "[\\s\\S]*12345[\\s\\S]*"
+- tapOn: "Redigera testnamn"
+- tapOn:
+    id: "test-info-name-field"
+- eraseText: 8
+- inputText: "  Nysnotest  "
+- hideKeyboard
+- tapOn: "Spara"
+- assertVisible: "Nysnotest"
+
+# Både Avbryt och tillbaka-dialogen ska bevara den sparade anteckningen.
+- tapOn:
+    id: "test-info-edit-notes"
+- eraseText: 5
+- inputText: "54321"
+- hideKeyboard
+- tapOn: "Avbryt"
+- assertVisible: "[\\s\\S]*12345[\\s\\S]*"
+- assertNotVisible: "[\\s\\S]*54321[\\s\\S]*"
+- tapOn:
+    id: "test-info-edit-notes"
+- eraseText: 5
+- inputText: "98765"
+- hideKeyboard
+- back
+- assertVisible: "Lämna utan att spara?"
+- tapOn: "Fortsätt skriva"
+- assertVisible: "98765"
+- hideKeyboard
+- back
+- assertVisible: "Lämna utan att spara?"
+- tapOn: "Lämna"
+- tapOn: "Nysnotest[\\s\\S]*"
+- assertVisible: "[\\s\\S]*12345[\\s\\S]*"
+- assertNotVisible: "[\\s\\S]*98765[\\s\\S]*"
+
+# En sparad anteckning kan också rensas.
+- tapOn:
+    id: "test-info-edit-notes"
+- eraseText: 5
+- tapOn: "Spara"
+- assertVisible: "Lägg till anteckning"
+- back
+- tapOn: "Nysnotest[\\s\\S]*"
+- assertVisible: "Lägg till anteckning"
+
+# Samma test får ett riktigt åk och fliknavigation.
+- tapOn: "Ändra skidor"
+- assertVisible: "Skidor i testet"
+- assertNotVisible:
+    id: "test-info-name-field"
+- tapOn: "Ingen"
+- tapOn: "Spara skidurval"
+- assertVisible: "Välj minst en skida till testet."
+- back
+- assertVisible: "Lämna utan att spara?"
+- tapOn: "Fortsätt välja"
+- tapOn: "Avbryt"
+- tapOn: "Nytt åk"
+- assertVisible: "Välj skida för åket"
+- assertVisible: "Infoskida"
+- tapOn: "Infoskida"
+- tapOn: "STARTA TEST"
+- assertVisible: "Samlar in data..."
+- travel:
+    points:
+      - "59.329300, 18.068600"
+      - "59.329390, 18.068600"
+      - "59.329480, 18.068600"
+      - "59.329570, 18.068600"
+      - "59.329660, 18.068600"
+    speed: 8
+- tapOn: "SPARA"
+- extendedWaitUntil:
+    visible: "Åk 1 - Infoskida[\\s\\S]*"
+    timeout: 15000
+- tapOn: "Testet[\\s\\S]*"
+- assertVisible: "Så gör du ett glidtest[\\s\\S]*"
+- assertNotVisible: "[\\s\\S]*Gör flera åk med varje skidpar[\\s\\S]*"
+
+# Byt föreslagna skidor utan att radera åket på den tidigare skidan.
+- tapOn: "Ändra skidor"
+- tapOn: "Lägg till ny skida"
+- tapOn:
+    id: "ski-name-field"
+- inputText: "Reservskida"
+- hideKeyboard
+- tapOn: "Lägg till"
+- scrollUntilVisible:
+    element:
+      text: "Stäng"
+    direction: DOWN
+- tapOn: "Stäng"
+- tapOn: "Infoskida"
+- tapOn: "Spara skidurval"
+
+# Utkastet överlever flikbyte. Inspelat åk och skidurval finns kvar.
+- tapOn:
+    id: "test-info-edit-notes"
+- inputText: "2026-10-30 08:15 -5"
+- hideKeyboard
+- tapOn: "Översikt[\\s\\S]*"
+- assertVisible: "Graf med 1 åk"
+- assertVisible: "Åk 1 - Infoskida[\\s\\S]*"
+- tapOn: "Testet[\\s\\S]*"
+- assertVisible: "2026-10-30 08:15 -5"
+- tapOn: "Spara"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Nysnotest[\\s\\S]*"
+    timeout: 60000
+- tapOn: "Nysnotest[\\s\\S]*"
+- assertVisible: "Graf med 1 åk"
+- tapOn: "Testet[\\s\\S]*"
+- assertVisible: "[\\s\\S]*2026-10-30 08:15 -5[\\s\\S]*"
+- tapOn: "Nytt åk"
+- assertVisible: "Välj skida för åket"
+- assertVisible: "Reservskida"
+- assertNotVisible: "Infoskida"
+- back
+- back
+
+# Exempeltestet förblir skrivskyddat.
+- tapOn: "Exempeltest: fyra glidåk[\\s\\S]*"
+- tapOn: "Testet[\\s\\S]*"
+- assertVisible: "[\\s\\S]*Exempeltest · kan inte redigeras[\\s\\S]*"
+- assertNotVisible: "Redigera testnamn"
+- assertNotVisible: "Ändra skidor"
+- assertNotVisible:
+    id: "test-info-edit-notes"
+- assertNotVisible: "Nytt åk"

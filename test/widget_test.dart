@@ -6,6 +6,8 @@ import 'package:skidpark/common/database/database.dart';
 import 'package:skidpark/common/database/repository/glide_test_repository.dart';
 import 'package:skidpark/common/database/repository/ski_repository.dart';
 import 'package:skidpark/common/navigation/bottom_navigation.dart';
+import 'package:skidpark/common/input/hands_free_controls_factory.dart';
+import 'package:skidpark/common/services/volume_press_handler.dart';
 import 'package:skidpark/theme/app_theme.dart';
 
 void main() {
@@ -22,6 +24,12 @@ void main() {
             value: GlideTestRepository(database),
           ),
           Provider<SkiRepository>.value(value: SkiRepository(database)),
+          Provider<HandsFreeControlsFactory>.value(
+            value: HandsFreeControlsFactory(
+              platform: TargetPlatform.linux,
+              volumeInput: UnsupportedVolumeButtonInput(),
+            ),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,
@@ -73,6 +81,12 @@ void main() {
         providers: [
           Provider<GlideTestRepository>.value(value: glideTestRepository),
           Provider<SkiRepository>.value(value: SkiRepository(database)),
+          Provider<HandsFreeControlsFactory>.value(
+            value: HandsFreeControlsFactory(
+              platform: TargetPlatform.linux,
+              volumeInput: UnsupportedVolumeButtonInput(),
+            ),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.darkTheme,

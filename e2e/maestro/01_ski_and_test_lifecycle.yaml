@@ -28,6 +28,10 @@ tags:
 - assertVisible: "Avbryt"
 - tapOn: "Lägg till"
 - assertVisible: "[\\s\\S]*2 av 2 valda"
+- scrollUntilVisible:
+    element:
+      text: "Avbryt"
+    direction: DOWN
 - tapOn: "Avbryt"
 
 - tapOn: "Ingen"
@@ -39,25 +43,25 @@ tags:
     id: "glide-test-name-field"
 - eraseText
 - inputText: "Livscykeltest"
-- scrollUntilVisible:
-    element:
-      id: "glide-test-notes-section"
-    direction: DOWN
-- tapOn:
-    id: "glide-test-notes-section"
-- tapOn:
-    id: "glide-test-notes-field"
-- inputText: "Kall nysnö"
-- pressKey: back
-- assertVisible: "Nytt glidtest"
+- hideKeyboard
+- assertNotVisible: "Anteckningar"
 - tapOn: "Skapa test"
 - assertVisible: "Nytt åk"
+- tapOn:
+    id: "test-info-edit-notes"
+- inputText: "2026-10-30 -5"
+- hideKeyboard
+- tapOn: "Spara"
+- assertVisible: "[\\s\\S]*2026-10-30 -5[\\s\\S]*"
 
 - tapOn: "Fler alternativ"
-- tapOn: "Redigera testinfo"
-- assertVisible: "Redigera test"
-- assertVisible: "Livscykeltest"
-- assertVisible: "Kall nysnö"
+- assertNotVisible: "Redigera testinfo"
+- assertVisible: "Exportera all data"
+- back
+- tapOn: "Ändra skidor"
+- assertVisible: "Skidor i testet"
+- assertNotVisible: "Livscykeltest"
+- assertNotVisible: "2026-10-30 -5"
 - assertVisible: "[\\s\\S]*2 av 2 valda"
 
 - tapOn: "Parkskida"
@@ -74,9 +78,30 @@ tags:
 - assertVisible: "Avbryt"
 - tapOn: "Lägg till"
 - assertVisible: "[\\s\\S]*2 av 3 valda"
-- tapOn: "Avbryt"
-- tapOn: "Spara ändringar"
+- scrollUntilVisible:
+    element:
+      text: "Stäng"
+    direction: DOWN
+- tapOn: "Stäng"
+- tapOn: "Spara skidurval"
 - assertVisible: "Nytt åk"
+- assertVisible: "Livscykeltest"
+- assertVisible: "[\\s\\S]*2026-10-30 -5[\\s\\S]*"
+- tapOn: "Nytt åk"
+# Fresh Google Play emulators can require their initial location setup here.
+- extendedWaitUntil:
+    visible: "Välj skida för åket|For a better experience[\\s\\S]*"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: "For a better experience[\\s\\S]*"
+    commands:
+      - tapOn: "Turn on"
+- assertVisible: "Välj skida för åket"
+- assertVisible: "Testskida"
+- assertVisible: "Ersättningsskida"
+- assertNotVisible: "Parkskida"
+- back
 
 - tapOn: "Fler alternativ"
 - tapOn: "Radera glidtestet"

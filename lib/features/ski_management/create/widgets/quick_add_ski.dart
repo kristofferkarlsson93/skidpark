@@ -16,6 +16,7 @@ class QuickAddSki extends StatelessWidget {
     this.showBrandAndModel = true,
     this.nameHelperText,
     this.submitLabel = 'Lägg till',
+    this.cancelLabel = 'Avbryt',
   }) : assert(
          !showBrandAndModel || brandAndModelController != null,
          'A brandAndModelController is required when the field is shown.',
@@ -30,6 +31,7 @@ class QuickAddSki extends StatelessWidget {
   final bool showBrandAndModel;
   final String? nameHelperText;
   final String submitLabel;
+  final String cancelLabel;
   final VoidCallback onNameChanged;
   final VoidCallback onOpen;
   final VoidCallback onCancel;
@@ -58,9 +60,11 @@ class QuickAddSki extends StatelessWidget {
           children: [
             Icon(Icons.add, size: 20),
             SizedBox(width: 10),
-            Text(
-              'Lägg till ny skida',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            Expanded(
+              child: Text(
+                'Lägg till ny skida',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -120,7 +124,7 @@ class QuickAddSki extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: isSaving ? null : onCancel,
-                child: const Text('Avbryt'),
+                child: Text(cancelLabel),
               ),
               FilledButton(
                 onPressed: isSaving ? null : onSave,

@@ -15,14 +15,15 @@ import 'package:skidpark/features/ski_management/models/ski.dart';
 
 import '../../../../common/database/database.dart';
 import '../../../../common/database/repository/test_run_repository.dart';
-import '../../../../common/services/volume_press_handler.dart';
+import '../../../../common/input/hands_free_controller.dart';
+import '../../../../common/input/hands_free_input.dart';
 
 enum RunViewState { selectSki, recordRun }
 
 enum RunSaveState { idle, saving, saved, failed }
 
 class RunRecorderViewModel extends ChangeNotifier {
-  final VolumeButtonInput _volumeButtonInput;
+  final HandsFreeController _controls;
   final TestRunRepository _testRunRepository;
   final SkiRepository _skiRepository;
   final GlideTestRepository _glideTestRepository;
@@ -31,8 +32,16 @@ class RunRecorderViewModel extends ChangeNotifier {
 
   List<StoredSkiData> _testSkis = [];
   List<StoredSkiData> _allActiveSkis = [];
+  bool _testSkisLoaded = false;
+  bool _activeSkisLoaded = false;
   bool _showOtherSkis = false;
-  bool _isVolumeInputEnabled = true;
+  bool _isInputEnabled = true;
+  bool _routeVisible = false;
+  String? _inputError;
+  String? _inputGuidance;
+  Timer? _startTimer;
+  int _startGeneration = 0;
+  int _startCountdownSeconds = 0;
 
   RunViewState _viewState = RunViewState.selectSki;
   int _currentMarkedSkiIndex = -1;
@@ -43,9 +52,6 @@ class RunRecorderViewModel extends ChangeNotifier {
   RunSaveState _saveState = RunSaveState.idle;
 
   bool get isHardwareStartTriggered => _isHardwareStartTriggered;
-  late final StreamSubscription<VolumeButton> _shortPressSubscription;
-
-  late final StreamSubscription<VolumeButton> _longPressSubscription;
   late final StreamSubscription<List<StoredSkiData>> _testSkisSubscription;
   late final StreamSubscription<List<StoredSkiData>> _activeSkisSubscription;
 
@@ -56,16 +62,15 @@ class RunRecorderViewModel extends ChangeNotifier {
     required TestRunRepository testRunRepository,
     required SkiRepository skiRepository,
     required GlideTestRepository glideTestRepository,
-    required VolumeButtonInput volumeButtonInput,
+    required HandsFreeController controls,
     required this.dataRecorder,
     required int glideTestId,
   }) : _testRunRepository = testRunRepository,
        _skiRepository = skiRepository,
        _glideTestRepository = glideTestRepository,
-       _volumeButtonInput = volumeButtonInput,
+       _controls = controls,
        _glideTestId = glideTestId {
     _listenToSkis();
-    _setupVolumeKeyListeners();
     dataRecorder.addListener(_handleDataRecorderChange);
   }
 
@@ -93,11 +98,29 @@ class RunRecorderViewModel extends ChangeNotifier {
 
   int get autoSaveCountdownSeconds => _autoSaveCountdownSeconds;
 
+  HandsFreeInstructions get inputInstructions => _controls.instructions;
+  bool get isStarting => _isHardwareStartTriggered;
+  int get startCountdownSeconds => _startCountdownSeconds;
+  String? get inputError => _inputError;
+  String? get inputGuidance => _inputGuidance;
+  bool get inputEnabled =>
+      _isInputEnabled &&
+      !isStarting &&
+      _inputError == null &&
+      !isSaving &&
+      (viewState == RunViewState.selectSki ||
+          _controls.configuration.canStopRecording);
+
   RunSaveState get saveState => _saveState;
 
   bool get isSaving => _saveState == RunSaveState.saving;
 
   Future<void> selectSki(StoredSkiData inputSki) async {
+    if (isStarting) return;
+    await _selectSki(inputSki);
+  }
+
+  Future<void> _selectSki(StoredSkiData inputSki) async {
     if (!_testSkis.any((ski) => ski.id == inputSki.id)) {
       await _glideTestRepository.addSkiToTest(_glideTestId, inputSki.id);
       // Keep the selection stable while the database stream catches up.
@@ -122,25 +145,54 @@ class RunRecorderViewModel extends ChangeNotifier {
     await selectSki(createdSki);
   }
 
-  void suspendVolumeInput() {
-    _isVolumeInputEnabled = false;
+  void suspendHandsFreeInput() {
+    _isInputEnabled = false;
+    cancelPendingStart();
+    notifyListeners();
   }
 
-  void resumeVolumeInput() {
-    _isVolumeInputEnabled = true;
+  void resumeHandsFreeInput() {
+    _isInputEnabled = true;
+    notifyListeners();
+  }
+
+  void setRouteVisible(bool visible) {
+    _routeVisible = visible;
+    if (!visible) cancelPendingStart();
+    if (visible &&
+        _currentMarkedSkiIndex >= 0 &&
+        _currentMarkedSkiIndex < availableSkis.length &&
+        viewState == RunViewState.selectSki) {
+      _announce(availableSkis[_currentMarkedSkiIndex].name);
+    }
+  }
+
+  void updateInputGuidance(String message) {
+    _inputGuidance = message;
+    notifyListeners();
+  }
+
+  void handleInputError(String message) {
+    _inputError = message;
+    cancelPendingStart();
+    notifyListeners();
   }
 
   void showOtherSkis() {
+    if (isStarting) return;
     _showOtherSkis = true;
     _selectedSki = null;
     _currentMarkedSkiIndex = -1;
+    _selectInitialSki();
     notifyListeners();
   }
 
   void showTestSkis() {
+    if (isStarting) return;
     _showOtherSkis = false;
     _selectedSki = null;
     _currentMarkedSkiIndex = -1;
+    _selectInitialSki();
     notifyListeners();
   }
 
@@ -226,66 +278,134 @@ class RunRecorderViewModel extends ChangeNotifier {
   }
 
   void abortRun() {
+    cancelPendingStart();
     _cancelAutoSave();
     dataRecorder.stopRecording();
     dataRecorder.resetForNewRun();
     _currentMarkedSkiIndex = -1;
   }
 
-  void _setupVolumeKeyListeners() {
-    _shortPressSubscription = _volumeButtonInput.shortPressStream.listen((
-      VolumeButton buttonId,
-    ) async {
-      if (!_isVolumeInputEnabled) return;
-      log("Pressed $buttonId");
-      if (viewState == RunViewState.recordRun) {
-        if (buttonId == VolumeButton.down) {
-          await stopAndSaveRun();
-        }
-      } else {
-        handleSkiSelectVolumeNavigation(buttonId);
-        notifyListeners();
-      }
-    });
-
-    _longPressSubscription = _volumeButtonInput.longPressStream.listen((
-      VolumeButton volumeButton,
-    ) async {
-      if (!_isVolumeInputEnabled) return;
-      log("Long press $volumeButton");
-      if (viewState == RunViewState.selectSki) {
-        if (volumeButton == VolumeButton.down && _currentMarkedSkiIndex >= 0) {
-          _isHardwareStartTriggered = true;
-          notifyListeners();
-          final selectedSki = availableSkis[_currentMarkedSkiIndex];
-          await selectSki(selectedSki);
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (_isDisposed) return;
-          startRun();
-          _isHardwareStartTriggered = false;
-        }
-      }
-    });
+  void handleHandsFreeAction(HandsFreeAction action) {
+    if (!inputEnabled || !_routeVisible) return;
+    if (viewState == RunViewState.recordRun) {
+      if (action == HandsFreeAction.stopAndSave) unawaited(stopAndSaveRun());
+      return;
+    }
+    switch (action) {
+      case HandsFreeAction.previous:
+        _moveSelection(-1);
+      case HandsFreeAction.next:
+        _moveSelection(1);
+      case HandsFreeAction.confirm:
+        unawaited(requestStart(fromHardware: true));
+      case HandsFreeAction.stopAndSave:
+        break;
+    }
   }
 
-  void handleSkiSelectVolumeNavigation(VolumeButton buttonId) {
+  void _moveSelection(int offset) {
     if (availableSkis.isEmpty) return;
-    // If we navigate with hardware, we need to make sure to reset whatever we did with touch before
     _selectedSki = null;
-    if (buttonId == VolumeButton.up) {
-      // If is start value (-1) or zero - go to last list item.
-      if (_currentMarkedSkiIndex <= 0) {
-        _currentMarkedSkiIndex = availableSkis.length - 1;
-      } else {
-        _currentMarkedSkiIndex -= 1;
-      }
-    } else {
-      if (_currentMarkedSkiIndex == availableSkis.length - 1) {
-        _currentMarkedSkiIndex = 0;
-      } else {
-        _currentMarkedSkiIndex += 1;
-      }
+    _currentMarkedSkiIndex = _currentMarkedSkiIndex < 0
+        ? (offset > 0 ? 0 : availableSkis.length - 1)
+        : (_currentMarkedSkiIndex + offset) % availableSkis.length;
+    notifyListeners();
+    _announce(availableSkis[_currentMarkedSkiIndex].name);
+  }
+
+  Future<void> requestStart({bool fromHardware = false}) async {
+    if (isStarting || !_routeVisible || viewState != RunViewState.selectSki) {
+      return;
     }
+    final ski =
+        _selectedSki ??
+        (_currentMarkedSkiIndex >= 0 &&
+                _currentMarkedSkiIndex < availableSkis.length
+            ? availableSkis[_currentMarkedSkiIndex]
+            : null);
+    if (ski == null) return;
+    final generation = ++_startGeneration;
+    _isHardwareStartTriggered = true;
+    notifyListeners();
+    try {
+      await _selectSki(ski);
+      await _controls.pause();
+      if (!_canFinishStart(generation)) return;
+      final delay = fromHardware
+          ? _controls.configuration.startDelay
+          : Duration.zero;
+      _startCountdownSeconds = delay.inSeconds;
+      if (_startCountdownSeconds > 0) {
+        _announce(
+          '${ski.name}. Inspelning startar om $_startCountdownSeconds sekunder.',
+        );
+        _startTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!_canFinishStart(generation)) {
+            timer.cancel();
+            return;
+          }
+          _startCountdownSeconds--;
+          if (_startCountdownSeconds == 0) {
+            timer.cancel();
+            _finishStart(generation);
+          } else {
+            notifyListeners();
+          }
+        });
+      } else {
+        _startTimer = Timer(delay, () => _finishStart(generation));
+      }
+      notifyListeners();
+    } catch (error) {
+      if (_isDisposed || generation != _startGeneration) return;
+      handleInputError(
+        'Kunde inte förbereda starten. Prova igen med skärmknappen.',
+      );
+    }
+  }
+
+  bool _canFinishStart(int generation) =>
+      !_isDisposed &&
+      _routeVisible &&
+      generation == _startGeneration &&
+      isStarting;
+
+  void _finishStart(int generation) {
+    if (!_canFinishStart(generation)) return;
+    _isHardwareStartTriggered = false;
+    _startCountdownSeconds = 0;
+    startRun();
+    _announce('Inspelning startad.');
+  }
+
+  void cancelPendingStart() {
+    _startGeneration++;
+    _startTimer?.cancel();
+    if (!isStarting) return;
+    _isHardwareStartTriggered = false;
+    _startCountdownSeconds = 0;
+    unawaited(_controls.feedback.stop());
+    notifyListeners();
+  }
+
+  void _announce(String message) {
+    if (!_routeVisible || _isDisposed) return;
+    unawaited(
+      _controls.feedback.announce(message).catchError((Object error) {}),
+    );
+  }
+
+  void _selectInitialSki() {
+    if (!_testSkisLoaded ||
+        !_activeSkisLoaded ||
+        !_controls.configuration.selectFirstSki ||
+        _currentMarkedSkiIndex >= 0 ||
+        isStarting ||
+        availableSkis.isEmpty) {
+      return;
+    }
+    _currentMarkedSkiIndex = 0;
+    _announce(availableSkis.first.name);
   }
 
   void _listenToSkis() {
@@ -293,6 +413,8 @@ class RunRecorderViewModel extends ChangeNotifier {
         .watchSkisForTest(_glideTestId)
         .listen((storedSkis) {
           _testSkis = storedSkis;
+          _testSkisLoaded = true;
+          _selectInitialSki();
           log("test skis: ${storedSkis.length}");
           notifyListeners();
         });
@@ -300,6 +422,8 @@ class RunRecorderViewModel extends ChangeNotifier {
       storedSkis,
     ) {
       _allActiveSkis = storedSkis;
+      _activeSkisLoaded = true;
+      _selectInitialSki();
       log("active skis: ${storedSkis.length}");
       notifyListeners();
     });
@@ -356,8 +480,8 @@ class RunRecorderViewModel extends ChangeNotifier {
   void dispose() {
     log("Disposing RunRecorderViewModel");
     _isDisposed = true;
-    _shortPressSubscription.cancel();
-    _longPressSubscription.cancel();
+    _startGeneration++;
+    _startTimer?.cancel();
     _testSkisSubscription.cancel();
     _activeSkisSubscription.cancel();
     _autoSaveTimer?.cancel();
